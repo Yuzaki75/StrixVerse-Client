@@ -1,12 +1,19 @@
 {
-    "version": 8,
+    "version": 6,
     "configurePresets": [
         {
-            "name": "msvc-vcpkg",
-            "inherits": "msvc-debug",
+            "name": "debug-vcpkg",
+            "inherits": "debug",
             "cacheVariables": {
                 "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
             }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug-vcpkg",
+            "configurePreset": "debug-vcpkg",
+            "configuration": "Debug"
         }
     ]
 }

@@ -1,12 +1,37 @@
 #pragma once
 
+#include <memory>
+
+class Game;
 class Window;
 
+// Lifecycle states of the engine. Transitions are strictly forward except
+// Running <-> Stopped (Stop() may be called from event handling).
+enum class EngineState
+{
+    Uninitialized,
+    Initialized,
+    Running,
+    Stopped,
+    Shutdown
+};
+
+// -----------------------------------------------------------------------------
+// Engine
+//
+// Purpose:
+//   Owns the main loop and the frame structure (events -> fixed updates ->
+//   update -> render) and drives the Game layer. It borrows the Window
+//   (non-owning pointer, the Application owns it) and owns the Game.
+// -----------------------------------------------------------------------------
 class Engine
 {
 public:
     Engine();
     ~Engine();
+
+    Engine(const Engine&) = delete;
+    Engine& operator=(const Engine&) = delete;
 
     bool Initialize(Window* window);
 
@@ -16,6 +41,9 @@ public:
 
     void Stop();
 
+    EngineState GetState() const;
+    bool IsRunning() const;
+
 private:
     void ProcessEvents();
     void Update();
@@ -23,5 +51,6 @@ private:
 
 private:
     Window* m_Window = nullptr;
-    bool m_Running = false;
+    std::unique_ptr<Game> m_Game;
+    EngineState m_State = EngineState::Uninitialized;
 };

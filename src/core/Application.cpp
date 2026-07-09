@@ -1,5 +1,8 @@
 #include "Application.h"
 
+#include "ServiceLocator.h"
+#include "Version.h"
+
 Application::Application()
 {
 }
@@ -14,6 +17,7 @@ bool Application::Initialize()
 
     Logger::Info("=================================");
     Logger::Info("Starting StrixVerse Client");
+    Logger::Info(Version::GetFullVersionString());
     Logger::Info("=================================");
 
     if (!m_Config.Load())
@@ -56,6 +60,9 @@ void Application::Shutdown()
     m_Window.Destroy();
 
     m_Config.Save();
+
+    // Release cross-cutting services after every system has stopped.
+    ServiceLocator::Clear();
 
     m_Logger.Shutdown();
 }

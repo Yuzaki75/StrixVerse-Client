@@ -1,0 +1,12 @@
+C:\Projects\StrixVerse\Client\src\main.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\main.obj
+C:\Projects\StrixVerse\Client\src\core\Application.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Application.obj
+C:\Projects\StrixVerse\Client\src\core\Config.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Config.obj
+C:\Projects\StrixVerse\Client\src\core\Engine.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Engine.obj
+C:\Projects\StrixVerse\Client\src\core\Game.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Game.obj
+C:\Projects\StrixVerse\Client\src\core\Logger.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Logger.obj
+C:\Projects\StrixVerse\Client\src\core\ThreadPool.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\ThreadPool.obj
+C:\Projects\StrixVerse\Client\src\core\Time.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Time.obj
+C:\Projects\StrixVerse\Client\src\core\Version.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Version.obj
+C:\Projects\StrixVerse\Client\src\core\Window.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Window.obj
+C:\Projects\StrixVerse\Client\src\graphics\Texture.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Texture.obj
+C:\Projects\StrixVerse\Client\src\graphics\OpenGL\GLContext.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\GLContext.obj

@@ -1,0 +1,12 @@
+{
+    "label": "CMake: build",
+    "command": "cmake",
+    "args": [
+        "--build",
+        "${command:cmake.buildDirectory}",
+        "--config",
+        "Debug",
+        "--target",
+        "all"
+    ]
+}

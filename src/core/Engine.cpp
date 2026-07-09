@@ -1,25 +1,46 @@
 #include "Engine.h"
 
+#include "Game.h"
 #include "Logger.h"
 #include "Time.h"
 #include "Window.h"
 
-Engine::Engine()
-    : m_Window(nullptr),
-      m_Running(false)
-{
-}
+Engine::Engine() = default;
 
 Engine::~Engine()
 {
+    // RAII safety net for early exits.
+    Shutdown();
 }
 
 bool Engine::Initialize(Window* window)
 {
+    if (m_State != EngineState::Uninitialized)
+    {
+        Logger::Warning("Engine: Initialize called twice.");
+        return m_State == EngineState::Initialized;
+    }
+
+    if (!window)
+    {
+        Logger::Error("Engine: window is null.");
+        return false;
+    }
+
     m_Window = window;
-    m_Running = true;
 
     Time::Initialize();
+
+    m_Game = std::make_unique<Game>();
+
+    if (!m_Game->Initialize())
+    {
+        Logger::Error("Engine: failed to initialize game layer.");
+        m_Game.reset();
+        return false;
+    }
+
+    m_State = EngineState::Initialized;
 
     Logger::Info("Engine initialized.");
 
@@ -28,9 +49,17 @@ bool Engine::Initialize(Window* window)
 
 void Engine::Run()
 {
+    if (m_State != EngineState::Initialized)
+    {
+        Logger::Error("Engine: Run called before successful Initialize.");
+        return;
+    }
+
+    m_State = EngineState::Running;
+
     Logger::Info("Entering main loop...");
 
-    while (m_Running)
+    while (m_State == EngineState::Running)
     {
         Time::Update();
 
@@ -44,12 +73,39 @@ void Engine::Run()
 
 void Engine::Shutdown()
 {
+    if (m_State == EngineState::Shutdown ||
+        m_State == EngineState::Uninitialized)
+    {
+        m_State = EngineState::Shutdown;
+        return;
+    }
+
+    if (m_Game)
+    {
+        m_Game->Shutdown();
+        m_Game.reset();
+    }
+
+    m_Window = nullptr;
+    m_State = EngineState::Shutdown;
+
     Logger::Info("Engine shutdown.");
 }
 
 void Engine::Stop()
 {
-    m_Running = false;
+    if (m_State == EngineState::Running)
+        m_State = EngineState::Stopped;
+}
+
+EngineState Engine::GetState() const
+{
+    return m_State;
+}
+
+bool Engine::IsRunning() const
+{
+    return m_State == EngineState::Running;
 }
 
 void Engine::ProcessEvents()
@@ -67,12 +123,23 @@ void Engine::ProcessEvents()
 
 void Engine::Update()
 {
-    // Future systems
+    if (!m_Game)
+        return;
+
+    // Deterministic simulation at a fixed rate (physics, netcode).
+    while (Time::ConsumeFixedStep())
+    {
+        m_Game->FixedUpdate(Time::GetFixedTimestep());
+    }
+
+    // Variable-rate gameplay logic.
+    m_Game->Update(Time::GetDeltaTime());
+
+    // Future systems:
     //
     // InputManager::Update();
     // NetworkManager::Update();
     // AudioManager::Update();
-    // SceneManager::Update();
     // UIManager::Update();
 }
 
@@ -83,10 +150,12 @@ void Engine::Render()
 
     m_Window->BeginFrame();
 
-    // Future rendering
+    if (m_Game)
+        m_Game->Render();
+
+    // Future rendering:
     //
     // Renderer::Begin();
-    // SceneManager::Render();
     // UIManager::Render();
     // Renderer::End();
 

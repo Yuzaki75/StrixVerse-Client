@@ -1,0 +1,14 @@
+[2026-07-09 23:28:25] [INFO] =================================
+[2026-07-09 23:28:25] [INFO] Starting StrixVerse Client
+[2026-07-09 23:28:25] [INFO] StrixVerse 0.1.0 (build 0, commit 906f919, Jul  9 2026 23:27:35)
+[2026-07-09 23:28:25] [INFO] =================================
+[2026-07-09 23:28:25] [INFO] Window created.
+[2026-07-09 23:28:25] [INFO] Game: loaded scene 'MainMenu'.
+[2026-07-09 23:28:25] [INFO] Game initialized.
+[2026-07-09 23:28:25] [INFO] Engine initialized.
+[2026-07-09 23:28:25] [INFO] Client initialized.
+[2026-07-09 23:28:25] [INFO] Entering main loop...
+[2026-07-09 23:29:00] [INFO] Shutting down client...
+[2026-07-09 23:29:00] [INFO] Game: unloaded scene 'MainMenu'.
+[2026-07-09 23:29:00] [INFO] Game shutdown.
+[2026-07-09 23:29:00] [INFO] Engine shutdown.

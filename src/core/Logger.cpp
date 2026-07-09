@@ -8,6 +8,7 @@
 
 std::ofstream Logger::s_LogFile;
 std::mutex Logger::s_Mutex;
+LogLevel Logger::s_Level = LogLevel::Debug;
 
 Logger::Logger()
 {
@@ -15,6 +16,9 @@ Logger::Logger()
 
 Logger::~Logger()
 {
+    // RAII safety net: guarantees the file is flushed and closed even when
+    // Shutdown() is skipped (early return, exception during init, ...).
+    Shutdown();
 }
 
 bool Logger::Initialize()
@@ -38,29 +42,45 @@ void Logger::Shutdown()
 
 void Logger::Info(const std::string& message)
 {
-    Write("INFO", message);
+    Write(LogLevel::Info, "INFO", message);
 }
 
 void Logger::Warning(const std::string& message)
 {
-    Write("WARNING", message);
+    Write(LogLevel::Warning, "WARNING", message);
 }
 
 void Logger::Error(const std::string& message)
 {
-    Write("ERROR", message);
+    Write(LogLevel::Error, "ERROR", message);
 }
 
 void Logger::Debug(const std::string& message)
 {
-    Write("DEBUG", message);
+    Write(LogLevel::Debug, "DEBUG", message);
+}
+
+void Logger::SetLevel(LogLevel level)
+{
+    std::lock_guard<std::mutex> lock(s_Mutex);
+    s_Level = level;
+}
+
+LogLevel Logger::GetLevel()
+{
+    std::lock_guard<std::mutex> lock(s_Mutex);
+    return s_Level;
 }
 
 void Logger::Write(
-    const std::string& level,
+    LogLevel level,
+    const std::string& levelName,
     const std::string& message)
 {
     std::lock_guard<std::mutex> lock(s_Mutex);
+
+    if (level < s_Level)
+        return;
 
     auto now =
         std::chrono::system_clock::now();
@@ -79,10 +99,10 @@ void Logger::Write(
     std::stringstream ss;
 
     ss << "["
-       << std::put_time(&localTime, "%H:%M:%S")
+       << std::put_time(&localTime, "%Y-%m-%d %H:%M:%S")
        << "] "
        << "["
-       << level
+       << levelName
        << "] "
        << message;
 
