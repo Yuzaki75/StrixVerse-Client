@@ -1,0 +1,61 @@
+#include "Application.h"
+
+Application::Application()
+{
+}
+
+Application::~Application()
+{
+}
+
+bool Application::Initialize()
+{
+    m_Logger.Initialize();
+
+    Logger::Info("=================================");
+    Logger::Info("Starting StrixVerse Client");
+    Logger::Info("=================================");
+
+    if (!m_Config.Load())
+    {
+        Logger::Error("Failed to load configuration.");
+        return false;
+    }
+
+    if (!m_Window.Create(
+            m_Config.GetWidth(),
+            m_Config.GetHeight(),
+            "StrixVerse"))
+    {
+        Logger::Error("Failed to create window.");
+        return false;
+    }
+
+    if (!m_Engine.Initialize(&m_Window))
+    {
+        Logger::Error("Failed to initialize engine.");
+        return false;
+    }
+
+    Logger::Info("Client initialized.");
+
+    return true;
+}
+
+void Application::Run()
+{
+    m_Engine.Run();
+}
+
+void Application::Shutdown()
+{
+    Logger::Info("Shutting down client...");
+
+    m_Engine.Shutdown();
+
+    m_Window.Destroy();
+
+    m_Config.Save();
+
+    m_Logger.Shutdown();
+}

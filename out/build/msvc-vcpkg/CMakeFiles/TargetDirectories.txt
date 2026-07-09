@@ -1,0 +1,3 @@
+C:/Projects/StrixVerse/Client/out/build/msvc-vcpkg/CMakeFiles/StrixVerseClient.dir
+C:/Projects/StrixVerse/Client/out/build/msvc-vcpkg/CMakeFiles/ALL_BUILD.dir
+C:/Projects/StrixVerse/Client/out/build/msvc-vcpkg/CMakeFiles/ZERO_CHECK.dir

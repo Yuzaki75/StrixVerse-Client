@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Projects/StrixVerse/Client/out/build/msvc-vcpkg/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
