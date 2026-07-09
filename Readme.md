@@ -68,7 +68,7 @@ StrixVerse-Client/
 ### Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/StrixVerse-Client.git
+git clone https://github.com/Yuzaki75/StrixVerse-Client.git
 cd StrixVerse-Client
 ```
 
