@@ -1,4 +1,3 @@
-````markdown
 <p align="center">
   <img src="Assets/logo.png" alt="StrixVerse Client Logo" width="220">
 </p>
