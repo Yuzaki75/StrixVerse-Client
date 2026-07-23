@@ -9,8 +9,7 @@ bool Renderer::Initialize()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glViewport(0, 0, 1280, 720);
-
+    // The viewport is set by the Window when it is created or resized.
     return true;
 }
 

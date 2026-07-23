@@ -38,6 +38,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -45,8 +47,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_FIND_ROOT_PATH: "C:/vcpkg/installed/x64-windows/debug;C:/vcpkg/installed/x64-windows"
   -
     kind: "message-v1"
@@ -64,7 +72,7 @@ events:
       The output was:
       0
       MSBuild version 18.7.8+1ac568fee for .NET Framework
-      Build started 7/9/2026 11:25:54 PM.
+      Build started 7/16/2026 4:57:44 PM.
       
       Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\4.3.1-msvc1\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
       PrepareForBuild:
@@ -99,7 +107,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:00.71
+      Time Elapsed 00:00:00.86
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -132,6 +140,8 @@ events:
       - "link"
     candidate_directories:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/wbem/"
@@ -139,9 +149,17 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/Python314/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/Windows/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/wbem/"
@@ -149,9 +167,17 @@ events:
       - "C:/vcpkg/installed/x64-windows/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/Python314/Scripts/"
+      - "C:/Python314/"
       - "C:/Windows/System32/"
       - "C:/Windows/"
       - "C:/Windows/System32/wbem/"
@@ -159,12 +185,24 @@ events:
       - "C:/Windows/System32/OpenSSH/"
       - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/Program Files/Git/cmd/"
+      - "C:/Program Files/nodejs/"
+      - "C:/ProgramData/chocolatey/bin/"
+      - "C:/Users/charl/.local/bin/"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/charl/AppData/Local/Python/bin/"
+      - "C:/Users/charl/AppData/Roaming/npm/"
     searched_directories:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/link"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/link"
@@ -186,15 +224,39 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/link"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/link"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/link"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/link.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/link"
+      - "C:/vcpkg/installed/x64-windows/Python314/link.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/link"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/link.com"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/link.exe"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/link"
@@ -216,12 +278,30 @@ events:
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/link.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/link.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/link"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/link.com"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/link"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/link.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/link.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/link"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/link"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.com"
     found: "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.exe"
     search_context:
@@ -233,6 +313,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -240,8 +322,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_FIND_ROOT_PATH: "C:/vcpkg/installed/x64-windows/debug;C:/vcpkg/installed/x64-windows"
   -
     kind: "find-v1"
@@ -266,6 +354,8 @@ events:
       - "lld-link"
     candidate_directories:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/wbem/"
@@ -273,9 +363,17 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/Python314/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/Windows/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/wbem/"
@@ -283,9 +381,17 @@ events:
       - "C:/vcpkg/installed/x64-windows/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/Python314/Scripts/"
+      - "C:/Python314/"
       - "C:/Windows/System32/"
       - "C:/Windows/"
       - "C:/Windows/System32/wbem/"
@@ -293,12 +399,24 @@ events:
       - "C:/Windows/System32/OpenSSH/"
       - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/Program Files/Git/cmd/"
+      - "C:/Program Files/nodejs/"
+      - "C:/ProgramData/chocolatey/bin/"
+      - "C:/Users/charl/.local/bin/"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/charl/AppData/Local/Python/bin/"
+      - "C:/Users/charl/AppData/Roaming/npm/"
     searched_directories:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lld-link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lld-link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lld-link"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/lld-link"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/lld-link"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/lld-link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/lld-link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/lld-link"
@@ -320,15 +438,39 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/lld-link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/lld-link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/lld-link"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/lld-link"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/lld-link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/lld-link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lld-link"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/lld-link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/lld-link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/lld-link"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lld-link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lld-link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lld-link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/lld-link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/lld-link"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lld-link.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lld-link.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lld-link"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/lld-link"
+      - "C:/vcpkg/installed/x64-windows/Python314/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/lld-link"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/lld-link.com"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/lld-link.exe"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/lld-link"
@@ -350,15 +492,39 @@ events:
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/lld-link.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/lld-link.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/lld-link"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/lld-link"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/lld-link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/lld-link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lld-link"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/lld-link.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/lld-link.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/lld-link"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lld-link.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lld-link.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lld-link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/lld-link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/lld-link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/lld-link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/lld-link"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lld-link.com"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lld-link.exe"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lld-link"
+      - "C:/Python314/Scripts/lld-link.com"
+      - "C:/Python314/Scripts/lld-link.exe"
+      - "C:/Python314/Scripts/lld-link"
+      - "C:/Python314/lld-link.com"
+      - "C:/Python314/lld-link.exe"
+      - "C:/Python314/lld-link"
       - "C:/Windows/System32/lld-link.com"
       - "C:/Windows/System32/lld-link.exe"
       - "C:/Windows/System32/lld-link"
@@ -380,12 +546,30 @@ events:
       - "C:/Program Files/Git/cmd/lld-link.com"
       - "C:/Program Files/Git/cmd/lld-link.exe"
       - "C:/Program Files/Git/cmd/lld-link"
+      - "C:/Program Files/nodejs/lld-link.com"
+      - "C:/Program Files/nodejs/lld-link.exe"
+      - "C:/Program Files/nodejs/lld-link"
+      - "C:/ProgramData/chocolatey/bin/lld-link.com"
+      - "C:/ProgramData/chocolatey/bin/lld-link.exe"
+      - "C:/ProgramData/chocolatey/bin/lld-link"
+      - "C:/Users/charl/.local/bin/lld-link.com"
+      - "C:/Users/charl/.local/bin/lld-link.exe"
+      - "C:/Users/charl/.local/bin/lld-link"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lld-link.com"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lld-link.exe"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lld-link"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/lld-link.com"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/lld-link.exe"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/lld-link"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lld-link.com"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lld-link.exe"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lld-link"
+      - "C:/Users/charl/AppData/Local/Python/bin/lld-link.com"
+      - "C:/Users/charl/AppData/Local/Python/bin/lld-link.exe"
+      - "C:/Users/charl/AppData/Local/Python/bin/lld-link"
+      - "C:/Users/charl/AppData/Roaming/npm/lld-link.com"
+      - "C:/Users/charl/AppData/Roaming/npm/lld-link.exe"
+      - "C:/Users/charl/AppData/Roaming/npm/lld-link"
     found: false
     search_context:
       CMAKE_PROGRAM_PATH:
@@ -396,6 +580,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -403,8 +589,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_FIND_ROOT_PATH: "C:/vcpkg/installed/x64-windows/debug;C:/vcpkg/installed/x64-windows"
   -
     kind: "find-v1"
@@ -427,6 +619,8 @@ events:
       - "link"
     candidate_directories:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/wbem/"
@@ -434,9 +628,17 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/Python314/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/Windows/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/wbem/"
@@ -444,9 +646,17 @@ events:
       - "C:/vcpkg/installed/x64-windows/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/Python314/Scripts/"
+      - "C:/Python314/"
       - "C:/Windows/System32/"
       - "C:/Windows/"
       - "C:/Windows/System32/wbem/"
@@ -454,12 +664,24 @@ events:
       - "C:/Windows/System32/OpenSSH/"
       - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/Program Files/Git/cmd/"
+      - "C:/Program Files/nodejs/"
+      - "C:/ProgramData/chocolatey/bin/"
+      - "C:/Users/charl/.local/bin/"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/charl/AppData/Local/Python/bin/"
+      - "C:/Users/charl/AppData/Roaming/npm/"
     searched_directories:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/link"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/link"
@@ -481,15 +703,39 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/link"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/link"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/link"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/link.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/link.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/link"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/link.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/link"
+      - "C:/vcpkg/installed/x64-windows/Python314/link.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/link"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/link.com"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/link.exe"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/link"
@@ -511,12 +757,30 @@ events:
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/link.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/link.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/link"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/link.com"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/link"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/link"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/link.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/link.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/link"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/link"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/link.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/link.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/link"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.com"
     found: "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.exe"
     search_context:
@@ -528,6 +792,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -535,8 +801,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_FIND_ROOT_PATH: "C:/vcpkg/installed/x64-windows/debug;C:/vcpkg/installed/x64-windows"
   -
     kind: "find-v1"
@@ -559,6 +831,8 @@ events:
       - "mt"
     candidate_directories:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/wbem/"
@@ -566,9 +840,17 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/Python314/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/Windows/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/wbem/"
@@ -576,9 +858,17 @@ events:
       - "C:/vcpkg/installed/x64-windows/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/Python314/Scripts/"
+      - "C:/Python314/"
       - "C:/Windows/System32/"
       - "C:/Windows/"
       - "C:/Windows/System32/wbem/"
@@ -586,12 +876,24 @@ events:
       - "C:/Windows/System32/OpenSSH/"
       - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/Program Files/Git/cmd/"
+      - "C:/Program Files/nodejs/"
+      - "C:/ProgramData/chocolatey/bin/"
+      - "C:/Users/charl/.local/bin/"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/charl/AppData/Local/Python/bin/"
+      - "C:/Users/charl/AppData/Roaming/npm/"
     searched_directories:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/mt.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/mt.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/mt"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/mt.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/mt"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/mt.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/mt"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/mt.com"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/mt.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/mt"
@@ -613,15 +915,39 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/mt.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/mt.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/mt"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/mt.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/mt"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/mt.com"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/mt"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/mt.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/mt"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/mt.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/mt"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/mt.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/mt.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/mt"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/mt.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/mt.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/mt"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/mt.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/mt"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/mt.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/mt"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/mt.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/mt.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/mt"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/mt.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/mt"
+      - "C:/vcpkg/installed/x64-windows/Python314/mt.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/mt"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/mt.com"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/mt.exe"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/mt"
@@ -643,15 +969,39 @@ events:
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/mt.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/mt.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/mt"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/mt.com"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/mt"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/mt.com"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/mt"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/mt.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/mt"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/mt.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/mt"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/mt.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/mt.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/mt"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/mt.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/mt.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/mt"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/mt.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/mt"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/mt.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/mt.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/mt"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/mt.com"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/mt.exe"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/mt"
+      - "C:/Python314/Scripts/mt.com"
+      - "C:/Python314/Scripts/mt.exe"
+      - "C:/Python314/Scripts/mt"
+      - "C:/Python314/mt.com"
+      - "C:/Python314/mt.exe"
+      - "C:/Python314/mt"
       - "C:/Windows/System32/mt.com"
       - "C:/Windows/System32/mt.exe"
       - "C:/Windows/System32/mt"
@@ -673,12 +1023,30 @@ events:
       - "C:/Program Files/Git/cmd/mt.com"
       - "C:/Program Files/Git/cmd/mt.exe"
       - "C:/Program Files/Git/cmd/mt"
+      - "C:/Program Files/nodejs/mt.com"
+      - "C:/Program Files/nodejs/mt.exe"
+      - "C:/Program Files/nodejs/mt"
+      - "C:/ProgramData/chocolatey/bin/mt.com"
+      - "C:/ProgramData/chocolatey/bin/mt.exe"
+      - "C:/ProgramData/chocolatey/bin/mt"
+      - "C:/Users/charl/.local/bin/mt.com"
+      - "C:/Users/charl/.local/bin/mt.exe"
+      - "C:/Users/charl/.local/bin/mt"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/mt.com"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/mt.exe"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/mt"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/mt.com"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/mt.exe"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/mt"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/mt.com"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/mt.exe"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/mt"
+      - "C:/Users/charl/AppData/Local/Python/bin/mt.com"
+      - "C:/Users/charl/AppData/Local/Python/bin/mt.exe"
+      - "C:/Users/charl/AppData/Local/Python/bin/mt"
+      - "C:/Users/charl/AppData/Roaming/npm/mt.com"
+      - "C:/Users/charl/AppData/Roaming/npm/mt.exe"
+      - "C:/Users/charl/AppData/Roaming/npm/mt"
     found: false
     search_context:
       CMAKE_PROGRAM_PATH:
@@ -689,6 +1057,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -696,8 +1066,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_FIND_ROOT_PATH: "C:/vcpkg/installed/x64-windows/debug;C:/vcpkg/installed/x64-windows"
   -
     kind: "find-v1"
@@ -720,6 +1096,8 @@ events:
       - "lib"
     candidate_directories:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/wbem/"
@@ -727,9 +1105,17 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/Python314/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/Windows/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/wbem/"
@@ -737,9 +1123,17 @@ events:
       - "C:/vcpkg/installed/x64-windows/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/"
+      - "C:/Python314/Scripts/"
+      - "C:/Python314/"
       - "C:/Windows/System32/"
       - "C:/Windows/"
       - "C:/Windows/System32/wbem/"
@@ -747,12 +1141,24 @@ events:
       - "C:/Windows/System32/OpenSSH/"
       - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/Program Files/Git/cmd/"
+      - "C:/Program Files/nodejs/"
+      - "C:/ProgramData/chocolatey/bin/"
+      - "C:/Users/charl/.local/bin/"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/charl/AppData/Local/Python/bin/"
+      - "C:/Users/charl/AppData/Roaming/npm/"
     searched_directories:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lib.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lib.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lib"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/lib.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/lib"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/lib.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/lib"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/lib.com"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/lib.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/lib"
@@ -774,15 +1180,39 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/lib.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/lib.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/lib"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/lib.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/lib"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/lib.com"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/lib"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/lib.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/lib"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lib.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lib"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/lib.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/lib.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/lib"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lib.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lib.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lib"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/lib.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/lib"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/lib.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/lib"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lib.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lib.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lib"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/lib.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/lib"
+      - "C:/vcpkg/installed/x64-windows/Python314/lib.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/lib"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/lib.com"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/lib.exe"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/lib"
@@ -804,12 +1234,30 @@ events:
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/lib.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/lib.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/lib"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/lib.com"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/lib"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/lib.com"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/lib"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/lib.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/lib"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lib.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/lib"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/lib.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/lib.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/lib"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lib.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lib.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/lib"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/lib.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/lib"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/lib.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/lib.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/lib"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lib.com"
     found: "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lib.exe"
     search_context:
@@ -821,6 +1269,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -828,8 +1278,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_FIND_ROOT_PATH: "C:/vcpkg/installed/x64-windows/debug;C:/vcpkg/installed/x64-windows"
   -
     kind: "find-v1"
@@ -863,6 +1319,8 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/"
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/brotli/"
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/bzip2/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/wbem/"
@@ -870,8 +1328,14 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/bin/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/sbin/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/"
@@ -893,6 +1357,8 @@ events:
       - "C:/vcpkg/installed/x64-windows/tools/"
       - "C:/vcpkg/installed/x64-windows/tools/brotli/"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/Python314/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/Windows/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/wbem/"
@@ -900,8 +1366,14 @@ events:
       - "C:/vcpkg/installed/x64-windows/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/"
       - "C:/vcpkg/installed/x64-windows/Program Files/bin/"
       - "C:/vcpkg/installed/x64-windows/Program Files/sbin/"
       - "C:/vcpkg/installed/x64-windows/Program Files/"
@@ -923,6 +1395,8 @@ events:
       - "C:/vcpkg/installed/x64-windows/tools/"
       - "C:/vcpkg/installed/x64-windows/tools/brotli/"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/"
+      - "C:/Python314/Scripts/"
+      - "C:/Python314/"
       - "C:/Windows/System32/"
       - "C:/Windows/"
       - "C:/Windows/System32/wbem/"
@@ -930,8 +1404,14 @@ events:
       - "C:/Windows/System32/OpenSSH/"
       - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/Program Files/Git/cmd/"
+      - "C:/Program Files/nodejs/"
+      - "C:/ProgramData/chocolatey/bin/"
+      - "C:/Users/charl/.local/bin/"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/charl/AppData/Local/Python/bin/"
+      - "C:/Users/charl/AppData/Roaming/npm/"
       - "C:/Program Files/bin/"
       - "C:/Program Files/sbin/"
       - "C:/Program Files/"
@@ -972,6 +1452,12 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/bzip2/rc.com"
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/bzip2/rc.exe"
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/bzip2/rc"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/rc.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/rc"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/rc.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/rc"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/rc.com"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/rc.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/rc"
@@ -993,12 +1479,30 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/rc.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/rc.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/rc"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/rc.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/rc"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/rc.com"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/rc"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/rc.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/rc"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/rc.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/rc"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/rc.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/rc.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/rc"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/rc.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/rc.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/rc"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/rc.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/rc"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/rc.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/rc"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/bin/rc.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/bin/rc.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/bin/rc"
@@ -1062,6 +1566,12 @@ events:
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/rc.com"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/rc.exe"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/rc"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/rc.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/rc"
+      - "C:/vcpkg/installed/x64-windows/Python314/rc.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/rc"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/rc.com"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/rc.exe"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/rc"
@@ -1083,12 +1593,30 @@ events:
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/rc.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/rc.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/rc"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/rc.com"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/rc"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/rc.com"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/rc"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/rc.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/rc"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/rc.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/rc"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/rc.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/rc.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/rc"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/rc.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/rc.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/rc"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/rc.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/rc"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/rc.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/rc.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/rc"
       - "C:/vcpkg/installed/x64-windows/Program Files/bin/rc.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/bin/rc.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/bin/rc"
@@ -1152,6 +1680,12 @@ events:
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/rc.com"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/rc.exe"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/rc"
+      - "C:/Python314/Scripts/rc.com"
+      - "C:/Python314/Scripts/rc.exe"
+      - "C:/Python314/Scripts/rc"
+      - "C:/Python314/rc.com"
+      - "C:/Python314/rc.exe"
+      - "C:/Python314/rc"
       - "C:/Windows/System32/rc.com"
       - "C:/Windows/System32/rc.exe"
       - "C:/Windows/System32/rc"
@@ -1173,12 +1707,30 @@ events:
       - "C:/Program Files/Git/cmd/rc.com"
       - "C:/Program Files/Git/cmd/rc.exe"
       - "C:/Program Files/Git/cmd/rc"
+      - "C:/Program Files/nodejs/rc.com"
+      - "C:/Program Files/nodejs/rc.exe"
+      - "C:/Program Files/nodejs/rc"
+      - "C:/ProgramData/chocolatey/bin/rc.com"
+      - "C:/ProgramData/chocolatey/bin/rc.exe"
+      - "C:/ProgramData/chocolatey/bin/rc"
+      - "C:/Users/charl/.local/bin/rc.com"
+      - "C:/Users/charl/.local/bin/rc.exe"
+      - "C:/Users/charl/.local/bin/rc"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/rc.com"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/rc.exe"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/rc"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/rc.com"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/rc.exe"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/rc"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/rc.com"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/rc.exe"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/rc"
+      - "C:/Users/charl/AppData/Local/Python/bin/rc.com"
+      - "C:/Users/charl/AppData/Local/Python/bin/rc.exe"
+      - "C:/Users/charl/AppData/Local/Python/bin/rc"
+      - "C:/Users/charl/AppData/Roaming/npm/rc.com"
+      - "C:/Users/charl/AppData/Roaming/npm/rc.exe"
+      - "C:/Users/charl/AppData/Roaming/npm/rc"
       - "C:/Program Files/bin/rc.com"
       - "C:/Program Files/bin/rc.exe"
       - "C:/Program Files/bin/rc"
@@ -1225,6 +1777,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -1232,8 +1786,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_INSTALL_PREFIX: "C:/Program Files (x86)/StrixVerseClient"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "C:/Program Files"
@@ -1250,8 +1810,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-i92evb"
-      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-i92evb"
+      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-fbjvt1"
+      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-fbjvt1"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -1266,39 +1826,39 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-i92evb'
+        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-fbjvt1'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_f9978.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_90f63.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
         MSBuild version 18.7.8+1ac568fee for .NET Framework
-        Build started 7/9/2026 11:25:55 PM.
+        Build started 7/16/2026 4:57:45 PM.
         
-        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-i92evb\\cmTC_f9978.vcxproj" on node 1 (default targets).
+        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-fbjvt1\\cmTC_90f63.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-i92evb\\Debug\\".
-          Creating directory "cmTC_f9978.dir\\Debug\\cmTC_f9978.tlog\\".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-fbjvt1\\Debug\\".
+          Creating directory "cmTC_90f63.dir\\Debug\\cmTC_90f63.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_f9978.dir\\Debug\\cmTC_f9978.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_f9978.dir\\Debug\\cmTC_f9978.tlog\\unsuccessfulbuild".
+          Creating "cmTC_90f63.dir\\Debug\\cmTC_90f63.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_90f63.dir\\Debug\\cmTC_90f63.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_f9978.dir\\Debug\\\\" /Fd"cmTC_f9978.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_90f63.dir\\Debug\\\\" /Fd"cmTC_90f63.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_f9978.dir\\Debug\\\\" /Fd"cmTC_f9978.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_90f63.dir\\Debug\\\\" /Fd"cmTC_90f63.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
           CMakeCXXCompilerABI.cpp
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-i92evb\\Debug\\cmTC_f9978.exe" /INCREMENTAL /ILK:"cmTC_f9978.dir\\Debug\\cmTC_f9978.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-i92evb/Debug/cmTC_f9978.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-i92evb/Debug/cmTC_f9978.lib" /MACHINE:X64  /machine:x64 cmTC_f9978.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_f9978.vcxproj -> C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-i92evb\\Debug\\cmTC_f9978.exe
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-fbjvt1\\Debug\\cmTC_90f63.exe" /INCREMENTAL /ILK:"cmTC_90f63.dir\\Debug\\cmTC_90f63.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-fbjvt1/Debug/cmTC_90f63.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-fbjvt1/Debug/cmTC_90f63.lib" /MACHINE:X64  /machine:x64 cmTC_90f63.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_90f63.vcxproj -> C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-fbjvt1\\Debug\\cmTC_90f63.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_f9978.dir\\Debug\\cmTC_f9978.tlog\\unsuccessfulbuild".
-          Touching "cmTC_f9978.dir\\Debug\\cmTC_f9978.tlog\\cmTC_f9978.lastbuildstate".
-        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-i92evb\\cmTC_f9978.vcxproj" (default targets).
+          Deleting file "cmTC_90f63.dir\\Debug\\cmTC_90f63.tlog\\unsuccessfulbuild".
+          Touching "cmTC_90f63.dir\\Debug\\cmTC_90f63.tlog\\cmTC_90f63.lastbuildstate".
+        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-fbjvt1\\cmTC_90f63.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:00.50
+        Time Elapsed 00:00:00.59
         
       exitCode: 0
   -
@@ -1452,6 +2012,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -1459,8 +2021,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_INSTALL_PREFIX: "C:/Program Files (x86)/StrixVerseClient"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "C:/Program Files"
@@ -1504,6 +2072,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -1511,8 +2081,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_INSTALL_PREFIX: "C:/Program Files (x86)/StrixVerseClient"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "C:/Program Files"
@@ -1560,6 +2136,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -1567,8 +2145,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_INSTALL_PREFIX: "C:/Program Files (x86)/StrixVerseClient"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "C:/Program Files"
@@ -1623,6 +2207,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -1630,8 +2216,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_INSTALL_PREFIX: "C:/Program Files (x86)/StrixVerseClient"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "C:/Program Files"
@@ -1771,6 +2363,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -1778,8 +2372,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_INSTALL_PREFIX: "C:/Program Files (x86)/StrixVerseClient"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "C:/Program Files"
@@ -1883,6 +2483,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -1890,8 +2492,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_INSTALL_PREFIX: "C:/Program Files (x86)/StrixVerseClient"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "C:/Program Files"
@@ -1911,8 +2519,8 @@ events:
     checks:
       - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
     directories:
-      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-qgh3v1"
-      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-qgh3v1"
+      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-1xdaut"
+      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-1xdaut"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -1926,67 +2534,68 @@ events:
       variable: "CMAKE_HAVE_LIBC_PTHREAD"
       cached: true
       stdout: |
-        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-qgh3v1'
+        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-1xdaut'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_0af6a.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_cafd6.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
         MSBuild version 18.7.8+1ac568fee for .NET Framework
-        Build started 7/9/2026 11:25:56 PM.
+        Build started 7/16/2026 4:57:47 PM.
         
-        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj" on node 1 (default targets).
+        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\Debug\\".
-          Creating directory "cmTC_0af6a.dir\\Debug\\cmTC_0af6a.tlog\\".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\Debug\\".
+          Creating directory "cmTC_cafd6.dir\\Debug\\cmTC_cafd6.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_0af6a.dir\\Debug\\cmTC_0af6a.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_0af6a.dir\\Debug\\cmTC_0af6a.tlog\\unsuccessfulbuild".
+          Creating "cmTC_cafd6.dir\\Debug\\cmTC_cafd6.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_cafd6.dir\\Debug\\cmTC_cafd6.tlog\\unsuccessfulbuild".
         ComputeStdModulesCompileInputs:
           Reading library manifest file 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\modules.json' which provides data for library 'microsoft/STL'.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.ixx' from library 'microsoft/STL' to be built with this project.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
         MakeDirsForCl:
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.dir\\Debug\\microsoft\\STL".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.dir\\Debug\\microsoft\\STL".
         SetModuleDependencies:
-          Creating directory "cmTC_0af6a.dir\\Debug\\cmTC_0af6a_MD.tlog\\".
+          Creating directory "cmTC_cafd6.dir\\Debug\\cmTC_cafd6_MD.tlog\\".
           Scanning sources for module dependencies...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_0af6a.dir\\Debug\\\\" /scanDependencies "cmTC_0af6a.dir\\Debug\\\\" /Fo"cmTC_0af6a.dir\\Debug\\\\" /Fd"cmTC_0af6a.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\src.cxx"
-        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\src.cxx(1,10): fatal  error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj]
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_0af6a.dir\\Debug\\\\" /scanDependencies "cmTC_0af6a.dir\\Debug\\\\" /Fo"cmTC_0af6a.dir\\Debug\\\\" /Fd"cmTC_0af6a.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\src.cxx"
-          src.cxx
-        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj]
-        C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Microsoft\\VC\\v180\\Microsoft.CppCommon.targets(534,5): warning MSB8074: Cannot read Module Dependencies file cmTC_0af6a.dir\\Debug\\src.cxx.module.json: Expecting element 'root' from namespace ''.. Encountered 'None'  with name '', namespace ''.  The build order might be incorrect. [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj]
-        ClCompile:
-          Compiling...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_0af6a.dir\\Debug\\\\" /Fo"cmTC_0af6a.dir\\Debug\\\\" /Fd"cmTC_0af6a.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_0af6a.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\src.cxx"
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_cafd6.dir\\Debug\\\\" /scanDependencies "cmTC_cafd6.dir\\Debug\\\\" /Fo"cmTC_cafd6.dir\\Debug\\\\" /Fd"cmTC_cafd6.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_0af6a.dir\\Debug\\\\" /Fo"cmTC_0af6a.dir\\Debug\\\\" /Fd"cmTC_0af6a.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_0af6a.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\src.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_cafd6.dir\\Debug\\\\" /scanDependencies "cmTC_cafd6.dir\\Debug\\\\" /Fo"cmTC_cafd6.dir\\Debug\\\\" /Fd"cmTC_cafd6.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx"
           src.cxx
-        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj]
-        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj" (default targets) -- FAILED.
+        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): fatal  error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
+        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
+        C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Microsoft\\VC\\v180\\Microsoft.CppCommon.targets(534,5): warning MSB8074: Cannot read Module Dependencies file cmTC_cafd6.dir\\Debug\\src.cxx.module.json: Expecting element 'root' from namespace ''.. Encountered 'None'  with name '', namespace ''.  The build order might be incorrect. [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
+        ClCompile:
+          Compiling...
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_cafd6.dir\\Debug\\\\" /Fo"cmTC_cafd6.dir\\Debug\\\\" /Fd"cmTC_cafd6.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_cafd6.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_cafd6.dir\\Debug\\\\" /Fo"cmTC_cafd6.dir\\Debug\\\\" /Fd"cmTC_cafd6.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_cafd6.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx"
+          src.cxx
+        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
+        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj" (default targets) -- FAILED.
         
         Build FAILED.
         
-        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj" (default target) (1) ->
+        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj" (default target) (1) ->
         (SetModuleDependencies target) -> 
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Microsoft\\VC\\v180\\Microsoft.CppCommon.targets(534,5): warning MSB8074: Cannot read Module Dependencies file cmTC_0af6a.dir\\Debug\\src.cxx.module.json: Expecting element 'root' from namespace ''.. Encountered 'None'  with name '', namespace ''.  The build order might be incorrect. [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj]
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Microsoft\\VC\\v180\\Microsoft.CppCommon.targets(534,5): warning MSB8074: Cannot read Module Dependencies file cmTC_cafd6.dir\\Debug\\src.cxx.module.json: Expecting element 'root' from namespace ''.. Encountered 'None'  with name '', namespace ''.  The build order might be incorrect. [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
         
         
-        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj" (default target) (1) ->
+        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj" (default target) (1) ->
         (SetModuleDependencies target) -> 
-          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\src.cxx(1,10): fatal  error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj]
-          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj]
+          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): fatal  error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
+          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
         
         
-        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj" (default target) (1) ->
+        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj" (default target) (1) ->
         (ClCompile target) -> 
-          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-qgh3v1\\cmTC_0af6a.vcxproj]
+          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
         
             1 Warning(s)
             3 Error(s)
         
-        Time Elapsed 00:00:00.46
+        Time Elapsed 00:00:00.77
         
       exitCode: 1
   -
@@ -2000,8 +2609,8 @@ events:
     checks:
       - "Looking for pthread_create in pthreads"
     directories:
-      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-jnw7ts"
-      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-jnw7ts"
+      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-h9qlf8"
+      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-h9qlf8"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -2015,56 +2624,56 @@ events:
       variable: "CMAKE_HAVE_PTHREADS_CREATE"
       cached: true
       stdout: |
-        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-jnw7ts'
+        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-h9qlf8'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_39066.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_b83ce.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
         MSBuild version 18.7.8+1ac568fee for .NET Framework
-        Build started 7/9/2026 11:25:57 PM.
+        Build started 7/16/2026 4:57:48 PM.
         
-        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\cmTC_39066.vcxproj" on node 1 (default targets).
+        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\Debug\\".
-          Creating directory "cmTC_39066.dir\\Debug\\cmTC_39066.tlog\\".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\Debug\\".
+          Creating directory "cmTC_b83ce.dir\\Debug\\cmTC_b83ce.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_39066.dir\\Debug\\cmTC_39066.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_39066.dir\\Debug\\cmTC_39066.tlog\\unsuccessfulbuild".
+          Creating "cmTC_b83ce.dir\\Debug\\cmTC_b83ce.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_b83ce.dir\\Debug\\cmTC_b83ce.tlog\\unsuccessfulbuild".
         ComputeStdModulesCompileInputs:
           Reading library manifest file 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\modules.json' which provides data for library 'microsoft/STL'.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.ixx' from library 'microsoft/STL' to be built with this project.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
         MakeDirsForCl:
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\cmTC_39066.dir\\Debug\\microsoft\\STL".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.dir\\Debug\\microsoft\\STL".
         SetModuleDependencies:
-          Creating directory "cmTC_39066.dir\\Debug\\cmTC_39066_MD.tlog\\".
+          Creating directory "cmTC_b83ce.dir\\Debug\\cmTC_b83ce_MD.tlog\\".
           Scanning sources for module dependencies...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_39066.dir\\Debug\\\\" /scanDependencies "cmTC_39066.dir\\Debug\\\\" /Fo"cmTC_39066.dir\\Debug\\\\" /Fd"cmTC_39066.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\CheckFunctionExists.cxx"
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_b83ce.dir\\Debug\\\\" /scanDependencies "cmTC_b83ce.dir\\Debug\\\\" /Fo"cmTC_b83ce.dir\\Debug\\\\" /Fd"cmTC_b83ce.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\CheckFunctionExists.cxx"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_39066.dir\\Debug\\\\" /scanDependencies "cmTC_39066.dir\\Debug\\\\" /Fo"cmTC_39066.dir\\Debug\\\\" /Fd"cmTC_39066.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\CheckFunctionExists.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_b83ce.dir\\Debug\\\\" /scanDependencies "cmTC_b83ce.dir\\Debug\\\\" /Fo"cmTC_b83ce.dir\\Debug\\\\" /Fd"cmTC_b83ce.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\CheckFunctionExists.cxx"
           CheckFunctionExists.cxx
         ClCompile:
           Compiling...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_39066.dir\\Debug\\\\" /Fo"cmTC_39066.dir\\Debug\\\\" /Fd"cmTC_39066.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_39066.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\CheckFunctionExists.cxx"
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_b83ce.dir\\Debug\\\\" /Fo"cmTC_b83ce.dir\\Debug\\\\" /Fd"cmTC_b83ce.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_b83ce.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\CheckFunctionExists.cxx"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_39066.dir\\Debug\\\\" /Fo"cmTC_39066.dir\\Debug\\\\" /Fd"cmTC_39066.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_39066.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\CheckFunctionExists.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_b83ce.dir\\Debug\\\\" /Fo"cmTC_b83ce.dir\\Debug\\\\" /Fd"cmTC_b83ce.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_b83ce.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\CheckFunctionExists.cxx"
           CheckFunctionExists.cxx
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\Debug\\cmTC_39066.exe" /INCREMENTAL /ILK:"cmTC_39066.dir\\Debug\\cmTC_39066.ilk" /NOLOGO pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-jnw7ts/Debug/cmTC_39066.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-jnw7ts/Debug/cmTC_39066.lib" /MACHINE:X64  /machine:x64 cmTC_39066.dir\\Debug\\CheckFunctionExists.obj
-        LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\cmTC_39066.vcxproj]
-        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\cmTC_39066.vcxproj" (default targets) -- FAILED.
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\Debug\\cmTC_b83ce.exe" /INCREMENTAL /ILK:"cmTC_b83ce.dir\\Debug\\cmTC_b83ce.ilk" /NOLOGO pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-h9qlf8/Debug/cmTC_b83ce.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-h9qlf8/Debug/cmTC_b83ce.lib" /MACHINE:X64  /machine:x64 cmTC_b83ce.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.vcxproj]
+        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.vcxproj" (default targets) -- FAILED.
         
         Build FAILED.
         
-        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\cmTC_39066.vcxproj" (default target) (1) ->
+        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.vcxproj" (default target) (1) ->
         (Link target) -> 
-          LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-jnw7ts\\cmTC_39066.vcxproj]
+          LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.vcxproj]
         
             0 Warning(s)
             1 Error(s)
         
-        Time Elapsed 00:00:00.54
+        Time Elapsed 00:00:00.57
         
       exitCode: 1
   -
@@ -2078,8 +2687,8 @@ events:
     checks:
       - "Looking for pthread_create in pthread"
     directories:
-      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-vq7h1j"
-      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-vq7h1j"
+      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-61l3tz"
+      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-61l3tz"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -2093,56 +2702,56 @@ events:
       variable: "CMAKE_HAVE_PTHREAD_CREATE"
       cached: true
       stdout: |
-        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-vq7h1j'
+        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-61l3tz'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_14a9e.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_ef1b9.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
         MSBuild version 18.7.8+1ac568fee for .NET Framework
-        Build started 7/9/2026 11:25:57 PM.
+        Build started 7/16/2026 4:57:49 PM.
         
-        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\cmTC_14a9e.vcxproj" on node 1 (default targets).
+        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\Debug\\".
-          Creating directory "cmTC_14a9e.dir\\Debug\\cmTC_14a9e.tlog\\".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\Debug\\".
+          Creating directory "cmTC_ef1b9.dir\\Debug\\cmTC_ef1b9.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_14a9e.dir\\Debug\\cmTC_14a9e.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_14a9e.dir\\Debug\\cmTC_14a9e.tlog\\unsuccessfulbuild".
+          Creating "cmTC_ef1b9.dir\\Debug\\cmTC_ef1b9.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_ef1b9.dir\\Debug\\cmTC_ef1b9.tlog\\unsuccessfulbuild".
         ComputeStdModulesCompileInputs:
           Reading library manifest file 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\modules.json' which provides data for library 'microsoft/STL'.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.ixx' from library 'microsoft/STL' to be built with this project.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
         MakeDirsForCl:
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\cmTC_14a9e.dir\\Debug\\microsoft\\STL".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.dir\\Debug\\microsoft\\STL".
         SetModuleDependencies:
-          Creating directory "cmTC_14a9e.dir\\Debug\\cmTC_14a9e_MD.tlog\\".
+          Creating directory "cmTC_ef1b9.dir\\Debug\\cmTC_ef1b9_MD.tlog\\".
           Scanning sources for module dependencies...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_14a9e.dir\\Debug\\\\" /scanDependencies "cmTC_14a9e.dir\\Debug\\\\" /Fo"cmTC_14a9e.dir\\Debug\\\\" /Fd"cmTC_14a9e.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\CheckFunctionExists.cxx"
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_ef1b9.dir\\Debug\\\\" /scanDependencies "cmTC_ef1b9.dir\\Debug\\\\" /Fo"cmTC_ef1b9.dir\\Debug\\\\" /Fd"cmTC_ef1b9.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\CheckFunctionExists.cxx"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_14a9e.dir\\Debug\\\\" /scanDependencies "cmTC_14a9e.dir\\Debug\\\\" /Fo"cmTC_14a9e.dir\\Debug\\\\" /Fd"cmTC_14a9e.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\CheckFunctionExists.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_ef1b9.dir\\Debug\\\\" /scanDependencies "cmTC_ef1b9.dir\\Debug\\\\" /Fo"cmTC_ef1b9.dir\\Debug\\\\" /Fd"cmTC_ef1b9.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\CheckFunctionExists.cxx"
           CheckFunctionExists.cxx
         ClCompile:
           Compiling...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_14a9e.dir\\Debug\\\\" /Fo"cmTC_14a9e.dir\\Debug\\\\" /Fd"cmTC_14a9e.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_14a9e.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\CheckFunctionExists.cxx"
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_ef1b9.dir\\Debug\\\\" /Fo"cmTC_ef1b9.dir\\Debug\\\\" /Fd"cmTC_ef1b9.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_ef1b9.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\CheckFunctionExists.cxx"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_14a9e.dir\\Debug\\\\" /Fo"cmTC_14a9e.dir\\Debug\\\\" /Fd"cmTC_14a9e.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_14a9e.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\CheckFunctionExists.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_ef1b9.dir\\Debug\\\\" /Fo"cmTC_ef1b9.dir\\Debug\\\\" /Fd"cmTC_ef1b9.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_ef1b9.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\CheckFunctionExists.cxx"
           CheckFunctionExists.cxx
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\Debug\\cmTC_14a9e.exe" /INCREMENTAL /ILK:"cmTC_14a9e.dir\\Debug\\cmTC_14a9e.ilk" /NOLOGO pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-vq7h1j/Debug/cmTC_14a9e.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-vq7h1j/Debug/cmTC_14a9e.lib" /MACHINE:X64  /machine:x64 cmTC_14a9e.dir\\Debug\\CheckFunctionExists.obj
-        LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\cmTC_14a9e.vcxproj]
-        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\cmTC_14a9e.vcxproj" (default targets) -- FAILED.
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\Debug\\cmTC_ef1b9.exe" /INCREMENTAL /ILK:"cmTC_ef1b9.dir\\Debug\\cmTC_ef1b9.ilk" /NOLOGO pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-61l3tz/Debug/cmTC_ef1b9.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-61l3tz/Debug/cmTC_ef1b9.lib" /MACHINE:X64  /machine:x64 cmTC_ef1b9.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.vcxproj]
+        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.vcxproj" (default targets) -- FAILED.
         
         Build FAILED.
         
-        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\cmTC_14a9e.vcxproj" (default target) (1) ->
+        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.vcxproj" (default target) (1) ->
         (Link target) -> 
-          LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-vq7h1j\\cmTC_14a9e.vcxproj]
+          LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.vcxproj]
         
             0 Warning(s)
             1 Error(s)
         
-        Time Elapsed 00:00:00.53
+        Time Elapsed 00:00:00.64
         
       exitCode: 1
   -
@@ -2150,7 +2759,7 @@ events:
     backtrace:
       - "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/FindGit.cmake:111 (find_program)"
       - "C:/vcpkg/scripts/buildsystems/vcpkg.cmake:939 (_find_package)"
-      - "CMakeLists.txt:121 (find_package)"
+      - "CMakeLists.txt:132 (find_package)"
     mode: "program"
     variable: "GIT_EXECUTABLE"
     description: "Git command line client"
@@ -2175,6 +2784,8 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/"
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/brotli/"
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/bzip2/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/wbem/"
@@ -2182,8 +2793,14 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/bin/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/sbin/"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/"
@@ -2206,6 +2823,8 @@ events:
       - "C:/vcpkg/installed/x64-windows/tools/"
       - "C:/vcpkg/installed/x64-windows/tools/brotli/"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/"
+      - "C:/vcpkg/installed/x64-windows/Python314/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/"
       - "C:/vcpkg/installed/x64-windows/Windows/"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/wbem/"
@@ -2213,8 +2832,14 @@ events:
       - "C:/vcpkg/installed/x64-windows/Windows/System32/OpenSSH/"
       - "C:/vcpkg/installed/x64-windows/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/"
       - "C:/vcpkg/installed/x64-windows/Program Files/bin/"
       - "C:/vcpkg/installed/x64-windows/Program Files/sbin/"
       - "C:/vcpkg/installed/x64-windows/Program Files/"
@@ -2237,6 +2862,8 @@ events:
       - "C:/vcpkg/installed/x64-windows/tools/"
       - "C:/vcpkg/installed/x64-windows/tools/brotli/"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/"
+      - "C:/Python314/Scripts/"
+      - "C:/Python314/"
       - "C:/Windows/System32/"
       - "C:/Windows/"
       - "C:/Windows/System32/wbem/"
@@ -2244,8 +2871,14 @@ events:
       - "C:/Windows/System32/OpenSSH/"
       - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
       - "C:/Program Files/Git/cmd/"
+      - "C:/Program Files/nodejs/"
+      - "C:/ProgramData/chocolatey/bin/"
+      - "C:/Users/charl/.local/bin/"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/charl/AppData/Local/Python/bin/"
+      - "C:/Users/charl/AppData/Roaming/npm/"
       - "C:/Program Files/bin/"
       - "C:/Program Files/sbin/"
       - "C:/Program Files/"
@@ -2287,6 +2920,12 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/bzip2/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/bzip2/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/bzip2/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/git.cmd"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/git.cmd"
@@ -2308,12 +2947,30 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.cmd"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/git.cmd"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/git.cmd"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/bin/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/bin/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/bin/git.cmd"
@@ -2380,6 +3037,12 @@ events:
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/Python314/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/git.cmd"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/git.cmd"
@@ -2401,12 +3064,30 @@ events:
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.cmd"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/git.cmd"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/git.cmd"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/git.cmd.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/git.cmd.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/git.cmd"
       - "C:/vcpkg/installed/x64-windows/Program Files/bin/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/bin/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/bin/git.cmd"
@@ -2473,6 +3154,12 @@ events:
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git.cmd.com"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git.cmd.exe"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git.cmd"
+      - "C:/Python314/Scripts/git.cmd.com"
+      - "C:/Python314/Scripts/git.cmd.exe"
+      - "C:/Python314/Scripts/git.cmd"
+      - "C:/Python314/git.cmd.com"
+      - "C:/Python314/git.cmd.exe"
+      - "C:/Python314/git.cmd"
       - "C:/Windows/System32/git.cmd.com"
       - "C:/Windows/System32/git.cmd.exe"
       - "C:/Windows/System32/git.cmd"
@@ -2494,12 +3181,30 @@ events:
       - "C:/Program Files/Git/cmd/git.cmd.com"
       - "C:/Program Files/Git/cmd/git.cmd.exe"
       - "C:/Program Files/Git/cmd/git.cmd"
+      - "C:/Program Files/nodejs/git.cmd.com"
+      - "C:/Program Files/nodejs/git.cmd.exe"
+      - "C:/Program Files/nodejs/git.cmd"
+      - "C:/ProgramData/chocolatey/bin/git.cmd.com"
+      - "C:/ProgramData/chocolatey/bin/git.cmd.exe"
+      - "C:/ProgramData/chocolatey/bin/git.cmd"
+      - "C:/Users/charl/.local/bin/git.cmd.com"
+      - "C:/Users/charl/.local/bin/git.cmd.exe"
+      - "C:/Users/charl/.local/bin/git.cmd"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.cmd.com"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.cmd.exe"
+      - "C:/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.cmd"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/git.cmd.com"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/git.cmd.exe"
       - "C:/Users/charl/AppData/Local/Microsoft/WindowsApps/git.cmd"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.cmd.com"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.cmd.exe"
       - "C:/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.cmd"
+      - "C:/Users/charl/AppData/Local/Python/bin/git.cmd.com"
+      - "C:/Users/charl/AppData/Local/Python/bin/git.cmd.exe"
+      - "C:/Users/charl/AppData/Local/Python/bin/git.cmd"
+      - "C:/Users/charl/AppData/Roaming/npm/git.cmd.com"
+      - "C:/Users/charl/AppData/Roaming/npm/git.cmd.exe"
+      - "C:/Users/charl/AppData/Roaming/npm/git.cmd"
       - "C:/Program Files/bin/git.cmd.com"
       - "C:/Program Files/bin/git.cmd.exe"
       - "C:/Program Files/bin/git.cmd"
@@ -2566,6 +3271,12 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/bzip2/git.com"
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/bzip2/git.exe"
       - "C:/vcpkg/installed/x64-windows/debug/vcpkg/installed/x64-windows/tools/bzip2/git"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/git.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/git.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/Scripts/git"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/git.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/git.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Python314/git"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/git.com"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/git.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Windows/System32/git"
@@ -2587,12 +3298,30 @@ events:
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/git.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/git.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/Git/cmd/git"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/git.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/git.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Program Files/nodejs/git"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/git.com"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/git.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/ProgramData/chocolatey/bin/git"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/git.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/git.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/.local/bin/git"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/git.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/git.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Microsoft/WindowsApps/git"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.com"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/git.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/git.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Local/Python/bin/git"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/git.com"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/git.exe"
+      - "C:/vcpkg/installed/x64-windows/debug/Users/charl/AppData/Roaming/npm/git"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/bin/git.com"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/bin/git.exe"
       - "C:/vcpkg/installed/x64-windows/debug/Program Files/bin/git"
@@ -2659,6 +3388,12 @@ events:
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git.com"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git.exe"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/git.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/git.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/Scripts/git"
+      - "C:/vcpkg/installed/x64-windows/Python314/git.com"
+      - "C:/vcpkg/installed/x64-windows/Python314/git.exe"
+      - "C:/vcpkg/installed/x64-windows/Python314/git"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/git.com"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/git.exe"
       - "C:/vcpkg/installed/x64-windows/Windows/System32/git"
@@ -2680,12 +3415,30 @@ events:
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/git.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/git.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/Git/cmd/git"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/git.com"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/git.exe"
+      - "C:/vcpkg/installed/x64-windows/Program Files/nodejs/git"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/git.com"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/git.exe"
+      - "C:/vcpkg/installed/x64-windows/ProgramData/chocolatey/bin/git"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/git.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/git.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/.local/bin/git"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/OpenAI/Codex/bin/git"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/git.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/git.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Microsoft/WindowsApps/git"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.com"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git.exe"
       - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Programs/Microsoft VS Code/bin/git"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/git.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/git.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Local/Python/bin/git"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/git.com"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/git.exe"
+      - "C:/vcpkg/installed/x64-windows/Users/charl/AppData/Roaming/npm/git"
       - "C:/vcpkg/installed/x64-windows/Program Files/bin/git.com"
       - "C:/vcpkg/installed/x64-windows/Program Files/bin/git.exe"
       - "C:/vcpkg/installed/x64-windows/Program Files/bin/git"
@@ -2752,6 +3505,12 @@ events:
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git.com"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git.exe"
       - "C:/vcpkg/installed/x64-windows/tools/bzip2/git"
+      - "C:/Python314/Scripts/git.com"
+      - "C:/Python314/Scripts/git.exe"
+      - "C:/Python314/Scripts/git"
+      - "C:/Python314/git.com"
+      - "C:/Python314/git.exe"
+      - "C:/Python314/git"
       - "C:/Windows/System32/git.com"
       - "C:/Windows/System32/git.exe"
       - "C:/Windows/System32/git"
@@ -2781,6 +3540,8 @@ events:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"
       ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
         - "C:\\WINDOWS\\system32"
         - "C:\\WINDOWS"
         - "C:\\WINDOWS\\System32\\Wbem"
@@ -2788,8 +3549,14 @@ events:
         - "C:\\WINDOWS\\System32\\OpenSSH\\"
         - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
         - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
         - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
         - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
       CMAKE_INSTALL_PREFIX: "C:/Program Files (x86)/StrixVerseClient"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "C:/Program Files"

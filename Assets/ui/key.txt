@@ -1,0 +1,2 @@
+Placeholder for 32x32 key icon (collectible).
+Replace with silver/golden key pixel art.

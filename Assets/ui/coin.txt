@@ -1,0 +1,2 @@
+Placeholder for 32x32 coin icon (currency).
+Replace with golden coin pixel art.

@@ -1,0 +1,2 @@
+Placeholder for 32x32 heart icon (health pickup).
+Replace with actual pixel art (e.g., red heart shape).

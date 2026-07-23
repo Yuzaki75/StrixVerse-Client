@@ -1,0 +1,2 @@
+Placeholder for 32x32 shield icon (defense).
+Replace with shield pixel art.

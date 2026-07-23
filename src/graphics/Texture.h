@@ -1,33 +1,29 @@
 #pragma once
 
-#include <string>
+#include <glad/glad.h>
 
 class Texture
 {
 public:
     Texture();
-
     ~Texture();
 
-    bool Load(
-        const std::string& path);
+    Texture(const Texture&) = delete;
+    Texture& operator=(const Texture&) = delete;
 
+    bool Create(unsigned int width, unsigned int height, unsigned char* data,
+                int channels, bool generateMipmaps = true, bool srgb = false);
     void Destroy();
 
-    void Bind(
-        unsigned int slot = 0) const;
+    void Bind(unsigned int slot = 0) const;
+    void Unbind();
 
-    unsigned int GetWidth() const;
-
-    unsigned int GetHeight() const;
-
-    bool IsLoaded() const;
+    unsigned int GetWidth() const { return m_Width; }
+    unsigned int GetHeight() const { return m_Height; }
+    unsigned int GetRendererID() const { return m_ID; }
 
 private:
-    unsigned int m_ID = 0;
-
-    unsigned int m_Width = 0;
-    unsigned int m_Height = 0;
-
-    bool m_Loaded = false;
+    unsigned int m_ID;
+    unsigned int m_Width;
+    unsigned int m_Height;
 };

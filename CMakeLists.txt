@@ -48,9 +48,14 @@ set(SOURCES
     src/core/Game.cpp                                # NEW
     src/core/Logger.cpp
     src/core/ThreadPool.cpp                          # NEW
-    src/core/Time.cpp
+    src/core/Timer.cpp                               # RENAMED
     src/core/Version.cpp                             # NEW
     src/core/Window.cpp
+
+    # Graphics
+    src/graphics/Camera2D.cpp
+    src/graphics/Shader.cpp
+    src/graphics/SpriteBatch.cpp                     # NEW
 )
 
 
@@ -67,10 +72,13 @@ set(HEADERS
     src/core/Logger.h
     src/core/ServiceLocator.h                        # NEW (header-only)
     src/core/ThreadPool.h                            # NEW
-    src/core/Time.h
+    src/core/Timer.h                                 # RENAMED
     src/core/Version.h                               # NEW
     src/core/Window.h
 
+    src/graphics/Camera2D.h
+    src/graphics/Shader.h
+    src/graphics/SpriteBatch.h                       # NEW
     src/graphics/OpenGL/GLBuffer.h                   # NEW: moved here from add_executable
 )
 
@@ -97,6 +105,7 @@ add_executable(StrixVerseClient
 target_include_directories(StrixVerseClient PRIVATE
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/third_party
+    ${CMAKE_CURRENT_LIST_DIR}/../../vcpkg/installed/x64-windows/include
 )
 
 
@@ -110,6 +119,7 @@ target_link_libraries(StrixVerseClient PRIVATE
     Freetype::Freetype
     glm::glm
     Threads::Threads                                 # NEW
+    glad::glad
 )
 
 
@@ -158,5 +168,4 @@ add_custom_command(TARGET StrixVerseClient POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/configs"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/logs"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/screenshots"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/cache"
-)
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/cache")

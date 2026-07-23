@@ -2,8 +2,11 @@
 
 #include "Game.h"
 #include "Logger.h"
-#include "Time.h"
+#include "Timer.h"
 #include "Window.h"
+#include "../graphics/Renderer.h"
+#include "AssetManager.h"
+#include "ServiceLocator.h"
 
 Engine::Engine() = default;
 
@@ -29,7 +32,14 @@ bool Engine::Initialize(Window* window)
 
     m_Window = window;
 
-    Time::Initialize();
+    Timer::Initialize();
+
+    // Initialize the renderer after the OpenGL context is current.
+    if (!Renderer::Initialize())
+    {
+        Logger::Error("Engine: failed to initialize renderer.");
+        return false;
+    }
 
     m_Game = std::make_unique<Game>();
 
@@ -39,6 +49,10 @@ bool Engine::Initialize(Window* window)
         m_Game.reset();
         return false;
     }
+
+    // Create and register the asset manager.
+    m_AssetManager = std::make_shared<AssetManager>();
+    ServiceLocator::Provide(m_AssetManager);
 
     m_State = EngineState::Initialized;
 
@@ -61,7 +75,7 @@ void Engine::Run()
 
     while (m_State == EngineState::Running)
     {
-        Time::Update();
+        Timer::Update();
 
         ProcessEvents();
 
@@ -76,17 +90,33 @@ void Engine::Shutdown()
     if (m_State == EngineState::Shutdown ||
         m_State == EngineState::Uninitialized)
     {
-        m_State = EngineState::Shutdown;
         return;
     }
 
+    // If we are still running, stop the loop.
+    if (m_State == EngineState::Running)
+        Stop();
+
+    // Shutdown the game.
     if (m_Game)
     {
         m_Game->Shutdown();
         m_Game.reset();
     }
 
+    // Shutdown the renderer.
+    Renderer::Shutdown();
+
+    // Unregister and destroy the asset manager.
+    if (m_AssetManager)
+    {
+        ServiceLocator::Remove<AssetManager>();
+        m_AssetManager.reset();
+    }
+
+    // Clear the window pointer (the Window object owns the SDL window and context).
     m_Window = nullptr;
+
     m_State = EngineState::Shutdown;
 
     Logger::Info("Engine shutdown.");
@@ -127,13 +157,13 @@ void Engine::Update()
         return;
 
     // Deterministic simulation at a fixed rate (physics, netcode).
-    while (Time::ConsumeFixedStep())
+    while (Timer::ConsumeFixedStep())
     {
-        m_Game->FixedUpdate(Time::GetFixedTimestep());
+        m_Game->FixedUpdate(Timer::GetFixedTimestep());
     }
 
     // Variable-rate gameplay logic.
-    m_Game->Update(Time::GetDeltaTime());
+    m_Game->Update(Timer::GetDeltaTime());
 
     // Future systems:
     //
@@ -148,16 +178,13 @@ void Engine::Render()
     if (!m_Window)
         return;
 
-    m_Window->BeginFrame();
+    // Clear the screen and begin the frame.
+    Renderer::BeginFrame();
 
+    // Let the game render its content.
     if (m_Game)
         m_Game->Render();
 
-    // Future rendering:
-    //
-    // Renderer::Begin();
-    // UIManager::Render();
-    // Renderer::End();
-
+    // Present the frame.
     m_Window->EndFrame();
 }

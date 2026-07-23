@@ -1,9 +1,8 @@
-#pragma once
-
 #include <memory>
 
 class Game;
 class Window;
+class AssetManager;
 
 // Lifecycle states of the engine. Transitions are strictly forward except
 // Running <-> Stopped (Stop() may be called from event handling).
@@ -52,5 +51,6 @@ private:
 private:
     Window* m_Window = nullptr;
     std::unique_ptr<Game> m_Game;
+    std::shared_ptr<AssetManager> m_AssetManager;
     EngineState m_State = EngineState::Uninitialized;
 };

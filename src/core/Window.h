@@ -24,7 +24,14 @@ public:
 
     void EndFrame();
 
+    // Get the window size.
+    void GetSize(int& width, int& height) const;
+
+    // Set the window size (and update viewport if needed).
+    void SetSize(int width, int height);
+
 private:
     SDL_Window* m_Window = nullptr;
+    SDL_GLContext m_GLContext = nullptr;
     bool m_ShouldClose = false;
 };
