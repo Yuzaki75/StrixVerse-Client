@@ -1,8 +1,0 @@
-================================================================================
-Linker Errors
-Generated: 2026-07-16T09:39:09.372Z
-Total Errors: 1
-================================================================================
-
-[LNK1104] (MSVC)
-cannot open file '1:C:\Projects\StrixVerse\Client\..\..\vcpkg\installed\x64-windows\debug\lib\glad.lib' [C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.vcxproj]

@@ -255,6 +255,9 @@ ZLIB_LIBRARY_RELEASE:FILEPATH=C:/vcpkg/installed/x64-windows/lib/z.lib
 // triplet
 _VCPKG_INSTALLED_DIR:PATH=C:/vcpkg/installed
 
+//The directory containing a CMake configuration file for glad.
+glad_DIR:PATH=C:/vcpkg/installed/x64-windows/share/glad
+
 //The directory containing a CMake configuration file for glm.
 glm_DIR:PATH=C:/vcpkg/installed/x64-windows/share/glm
 

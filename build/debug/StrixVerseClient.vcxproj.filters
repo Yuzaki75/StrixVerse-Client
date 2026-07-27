@@ -40,6 +40,12 @@
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\SpriteBatch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\Connection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\NetworkManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -88,6 +94,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\OpenGL\GLBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\Connection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\NetworkManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

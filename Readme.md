@@ -26,6 +26,7 @@ Designed with performance and modularity in mind, the client is built using mode
 - Cross-platform support
 - Secure authentication
 - Real-time multiplayer networking
+- Entity Component System (ECS) for efficient game object management
 - Character creation and customization
 - Inventory management
 - Equipment system

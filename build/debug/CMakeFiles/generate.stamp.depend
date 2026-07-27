@@ -44,6 +44,11 @@ C:/vcpkg/installed/x64-windows/share/freetype/freetype-targets-debug.cmake
 C:/vcpkg/installed/x64-windows/share/freetype/freetype-targets-release.cmake
 C:/vcpkg/installed/x64-windows/share/freetype/freetype-targets.cmake
 C:/vcpkg/installed/x64-windows/share/freetype/vcpkg-cmake-wrapper.cmake
+C:/vcpkg/installed/x64-windows/share/glad/gladConfig.cmake
+C:/vcpkg/installed/x64-windows/share/glad/gladConfigVersion.cmake
+C:/vcpkg/installed/x64-windows/share/glad/gladTargets-debug.cmake
+C:/vcpkg/installed/x64-windows/share/glad/gladTargets-release.cmake
+C:/vcpkg/installed/x64-windows/share/glad/gladTargets.cmake
 C:/vcpkg/installed/x64-windows/share/glm/glmConfig-debug.cmake
 C:/vcpkg/installed/x64-windows/share/glm/glmConfig-release.cmake
 C:/vcpkg/installed/x64-windows/share/glm/glmConfig.cmake

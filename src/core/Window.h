@@ -30,6 +30,9 @@ public:
     // Set the window size (and update viewport if needed).
     void SetSize(int width, int height);
 
+    // Get the SDL window handle.
+    SDL_Window* GetSDLWindow() const { return m_Window; }
+
 private:
     SDL_Window* m_Window = nullptr;
     SDL_GLContext m_GLContext = nullptr;

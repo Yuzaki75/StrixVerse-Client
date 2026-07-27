@@ -29,6 +29,9 @@ endif()
 find_package(SDL3 CONFIG REQUIRED)
 find_package(Freetype CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
+# Set the directory for glad package
+set(glad_DIR "${CMAKE_CURRENT_LIST_DIR}/../../vcpkg/installed/x64-windows/share/glad")
+find_package(glad CONFIG REQUIRED)
 find_package(Threads REQUIRED)                       # NEW: ThreadPool / Logger
 
 
@@ -56,6 +59,10 @@ set(SOURCES
     src/graphics/Camera2D.cpp
     src/graphics/Shader.cpp
     src/graphics/SpriteBatch.cpp                     # NEW
+
+    # Networking
+    src/networking/Connection.cpp
+    src/networking/NetworkManager.cpp
 )
 
 
@@ -80,6 +87,10 @@ set(HEADERS
     src/graphics/Shader.h
     src/graphics/SpriteBatch.h                       # NEW
     src/graphics/OpenGL/GLBuffer.h                   # NEW: moved here from add_executable
+
+    # Networking
+    src/networking/Connection.h
+    src/networking/NetworkManager.h
 )
 
 

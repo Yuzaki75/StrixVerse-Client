@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 #include <chrono>
+#include <functional>
 #include "Packet.h"
 #include "PacketSerializer.h"
 #include "PacketSender.h"
@@ -86,6 +87,9 @@ private:
 
     // Statistics
     NetworkStatistics m_stats;
+
+    // Winsock reference count
+    static int s_wsaRefCount;
 };
 
 #endif // CONNECTION_H

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "ecs/Entity.h"
 
 // -----------------------------------------------------------------------------
 // Game
@@ -13,6 +14,7 @@
 // Responsibilities:
 //   - Initialize()   : prepare gameplay state, load the startup scene
 //   - LoadScene()    : switch the active scene by name
+//   - UnloadScene()  : unload the active scene, release gameplay state
 //   - Update()       : variable-rate gameplay logic (animation, UI, camera)
 //   - FixedUpdate()  : deterministic logic at a fixed rate (physics, netcode)
 //   - Render()       : issue gameplay render commands
@@ -59,4 +61,8 @@ public:
 private:
     bool m_Initialized = false;
     std::string m_ActiveScene;
+
+    // ECS entities for testing
+    StrixVerse::ECS::Entity m_TestEntity;
+    StrixVerse::ECS::Entity m_TestEntity2;
 };

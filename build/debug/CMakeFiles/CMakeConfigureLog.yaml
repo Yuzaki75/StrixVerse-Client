@@ -71,8 +71,8 @@ events:
       
       The output was:
       0
-      MSBuild version 18.7.8+1ac568fee for .NET Framework
-      Build started 7/16/2026 4:57:44 PM.
+      MSBuild version 18.8.2+ce25c0108 for .NET Framework
+      Build started 7/27/2026 2:28:37 PM.
       
       Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\4.3.1-msvc1\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
       PrepareForBuild:
@@ -107,7 +107,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:00.86
+      Time Elapsed 00:00:04.17
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -1810,8 +1810,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-fbjvt1"
-      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-fbjvt1"
+      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-ktkiyj"
+      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-ktkiyj"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -1826,39 +1826,39 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-fbjvt1'
+        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-ktkiyj'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_90f63.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
-        MSBuild version 18.7.8+1ac568fee for .NET Framework
-        Build started 7/16/2026 4:57:45 PM.
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_e8027.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.8.2+ce25c0108 for .NET Framework
+        Build started 7/27/2026 2:28:43 PM.
         
-        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-fbjvt1\\cmTC_90f63.vcxproj" on node 1 (default targets).
+        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-ktkiyj\\cmTC_e8027.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-fbjvt1\\Debug\\".
-          Creating directory "cmTC_90f63.dir\\Debug\\cmTC_90f63.tlog\\".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-ktkiyj\\Debug\\".
+          Creating directory "cmTC_e8027.dir\\Debug\\cmTC_e8027.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_90f63.dir\\Debug\\cmTC_90f63.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_90f63.dir\\Debug\\cmTC_90f63.tlog\\unsuccessfulbuild".
+          Creating "cmTC_e8027.dir\\Debug\\cmTC_e8027.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_e8027.dir\\Debug\\cmTC_e8027.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_90f63.dir\\Debug\\\\" /Fd"cmTC_90f63.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_e8027.dir\\Debug\\\\" /Fd"cmTC_e8027.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36252 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_90f63.dir\\Debug\\\\" /Fd"cmTC_90f63.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_e8027.dir\\Debug\\\\" /Fd"cmTC_e8027.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
           CMakeCXXCompilerABI.cpp
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-fbjvt1\\Debug\\cmTC_90f63.exe" /INCREMENTAL /ILK:"cmTC_90f63.dir\\Debug\\cmTC_90f63.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-fbjvt1/Debug/cmTC_90f63.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-fbjvt1/Debug/cmTC_90f63.lib" /MACHINE:X64  /machine:x64 cmTC_90f63.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_90f63.vcxproj -> C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-fbjvt1\\Debug\\cmTC_90f63.exe
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-ktkiyj\\Debug\\cmTC_e8027.exe" /INCREMENTAL /ILK:"cmTC_e8027.dir\\Debug\\cmTC_e8027.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-ktkiyj/Debug/cmTC_e8027.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-ktkiyj/Debug/cmTC_e8027.lib" /MACHINE:X64  /machine:x64 cmTC_e8027.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_e8027.vcxproj -> C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-ktkiyj\\Debug\\cmTC_e8027.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_90f63.dir\\Debug\\cmTC_90f63.tlog\\unsuccessfulbuild".
-          Touching "cmTC_90f63.dir\\Debug\\cmTC_90f63.tlog\\cmTC_90f63.lastbuildstate".
-        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-fbjvt1\\cmTC_90f63.vcxproj" (default targets).
+          Deleting file "cmTC_e8027.dir\\Debug\\cmTC_e8027.tlog\\unsuccessfulbuild".
+          Touching "cmTC_e8027.dir\\Debug\\cmTC_e8027.tlog\\cmTC_e8027.lastbuildstate".
+        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-ktkiyj\\cmTC_e8027.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:00.59
+        Time Elapsed 00:00:00.61
         
       exitCode: 0
   -
@@ -1887,7 +1887,7 @@ events:
       - "CMakeLists.txt:4 (project)"
     message: |
       Running the CXX compiler's linker: "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/HostX64/x64/link.exe" "-v"
-      Microsoft (R) Incremental Linker Version 14.51.36248.0
+      Microsoft (R) Incremental Linker Version 14.51.36252.0
       Copyright (C) Microsoft Corporation.  All rights reserved.
   -
     kind: "find_package-v1"
@@ -2508,6 +2508,138 @@ events:
         - "C:/Program Files (x86)/StrixVerseClient"
       CMAKE_FIND_ROOT_PATH: "C:/vcpkg/installed/x64-windows/debug;C:/vcpkg/installed/x64-windows"
   -
+    kind: "find_package-v1"
+    backtrace:
+      - "C:/vcpkg/scripts/buildsystems/vcpkg.cmake:939 (_find_package)"
+      - "CMakeLists.txt:34 (find_package)"
+    name: "glad"
+    configs:
+      -
+        filename: "glad.cps"
+        kind: "cps"
+      -
+        filename: "gladConfig.cmake"
+        kind: "cmake"
+      -
+        filename: "glad-config.cmake"
+        kind: "cmake"
+    version_request:
+      exact: false
+    settings:
+      required: "required_explicit"
+      quiet: false
+      global: false
+      policy_scope: true
+      bypass_provider: false
+      names:
+        - "glad"
+      path_suffixes:
+        - ""
+      paths:
+        CMAKE_FIND_USE_CMAKE_PATH: true
+        CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+        CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+        CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+        CMAKE_FIND_USE_INSTALL_PREFIX: true
+        CMAKE_FIND_USE_PACKAGE_ROOT_PATH: true
+        CMAKE_FIND_USE_CMAKE_PACKAGE_REGISTRY: true
+        CMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY: true
+        CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
+    candidates:
+      -
+        path: "C:/Projects/StrixVerse/Client/../../vcpkg/installed/x64-windows/share/glad/glad.cps"
+        mode: "none?"
+        reason: "no_exist"
+      -
+        path: "C:/Projects/StrixVerse/Client/../../vcpkg/installed/x64-windows/share/glad/gladConfig.cmake"
+        mode: "none?"
+        reason: "no_exist"
+      -
+        path: "C:/Projects/StrixVerse/Client/../../vcpkg/installed/x64-windows/share/glad/glad-config.cmake"
+        mode: "none?"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/gladConfig.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/glad-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/lib/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/share/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/gladConfig.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/glad-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/lib/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/share/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/gladConfig.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/glad-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/lib/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/share/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+    found:
+      path: "C:/vcpkg/installed/x64-windows/share/glad/gladConfig.cmake"
+      mode: "config"
+      version: "0.1.36"
+    search_context:
+      CMAKE_PREFIX_PATH:
+        - "C:/vcpkg/installed/x64-windows/debug"
+        - "C:/vcpkg/installed/x64-windows"
+      ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
+      CMAKE_INSTALL_PREFIX: "C:/Program Files (x86)/StrixVerseClient"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "C:/Program Files"
+        - "C:/Program Files (x86)"
+        - "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake"
+        - "C:/Program Files (x86)/StrixVerseClient"
+      CMAKE_FIND_ROOT_PATH: "C:/vcpkg/installed/x64-windows/debug;C:/vcpkg/installed/x64-windows"
+  -
     kind: "try_compile-v1"
     backtrace:
       - "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
@@ -2515,12 +2647,12 @@ events:
       - "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/FindThreads.cmake:162 (check_cxx_source_compiles)"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/FindThreads.cmake:226 (_threads_check_libc)"
       - "C:/vcpkg/scripts/buildsystems/vcpkg.cmake:939 (_find_package)"
-      - "CMakeLists.txt:32 (find_package)"
+      - "CMakeLists.txt:35 (find_package)"
     checks:
       - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
     directories:
-      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-1xdaut"
-      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-1xdaut"
+      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-cvp0tf"
+      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-cvp0tf"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -2534,68 +2666,68 @@ events:
       variable: "CMAKE_HAVE_LIBC_PTHREAD"
       cached: true
       stdout: |
-        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-1xdaut'
+        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-cvp0tf'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_cafd6.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
-        MSBuild version 18.7.8+1ac568fee for .NET Framework
-        Build started 7/16/2026 4:57:47 PM.
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_153f0.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.8.2+ce25c0108 for .NET Framework
+        Build started 7/27/2026 2:28:45 PM.
         
-        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj" on node 1 (default targets).
+        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\Debug\\".
-          Creating directory "cmTC_cafd6.dir\\Debug\\cmTC_cafd6.tlog\\".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\Debug\\".
+          Creating directory "cmTC_153f0.dir\\Debug\\cmTC_153f0.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_cafd6.dir\\Debug\\cmTC_cafd6.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_cafd6.dir\\Debug\\cmTC_cafd6.tlog\\unsuccessfulbuild".
+          Creating "cmTC_153f0.dir\\Debug\\cmTC_153f0.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_153f0.dir\\Debug\\cmTC_153f0.tlog\\unsuccessfulbuild".
         ComputeStdModulesCompileInputs:
           Reading library manifest file 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\modules.json' which provides data for library 'microsoft/STL'.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.ixx' from library 'microsoft/STL' to be built with this project.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
         MakeDirsForCl:
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.dir\\Debug\\microsoft\\STL".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.dir\\Debug\\microsoft\\STL".
         SetModuleDependencies:
-          Creating directory "cmTC_cafd6.dir\\Debug\\cmTC_cafd6_MD.tlog\\".
+          Creating directory "cmTC_153f0.dir\\Debug\\cmTC_153f0_MD.tlog\\".
           Scanning sources for module dependencies...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_cafd6.dir\\Debug\\\\" /scanDependencies "cmTC_cafd6.dir\\Debug\\\\" /Fo"cmTC_cafd6.dir\\Debug\\\\" /Fd"cmTC_cafd6.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_153f0.dir\\Debug\\\\" /scanDependencies "cmTC_153f0.dir\\Debug\\\\" /Fo"cmTC_153f0.dir\\Debug\\\\" /Fd"cmTC_153f0.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36252 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_cafd6.dir\\Debug\\\\" /scanDependencies "cmTC_cafd6.dir\\Debug\\\\" /Fo"cmTC_cafd6.dir\\Debug\\\\" /Fd"cmTC_cafd6.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_153f0.dir\\Debug\\\\" /scanDependencies "cmTC_153f0.dir\\Debug\\\\" /Fo"cmTC_153f0.dir\\Debug\\\\" /Fd"cmTC_153f0.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\src.cxx"
           src.cxx
-        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): fatal  error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
-        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
-        C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Microsoft\\VC\\v180\\Microsoft.CppCommon.targets(534,5): warning MSB8074: Cannot read Module Dependencies file cmTC_cafd6.dir\\Debug\\src.cxx.module.json: Expecting element 'root' from namespace ''.. Encountered 'None'  with name '', namespace ''.  The build order might be incorrect. [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
+        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\src.cxx(1,10): fatal  error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj]
+        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj]
+        C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Microsoft\\VC\\v180\\Microsoft.CppCommon.targets(534,5): warning MSB8074: Cannot read Module Dependencies file cmTC_153f0.dir\\Debug\\src.cxx.module.json: Expecting element 'root' from namespace ''.. Encountered 'None'  with name '', namespace ''.  The build order might be incorrect. [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj]
         ClCompile:
           Compiling...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_cafd6.dir\\Debug\\\\" /Fo"cmTC_cafd6.dir\\Debug\\\\" /Fd"cmTC_cafd6.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_cafd6.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_153f0.dir\\Debug\\\\" /Fo"cmTC_153f0.dir\\Debug\\\\" /Fd"cmTC_153f0.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_153f0.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36252 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_cafd6.dir\\Debug\\\\" /Fo"cmTC_cafd6.dir\\Debug\\\\" /Fd"cmTC_cafd6.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_cafd6.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_153f0.dir\\Debug\\\\" /Fo"cmTC_153f0.dir\\Debug\\\\" /Fd"cmTC_153f0.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_153f0.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\src.cxx"
           src.cxx
-        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
-        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj" (default targets) -- FAILED.
+        C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj]
+        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj" (default targets) -- FAILED.
         
         Build FAILED.
         
-        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj" (default target) (1) ->
+        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj" (default target) (1) ->
         (SetModuleDependencies target) -> 
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Microsoft\\VC\\v180\\Microsoft.CppCommon.targets(534,5): warning MSB8074: Cannot read Module Dependencies file cmTC_cafd6.dir\\Debug\\src.cxx.module.json: Expecting element 'root' from namespace ''.. Encountered 'None'  with name '', namespace ''.  The build order might be incorrect. [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Microsoft\\VC\\v180\\Microsoft.CppCommon.targets(534,5): warning MSB8074: Cannot read Module Dependencies file cmTC_153f0.dir\\Debug\\src.cxx.module.json: Expecting element 'root' from namespace ''.. Encountered 'None'  with name '', namespace ''.  The build order might be incorrect. [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj]
         
         
-        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj" (default target) (1) ->
+        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj" (default target) (1) ->
         (SetModuleDependencies target) -> 
-          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): fatal  error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
-          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
+          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\src.cxx(1,10): fatal  error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj]
+          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj]
         
         
-        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj" (default target) (1) ->
+        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj" (default target) (1) ->
         (ClCompile target) -> 
-          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-1xdaut\\cmTC_cafd6.vcxproj]
+          C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-cvp0tf\\cmTC_153f0.vcxproj]
         
             1 Warning(s)
             3 Error(s)
         
-        Time Elapsed 00:00:00.77
+        Time Elapsed 00:00:00.87
         
       exitCode: 1
   -
@@ -2605,12 +2737,12 @@ events:
       - "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/FindThreads.cmake:175 (check_library_exists)"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/FindThreads.cmake:238 (_threads_check_lib)"
       - "C:/vcpkg/scripts/buildsystems/vcpkg.cmake:939 (_find_package)"
-      - "CMakeLists.txt:32 (find_package)"
+      - "CMakeLists.txt:35 (find_package)"
     checks:
       - "Looking for pthread_create in pthreads"
     directories:
-      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-h9qlf8"
-      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-h9qlf8"
+      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-kavox4"
+      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-kavox4"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -2624,56 +2756,56 @@ events:
       variable: "CMAKE_HAVE_PTHREADS_CREATE"
       cached: true
       stdout: |
-        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-h9qlf8'
+        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-kavox4'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_b83ce.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
-        MSBuild version 18.7.8+1ac568fee for .NET Framework
-        Build started 7/16/2026 4:57:48 PM.
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_f2898.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.8.2+ce25c0108 for .NET Framework
+        Build started 7/27/2026 2:28:46 PM.
         
-        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.vcxproj" on node 1 (default targets).
+        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\cmTC_f2898.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\Debug\\".
-          Creating directory "cmTC_b83ce.dir\\Debug\\cmTC_b83ce.tlog\\".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\Debug\\".
+          Creating directory "cmTC_f2898.dir\\Debug\\cmTC_f2898.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_b83ce.dir\\Debug\\cmTC_b83ce.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_b83ce.dir\\Debug\\cmTC_b83ce.tlog\\unsuccessfulbuild".
+          Creating "cmTC_f2898.dir\\Debug\\cmTC_f2898.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_f2898.dir\\Debug\\cmTC_f2898.tlog\\unsuccessfulbuild".
         ComputeStdModulesCompileInputs:
           Reading library manifest file 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\modules.json' which provides data for library 'microsoft/STL'.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.ixx' from library 'microsoft/STL' to be built with this project.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
         MakeDirsForCl:
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.dir\\Debug\\microsoft\\STL".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\cmTC_f2898.dir\\Debug\\microsoft\\STL".
         SetModuleDependencies:
-          Creating directory "cmTC_b83ce.dir\\Debug\\cmTC_b83ce_MD.tlog\\".
+          Creating directory "cmTC_f2898.dir\\Debug\\cmTC_f2898_MD.tlog\\".
           Scanning sources for module dependencies...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_b83ce.dir\\Debug\\\\" /scanDependencies "cmTC_b83ce.dir\\Debug\\\\" /Fo"cmTC_b83ce.dir\\Debug\\\\" /Fd"cmTC_b83ce.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\CheckFunctionExists.cxx"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_f2898.dir\\Debug\\\\" /scanDependencies "cmTC_f2898.dir\\Debug\\\\" /Fo"cmTC_f2898.dir\\Debug\\\\" /Fd"cmTC_f2898.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\CheckFunctionExists.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36252 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_b83ce.dir\\Debug\\\\" /scanDependencies "cmTC_b83ce.dir\\Debug\\\\" /Fo"cmTC_b83ce.dir\\Debug\\\\" /Fd"cmTC_b83ce.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\CheckFunctionExists.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_f2898.dir\\Debug\\\\" /scanDependencies "cmTC_f2898.dir\\Debug\\\\" /Fo"cmTC_f2898.dir\\Debug\\\\" /Fd"cmTC_f2898.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\CheckFunctionExists.cxx"
           CheckFunctionExists.cxx
         ClCompile:
           Compiling...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_b83ce.dir\\Debug\\\\" /Fo"cmTC_b83ce.dir\\Debug\\\\" /Fd"cmTC_b83ce.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_b83ce.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\CheckFunctionExists.cxx"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_f2898.dir\\Debug\\\\" /Fo"cmTC_f2898.dir\\Debug\\\\" /Fd"cmTC_f2898.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_f2898.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\CheckFunctionExists.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36252 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_b83ce.dir\\Debug\\\\" /Fo"cmTC_b83ce.dir\\Debug\\\\" /Fd"cmTC_b83ce.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_b83ce.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\CheckFunctionExists.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_f2898.dir\\Debug\\\\" /Fo"cmTC_f2898.dir\\Debug\\\\" /Fd"cmTC_f2898.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_f2898.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\CheckFunctionExists.cxx"
           CheckFunctionExists.cxx
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\Debug\\cmTC_b83ce.exe" /INCREMENTAL /ILK:"cmTC_b83ce.dir\\Debug\\cmTC_b83ce.ilk" /NOLOGO pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-h9qlf8/Debug/cmTC_b83ce.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-h9qlf8/Debug/cmTC_b83ce.lib" /MACHINE:X64  /machine:x64 cmTC_b83ce.dir\\Debug\\CheckFunctionExists.obj
-        LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.vcxproj]
-        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.vcxproj" (default targets) -- FAILED.
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\Debug\\cmTC_f2898.exe" /INCREMENTAL /ILK:"cmTC_f2898.dir\\Debug\\cmTC_f2898.ilk" /NOLOGO pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-kavox4/Debug/cmTC_f2898.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-kavox4/Debug/cmTC_f2898.lib" /MACHINE:X64  /machine:x64 cmTC_f2898.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\cmTC_f2898.vcxproj]
+        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\cmTC_f2898.vcxproj" (default targets) -- FAILED.
         
         Build FAILED.
         
-        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.vcxproj" (default target) (1) ->
+        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\cmTC_f2898.vcxproj" (default target) (1) ->
         (Link target) -> 
-          LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-h9qlf8\\cmTC_b83ce.vcxproj]
+          LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-kavox4\\cmTC_f2898.vcxproj]
         
             0 Warning(s)
             1 Error(s)
         
-        Time Elapsed 00:00:00.57
+        Time Elapsed 00:00:00.69
         
       exitCode: 1
   -
@@ -2683,12 +2815,12 @@ events:
       - "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/FindThreads.cmake:175 (check_library_exists)"
       - "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/FindThreads.cmake:239 (_threads_check_lib)"
       - "C:/vcpkg/scripts/buildsystems/vcpkg.cmake:939 (_find_package)"
-      - "CMakeLists.txt:32 (find_package)"
+      - "CMakeLists.txt:35 (find_package)"
     checks:
       - "Looking for pthread_create in pthread"
     directories:
-      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-61l3tz"
-      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-61l3tz"
+      source: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-02zmvb"
+      binary: "C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-02zmvb"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -2702,56 +2834,56 @@ events:
       variable: "CMAKE_HAVE_PTHREAD_CREATE"
       cached: true
       stdout: |
-        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-61l3tz'
+        Change Dir: 'C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-02zmvb'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_ef1b9.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
-        MSBuild version 18.7.8+1ac568fee for .NET Framework
-        Build started 7/16/2026 4:57:49 PM.
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_7556f.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.8.2+ce25c0108 for .NET Framework
+        Build started 7/27/2026 2:28:47 PM.
         
-        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.vcxproj" on node 1 (default targets).
+        Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\cmTC_7556f.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\Debug\\".
-          Creating directory "cmTC_ef1b9.dir\\Debug\\cmTC_ef1b9.tlog\\".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\Debug\\".
+          Creating directory "cmTC_7556f.dir\\Debug\\cmTC_7556f.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_ef1b9.dir\\Debug\\cmTC_ef1b9.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_ef1b9.dir\\Debug\\cmTC_ef1b9.tlog\\unsuccessfulbuild".
+          Creating "cmTC_7556f.dir\\Debug\\cmTC_7556f.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_7556f.dir\\Debug\\cmTC_7556f.tlog\\unsuccessfulbuild".
         ComputeStdModulesCompileInputs:
           Reading library manifest file 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\modules.json' which provides data for library 'microsoft/STL'.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.ixx' from library 'microsoft/STL' to be built with this project.
           Adding module source 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\modules\\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
         MakeDirsForCl:
-          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.dir\\Debug\\microsoft\\STL".
+          Creating directory "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\cmTC_7556f.dir\\Debug\\microsoft\\STL".
         SetModuleDependencies:
-          Creating directory "cmTC_ef1b9.dir\\Debug\\cmTC_ef1b9_MD.tlog\\".
+          Creating directory "cmTC_7556f.dir\\Debug\\cmTC_7556f_MD.tlog\\".
           Scanning sources for module dependencies...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_ef1b9.dir\\Debug\\\\" /scanDependencies "cmTC_ef1b9.dir\\Debug\\\\" /Fo"cmTC_ef1b9.dir\\Debug\\\\" /Fd"cmTC_ef1b9.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\CheckFunctionExists.cxx"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_7556f.dir\\Debug\\\\" /scanDependencies "cmTC_7556f.dir\\Debug\\\\" /Fo"cmTC_7556f.dir\\Debug\\\\" /Fd"cmTC_7556f.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\CheckFunctionExists.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36252 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_ef1b9.dir\\Debug\\\\" /scanDependencies "cmTC_ef1b9.dir\\Debug\\\\" /Fo"cmTC_ef1b9.dir\\Debug\\\\" /Fd"cmTC_ef1b9.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\CheckFunctionExists.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_7556f.dir\\Debug\\\\" /scanDependencies "cmTC_7556f.dir\\Debug\\\\" /Fo"cmTC_7556f.dir\\Debug\\\\" /Fd"cmTC_7556f.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\CheckFunctionExists.cxx"
           CheckFunctionExists.cxx
         ClCompile:
           Compiling...
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_ef1b9.dir\\Debug\\\\" /Fo"cmTC_ef1b9.dir\\Debug\\\\" /Fd"cmTC_ef1b9.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_ef1b9.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\CheckFunctionExists.cxx"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_7556f.dir\\Debug\\\\" /Fo"cmTC_7556f.dir\\Debug\\\\" /Fd"cmTC_7556f.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_7556f.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\CheckFunctionExists.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36252 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_ef1b9.dir\\Debug\\\\" /Fo"cmTC_ef1b9.dir\\Debug\\\\" /Fd"cmTC_ef1b9.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_ef1b9.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\CheckFunctionExists.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++20 /ifcOutput "cmTC_7556f.dir\\Debug\\\\" /Fo"cmTC_7556f.dir\\Debug\\\\" /Fd"cmTC_7556f.dir\\Debug\\vc145.pdb" /sourceDependencies "cmTC_7556f.dir\\Debug\\.d.json" /external:W1 /TP /errorReport:queue "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\CheckFunctionExists.cxx"
           CheckFunctionExists.cxx
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\Debug\\cmTC_ef1b9.exe" /INCREMENTAL /ILK:"cmTC_ef1b9.dir\\Debug\\cmTC_ef1b9.ilk" /NOLOGO pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-61l3tz/Debug/cmTC_ef1b9.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-61l3tz/Debug/cmTC_ef1b9.lib" /MACHINE:X64  /machine:x64 cmTC_ef1b9.dir\\Debug\\CheckFunctionExists.obj
-        LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.vcxproj]
-        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.vcxproj" (default targets) -- FAILED.
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\Debug\\cmTC_7556f.exe" /INCREMENTAL /ILK:"cmTC_7556f.dir\\Debug\\cmTC_7556f.ilk" /NOLOGO pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-02zmvb/Debug/cmTC_7556f.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/CMakeScratch/TryCompile-02zmvb/Debug/cmTC_7556f.lib" /MACHINE:X64  /machine:x64 cmTC_7556f.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\cmTC_7556f.vcxproj]
+        Done Building Project "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\cmTC_7556f.vcxproj" (default targets) -- FAILED.
         
         Build FAILED.
         
-        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.vcxproj" (default target) (1) ->
+        "C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\cmTC_7556f.vcxproj" (default target) (1) ->
         (Link target) -> 
-          LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-61l3tz\\cmTC_ef1b9.vcxproj]
+          LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Projects\\StrixVerse\\Client\\build\\debug\\CMakeFiles\\CMakeScratch\\TryCompile-02zmvb\\cmTC_7556f.vcxproj]
         
             0 Warning(s)
             1 Error(s)
         
-        Time Elapsed 00:00:00.64
+        Time Elapsed 00:00:00.76
         
       exitCode: 1
   -
@@ -2759,7 +2891,7 @@ events:
     backtrace:
       - "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/FindGit.cmake:111 (find_program)"
       - "C:/vcpkg/scripts/buildsystems/vcpkg.cmake:939 (_find_package)"
-      - "CMakeLists.txt:132 (find_package)"
+      - "CMakeLists.txt:142 (find_package)"
     mode: "program"
     variable: "GIT_EXECUTABLE"
     description: "Git command line client"
@@ -3536,6 +3668,142 @@ events:
         - "C:/vcpkg/installed/x64-windows/tools"
         - "C:/vcpkg/installed/x64-windows/tools/brotli"
         - "C:/vcpkg/installed/x64-windows/tools/bzip2"
+      CMAKE_PREFIX_PATH:
+        - "C:/vcpkg/installed/x64-windows/debug"
+        - "C:/vcpkg/installed/x64-windows"
+      ENV{PATH}:
+        - "C:\\Python314\\Scripts\\"
+        - "C:\\Python314\\"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\ProgramData\\chocolatey\\bin"
+        - "C:\\Users\\charl\\.local\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\charl\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\charl\\AppData\\Local\\Python\\bin"
+        - "C:\\Users\\charl\\AppData\\Roaming\\npm"
+      CMAKE_INSTALL_PREFIX: "C:/Program Files (x86)/StrixVerseClient"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "C:/Program Files"
+        - "C:/Program Files (x86)"
+        - "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake"
+        - "C:/Program Files (x86)/StrixVerseClient"
+      CMAKE_FIND_ROOT_PATH: "C:/vcpkg/installed/x64-windows/debug;C:/vcpkg/installed/x64-windows"
+...
+
+---
+events:
+  -
+    kind: "find_package-v1"
+    backtrace:
+      - "C:/vcpkg/scripts/buildsystems/vcpkg.cmake:939 (_find_package)"
+      - "CMakeLists.txt:34 (find_package)"
+    name: "glad"
+    configs:
+      -
+        filename: "glad.cps"
+        kind: "cps"
+      -
+        filename: "gladConfig.cmake"
+        kind: "cmake"
+      -
+        filename: "glad-config.cmake"
+        kind: "cmake"
+    version_request:
+      exact: false
+    settings:
+      required: "required_explicit"
+      quiet: false
+      global: false
+      policy_scope: true
+      bypass_provider: false
+      names:
+        - "glad"
+      path_suffixes:
+        - ""
+      paths:
+        CMAKE_FIND_USE_CMAKE_PATH: true
+        CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+        CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+        CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+        CMAKE_FIND_USE_INSTALL_PREFIX: true
+        CMAKE_FIND_USE_PACKAGE_ROOT_PATH: true
+        CMAKE_FIND_USE_CMAKE_PACKAGE_REGISTRY: true
+        CMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY: true
+        CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
+    candidates:
+      -
+        path: "C:/Projects/StrixVerse/Client/../../vcpkg/installed/x64-windows/share/glad/glad.cps"
+        mode: "none?"
+        reason: "no_exist"
+      -
+        path: "C:/Projects/StrixVerse/Client/../../vcpkg/installed/x64-windows/share/glad/gladConfig.cmake"
+        mode: "none?"
+        reason: "no_exist"
+      -
+        path: "C:/Projects/StrixVerse/Client/../../vcpkg/installed/x64-windows/share/glad/glad-config.cmake"
+        mode: "none?"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/gladConfig.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/glad-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/lib/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/share/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/gladConfig.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/glad-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/lib/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/debug/share/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/gladConfig.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/glad-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/lib/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "C:/vcpkg/installed/x64-windows/share/cps/glad.cps"
+        mode: "cps"
+        reason: "no_exist"
+    found:
+      path: "C:/vcpkg/installed/x64-windows/share/glad/gladConfig.cmake"
+      mode: "config"
+      version: "0.1.36"
+    search_context:
       CMAKE_PREFIX_PATH:
         - "C:/vcpkg/installed/x64-windows/debug"
         - "C:/vcpkg/installed/x64-windows"

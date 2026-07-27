@@ -16,11 +16,7 @@ void PacketDispatcher::removeHandler(PacketType type, std::shared_ptr<PacketHand
 }
 
 void PacketDispatcher::dispatch(const std::shared_ptr<Packet>& packet) {
-    dispatch(*packet);
-}
-
-void PacketDispatcher::dispatch(const Packet& packet) {
-    auto it = m_handlers.find(packet.getType());
+    auto it = m_handlers.find(packet->getType());
     if (it != m_handlers.end()) {
         for (auto& handler : it->second) {
             handler->handle(packet);

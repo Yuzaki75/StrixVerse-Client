@@ -1,19 +1,19 @@
+#pragma once
+
 #include <memory>
+#include <vector>
+#include <string>
 
-class Game;
 class Window;
+class Game;
 class AssetManager;
+class ServiceLocator;
+#include "networking/NetworkManager.h"
 
-// Lifecycle states of the engine. Transitions are strictly forward except
-// Running <-> Stopped (Stop() may be called from event handling).
-enum class EngineState
-{
-    Uninitialized,
-    Initialized,
-    Running,
-    Stopped,
-    Shutdown
-};
+// ECS Includes
+#include "ecs/EntityManager.h"
+#include "ecs/ComponentManager.h"
+#include "ecs/SystemManager.h"
 
 // -----------------------------------------------------------------------------
 // Engine
@@ -40,8 +40,29 @@ public:
 
     void Stop();
 
+    enum class EngineState
+    {
+        Uninitialized,
+        Initialized,
+        Running,
+        Stopped,
+        Shutdown
+    };
+
     EngineState GetState() const;
     bool IsRunning() const;
+
+    // Get reference to the network manager (for game to use)
+    NetworkManager& getNetworkManager() { return m_NetworkManager; }
+    const NetworkManager& getNetworkManager() const { return m_NetworkManager; }
+
+    // ECS Manager accessors
+    StrixVerse::ECS::EntityManager& GetEntityManager() { return *m_pEntityManager; }
+    const StrixVerse::ECS::EntityManager& GetEntityManager() const { return *m_pEntityManager; }
+    StrixVerse::ECS::ComponentManager& GetComponentManager() { return *m_pComponentManager; }
+    const StrixVerse::ECS::ComponentManager& GetComponentManager() const { return *m_pComponentManager; }
+    StrixVerse::ECS::SystemManager& GetSystemManager() { return *m_pSystemManager; }
+    const StrixVerse::ECS::SystemManager& GetSystemManager() const { return *m_pSystemManager; }
 
 private:
     void ProcessEvents();
@@ -53,4 +74,10 @@ private:
     std::unique_ptr<Game> m_Game;
     std::shared_ptr<AssetManager> m_AssetManager;
     EngineState m_State = EngineState::Uninitialized;
+    NetworkManager m_NetworkManager;
+
+    // ECS Managers
+    std::shared_ptr<StrixVerse::ECS::EntityManager> m_pEntityManager;
+    std::shared_ptr<StrixVerse::ECS::ComponentManager> m_pComponentManager;
+    std::shared_ptr<StrixVerse::ECS::SystemManager> m_pSystemManager;
 };

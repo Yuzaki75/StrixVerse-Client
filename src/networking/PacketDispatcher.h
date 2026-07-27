@@ -11,15 +11,12 @@ class PacketDispatcher {
 public:
     // Add a handler for a specific packet type
     void addHandler(PacketType type, std::shared_ptr<PacketHandler> handler);
-    
+
     // Remove a handler for a specific packet type
     void removeHandler(PacketType type, std::shared_ptr<PacketHandler> handler);
-    
+
     // Dispatch a packet to all registered handlers for its type
     void dispatch(const std::shared_ptr<Packet>& packet);
-    
-    // Dispatch a packet to all registered handlers for its type (const version)
-    void dispatch(const Packet& packet);
 
 private:
     std::unordered_map<PacketType, std::vector<std::shared_ptr<PacketHandler>>> m_handlers;

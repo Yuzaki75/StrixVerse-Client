@@ -6,7 +6,7 @@
 class PacketHandler {
 public:
     virtual ~PacketHandler() = default;
-    virtual void handle(const Packet& packet) = 0;
+    virtual void handle(const std::shared_ptr<Packet>& packet) = 0;
 };
 
 #endif // PACKET_HANDLER_H

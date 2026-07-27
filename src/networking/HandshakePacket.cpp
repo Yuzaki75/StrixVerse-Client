@@ -1,2 +1,13 @@
 #include "HandshakePacket.h"
-// Registration will be handled in PacketFactory
+#include "PacketFactory.h"
+
+namespace {
+    struct HandshakePacketRegistrar {
+        HandshakePacketRegistrar() {
+            PacketFactory::registerPacket(PacketType::Handshake, []() {
+                return std::make_shared<HandshakePacket>();
+            });
+        }
+    };
+    static HandshakePacketRegistrar registrar;
+}
