@@ -1,4 +1,6 @@
 #include "EntityManager.h"
+#include "ComponentManager.h"
+#include "SystemManager.h"
 #include <stdexcept>
 
 namespace StrixVerse
@@ -8,11 +10,11 @@ namespace StrixVerse
         EntityManager::EntityManager()
         {
             // Initialize the entity vector with max entities, each with generation 0.
-            m_Entities.resize(MAX_ENTITIES, EntityID{0});
+            m_Entities.resize(EntityManager::MAX_ENTITIES, EntityID{0});
             // Initially, all entities are not alive.
-            m_EntityAlive.resize(MAX_ENTITIES, false);
+            m_EntityAlive.resize(EntityManager::MAX_ENTITIES, false);
             // Initially, all entities are free (we can use them).
-            for (uint32_t i = 0; i < MAX_ENTITIES; ++i)
+            for (uint32_t i = 0; i < EntityManager::MAX_ENTITIES; ++i)
             {
                 m_FreeIndices.push_back(i);
             }
@@ -20,7 +22,7 @@ namespace StrixVerse
 
         Entity EntityManager::createEntity()
         {
-            if (m_LivingEntityCount >= MAX_ENTITIES)
+            if (m_LivingEntityCount >= EntityManager::MAX_ENTITIES)
             {
                 throw std::runtime_error("Too many entities. Maximum reached.");
             }
@@ -36,7 +38,8 @@ namespace StrixVerse
             m_Entities[id].generation++;
 
             // Return the entity with the index and current generation.
-            return Entity{id, m_Entities[id].generation};
+            Entity e{id, m_Entities[id].generation};
+            return e;
         }
 
         void EntityManager::destroyEntity(Entity entity)
@@ -44,6 +47,18 @@ namespace StrixVerse
             if (!isValid(entity))
             {
                 return; // Already destroyed or invalid.
+            }
+
+            // Notify the component manager to clean up this entity's components.
+            if (m_pComponentManager)
+            {
+                m_pComponentManager->entityDestroyed(entity);
+            }
+
+            // Notify the system manager that this entity is gone.
+            if (m_pSystemManager)
+            {
+                m_pSystemManager->onEntityDestroyed(entity);
             }
 
             // Mark the entity as not alive.
@@ -60,7 +75,7 @@ namespace StrixVerse
             {
                 return false;
             }
-            return m_EntityAlive[entity.id] && (m_Entities[entity.id].generation == entity.generation);
+            return m_EntityAlive[entity.id] && (m_Entities[entity.id].generation == entity.getGeneration());
         }
 
         uint32_t EntityManager::getLivingEntityCount() const
@@ -70,7 +85,7 @@ namespace StrixVerse
 
         bool EntityManager::isEntityFull() const
         {
-            return (m_LivingEntityCount >= MAX_ENTITIES);
+            return (m_LivingEntityCount >= EntityManager::MAX_ENTITIES);
         }
 
         std::vector<Entity> EntityManager::getLivingEntities() const

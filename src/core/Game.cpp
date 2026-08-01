@@ -7,6 +7,12 @@
 #include "ecs/VelocityComponent.h"
 #include "ecs/EntityManager.h"
 #include "ecs/ComponentManager.h"
+#include "ecs/Entity.h"
+
+// UI Includes
+#include "ui/UIManager.h"
+#include "ui/UIButton.h"
+#include "ui/UILabel.h"
 
 namespace
 {
@@ -83,6 +89,41 @@ bool Game::Initialize()
         return false;
     }
 
+    // Initialize UI Manager
+    m_UIManager = std::make_unique<UIManager>();
+
+    // Create a test button
+    m_TestButton = std::make_shared<UIButton>();
+    m_TestButton->setPosition(100.0f, 100.0f);
+    m_TestButton->setSize(200.0f, 50.0f);
+    m_TestButton->setText("Click Me!");
+    m_TestButton->setNormalColor({0.2f, 0.3f, 0.5f, 1.0f}); // Blue
+    m_TestButton->setHoverColor({0.3f, 0.4f, 0.6f, 1.0f}); // Lighter blue
+    m_TestButton->setPressedColor({0.1f, 0.2f, 0.4f, 1.0f}); // Dark blue
+    m_TestButton->setTextColor({1.0f, 1.0f, 1.0f, 1.0f}); // White
+
+    // Set click callback - change label text when clicked
+    m_TestButton->setOnClick([this]() {
+        // Change the label text when button is clicked
+        if (m_TestLabel)
+        {
+            static int clickCount = 0;
+            clickCount++;
+            m_TestLabel->setText("Button clicked " + std::to_string(clickCount) + " times!");
+        }
+    });
+
+    m_UIManager->addElement(m_TestButton);
+
+    // Create a test label
+    m_TestLabel = std::make_shared<UILabel>();
+    m_TestLabel->setPosition(100.0f, 200.0f);
+    m_TestLabel->setText("Hello, StrixVerse UI!");
+    m_TestLabel->setTextColor({1.0f, 1.0f, 1.0f, 1.0f}); // White
+    m_TestLabel->setFontSize(24.0f);
+
+    m_UIManager->addElement(m_TestLabel);
+
     Logger::Info("Game initialized.");
 
     return true;
@@ -136,8 +177,6 @@ void Game::Update(float deltaTime)
     if (!m_Initialized || m_ActiveScene.empty())
         return;
 
-    (void)deltaTime;
-
     // Future gameplay systems:
     //
     // SceneManager::Update(deltaTime);
@@ -149,12 +188,41 @@ void Game::FixedUpdate(float fixedDeltaTime)
     if (!m_Initialized || m_ActiveScene.empty())
         return;
 
-    (void)fixedDeltaTime;
-
     // Future deterministic systems:
     //
     // Physics::Step(fixedDeltaTime);
     // Netcode::Tick(fixedDeltaTime);
+
+    // Update ECS systems
+    auto entityManager = ::ServiceLocator::Get<StrixVerse::ECS::EntityManager>();
+    auto componentManager = ::ServiceLocator::Get<StrixVerse::ECS::ComponentManager>();
+    auto systemManager = ::ServiceLocator::Get<StrixVerse::ECS::SystemManager>();
+
+    if (entityManager && componentManager && systemManager)
+    {
+        // Update ECS systems
+        systemManager->update(fixedDeltaTime);
+
+        // Update position of test entity based on velocity (simple integration)
+        if (entityManager->isValid(m_TestEntity2))
+        {
+            auto velocityComp = componentManager->getComponent<StrixVerse::ECS::VelocityComponent>(m_TestEntity2);
+            auto transformComp = componentManager->getComponent<StrixVerse::ECS::Transform>(m_TestEntity2);
+
+            if (velocityComp && transformComp)
+            {
+                // Simple Euler integration
+                transformComp->position.x += velocityComp->vx * fixedDeltaTime;
+                transformComp->position.y += velocityComp->vy * fixedDeltaTime;
+
+                // Wrap around screen (assuming 800x600 for now)
+                if (transformComp->position.x > 800.0f) transformComp->position.x = 0.0f;
+                if (transformComp->position.x < 0.0f) transformComp->position.x = 800.0f;
+                if (transformComp->position.y > 600.0f) transformComp->position.y = 0.0f;
+                if (transformComp->position.y < 0.0f) transformComp->position.y = 600.0f;
+            }
+        }
+    }
 }
 
 void Game::Render()
@@ -165,6 +233,21 @@ void Game::Render()
     // Future rendering:
     //
     // SceneManager::Render();
+
+    // Render ECS systems (which will draw sprites, etc.)
+    auto systemManager = ::ServiceLocator::Get<StrixVerse::ECS::SystemManager>();
+    if (systemManager)
+    {
+        systemManager->render();
+    }
+
+    // Render UI
+    if (m_UIManager)
+    {
+        // Note: In a real implementation, we'd get the actual delta time from the engine
+        // For now, we'll update the UI manager in the Engine's update/render cycle
+        m_UIManager->render();
+    }
 }
 
 void Game::Shutdown()
@@ -188,6 +271,11 @@ void Game::Shutdown()
             m_TestEntity2 = StrixVerse::ECS::Entity(); // Reset to invalid entity
         }
     }
+
+    // Clean up UI
+    m_UIManager.reset();
+    m_TestButton.reset();
+    m_TestLabel.reset();
 
     UnloadScene();
 

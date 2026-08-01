@@ -1,0 +1,10 @@
+MSBuild version 18.8.2+ce25c0108 for .NET Framework
+Some command line switches were read from this response file:
+  C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.rsp
+MSBUILD : error MSB1008: Only one project can be specified.
+    Full command line: '"C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe" "C:/Program Files/Git/noautoresponse" build\debug\StrixVerseClient.vcxproj p:Configuration=Debug p:Platform=x64'
+  Switches appended by response files:
+'' came from 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.rsp'
+Switch: build\debug\StrixVerseClient.vcxproj
+
+For switch syntax, type "MSBuild -help"

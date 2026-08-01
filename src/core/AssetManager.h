@@ -7,8 +7,8 @@
 #include <vector>
 
 // Forward declarations.
-struct Texture;
-struct Shader;
+class Texture;
+class Shader;
 
 class AssetManager
 {
@@ -33,6 +33,9 @@ public:
 
     // Get a texture by its file path (without loading). Returns nullptr if not loaded.
     std::shared_ptr<Texture> GetTexture(const std::string& filePath) const;
+
+    // Get a texture by its OpenGL renderer ID. Returns nullptr if not found.
+    Texture* GetTextureByRendererID(unsigned int rendererID) const;
 
     // Get a shader by its vertex and fragment shader paths (without loading).
     std::shared_ptr<Shader> GetShader(const std::string& vertexPath,

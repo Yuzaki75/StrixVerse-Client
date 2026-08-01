@@ -6,7 +6,9 @@ namespace StrixVerse
     {
         Entity::Entity(uint32_t index, uint32_t generation)
             : m_ID{ index, generation }
-        {}
+        {
+            id = index;
+        }
 
         bool Entity::isValid() const
         {

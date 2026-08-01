@@ -1,7 +1,16 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include "ecs/Entity.h"
+
+// Forward declarations
+namespace StrixVerse { namespace ECS { class EntityManager; class ComponentManager; class SystemManager; } }
+
+// UI Forward declaration
+class UIManager;
+class UIButton;
+class UILabel;
 
 // -----------------------------------------------------------------------------
 // Game
@@ -65,4 +74,9 @@ private:
     // ECS entities for testing
     StrixVerse::ECS::Entity m_TestEntity;
     StrixVerse::ECS::Entity m_TestEntity2;
+
+    // UI components for testing
+    std::unique_ptr<UIManager> m_UIManager;
+    std::shared_ptr<UIButton> m_TestButton;
+    std::shared_ptr<UILabel> m_TestLabel;
 };

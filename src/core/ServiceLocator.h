@@ -4,6 +4,7 @@
 #include <mutex>
 #include <typeindex>
 #include <unordered_map>
+#include <cassert>
 
 // -----------------------------------------------------------------------------
 // ServiceLocator
@@ -53,7 +54,14 @@ public:
         auto it = registry.find(std::type_index(typeid(T)));
 
         if (it == registry.end())
+        {
+#ifdef _DEBUG
+            // In debug mode, assert if service is not found to catch issues early
+            // In release, we return nullptr to avoid crashes
+            assert(false && "Service not found in ServiceLocator");
+#endif
             return nullptr;
+        }
 
         return std::static_pointer_cast<T>(it->second);
     }

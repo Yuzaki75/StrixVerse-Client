@@ -1,1 +1,3 @@
-"C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Tools\MSVC\14.51.36231\bin\Hostx64\x64\cl.exe" /c /I"src" /I"third_party" /I"c:/vcpkg/installed/x64-windows/include" /D_MBCS /DWIN32 /D_WINDOWS /D"STRIX_GIT_COMMIT=\"4fae1ad\"" /D"CMAKE_INTDIR=\"Debug\"" /std:c++20 /Zi /nologo /W4 /WX- /diagnostics:column /Od /Ob0 /EHsc /RTC1 /MDd src\graphics\SpriteBatch.cpp
+@echo off
+call C:/Program Files/Microsoft Visual Studio/18/Community/VC/Auxiliary/Build/vcvarsall.bat x64
+C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/MSBuild.exe /noautoresponse build/debug/StrixVerseClient.vcxproj /p:Configuration=Debug /p:Platform=x64

@@ -13,7 +13,8 @@ Texture::~Texture()
 }
 
 bool Texture::Create(unsigned int width, unsigned int height, unsigned char* data,
-                     int channels, bool generateMipmaps, bool srgb)
+                     int channels, bool generateMipmaps, bool srgb,
+                     GLint wrapS, GLint wrapT, GLint minFilter, GLint magFilter)
 {
     // Delete any existing texture
     if (m_ID != 0)
@@ -28,12 +29,23 @@ bool Texture::Create(unsigned int width, unsigned int height, unsigned char* dat
     glBindTexture(GL_TEXTURE_2D, m_ID);
 
     // Set texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
+
     // Set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                    generateMipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // If minFilter or magFilter is 0, use default based on generateMipmaps
+    GLint effectiveMinFilter = minFilter;
+    if (effectiveMinFilter == 0)
+    {
+        effectiveMinFilter = generateMipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR;
+    }
+    GLint effectiveMagFilter = magFilter;
+    if (effectiveMagFilter == 0)
+    {
+        effectiveMagFilter = GL_LINEAR;
+    }
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, effectiveMinFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, effectiveMagFilter);
 
     // Determine internal format and format based on channels and srgb
     GLint internalFormat = 0;

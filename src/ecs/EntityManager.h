@@ -10,6 +10,10 @@ namespace StrixVerse
 {
     namespace ECS
     {
+        // Forward declarations for notification chain
+        class ComponentManager;
+        class SystemManager;
+
         class EntityManager
         {
         public:
@@ -22,6 +26,10 @@ namespace StrixVerse
             EntityManager& operator=(const EntityManager&) = delete;
             EntityManager(EntityManager&&) = delete;
             EntityManager& operator=(EntityManager&&) = delete;
+
+            // Set the component and system managers for notification chain.
+            void SetComponentManager(ComponentManager* cm) { m_pComponentManager = cm; }
+            void SetSystemManager(SystemManager* sm) { m_pSystemManager = sm; }
 
             Entity createEntity();
             void destroyEntity(Entity entity);
@@ -42,6 +50,10 @@ namespace StrixVerse
             // Free list of indices that have been destroyed and can be reused.
             std::vector<uint32_t> m_FreeIndices{};
             uint32_t m_LivingEntityCount = 0;
+
+            // Notification chain pointers (non-owning)
+            class ComponentManager* m_pComponentManager = nullptr;
+            class SystemManager* m_pSystemManager = nullptr;
         };
     }
 }

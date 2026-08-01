@@ -81,7 +81,7 @@ private:
     std::condition_variable m_receiveQueueCond;
 
     // Buffer for receiving data
-    static constexpr size_t RECV_BUFFER_SIZE = 4096;
+    static constexpr size_t RECV_BUFFER_SIZE = 32768;
     char m_recvBuffer[RECV_BUFFER_SIZE];
     size_t m_recvBufferPos; // How many bytes are currently in the buffer
 

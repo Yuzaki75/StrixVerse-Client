@@ -12,7 +12,9 @@ public:
     Texture& operator=(const Texture&) = delete;
 
     bool Create(unsigned int width, unsigned int height, unsigned char* data,
-                int channels, bool generateMipmaps = true, bool srgb = false);
+                int channels, bool generateMipmaps = true, bool srgb = false,
+                GLint wrapS = GL_REPEAT, GLint wrapT = GL_REPEAT,
+                GLint minFilter = 0, GLint magFilter = 0);
     void Destroy();
 
     void Bind(unsigned int slot = 0) const;

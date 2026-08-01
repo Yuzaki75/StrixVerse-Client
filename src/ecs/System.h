@@ -14,9 +14,6 @@ namespace StrixVerse
 {
     namespace ECS
     {
-        // Maximum number of component types we support (for bitset).
-        static const uint32_t MAX_COMPONENTS = 256;
-
         // Forward declaration.
         class EntityManager;
         class ComponentManager;

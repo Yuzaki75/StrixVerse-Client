@@ -1,14 +1,28 @@
 #include "Engine.h"
 
 #include "Game.h"
+
 #include "Logger.h"
 #include "Timer.h"
 #include "Window.h"
 #include "../graphics/Renderer.h"
 #include "AssetManager.h"
+#include "../graphics/Font.h"
+#include "../graphics/SpriteBatch.h"
 #include "ServiceLocator.h"
 #include "networking/NetworkManager.h"
-#include <glad/glad.h>
+
+#include <filesystem>
+
+// UI Includes
+#include "ui/UIManager.h"
+#include "ui/UIPanel.h"
+
+// Screen Includes
+#include "screens/SplashScreen.h"
+#include "screens/ScreenFactory.h"
+#include "core/AuthService.h"
+#include "core/WorldManager.h"
 
 // Component and System includes for ECS setup
 #include "ecs/TransformComponent.h"
@@ -22,6 +36,9 @@
 #include "ecs/InputSystem.h"
 #include "ecs/NetworkSyncSystem.h"
 #include "ecs/SystemManager.h"
+#include "ecs/PlayerSystem.h"
+#include "ecs/Camera2DSystem.h"
+#include "ecs/Camera2DComponent.h"
 
 Engine::Engine() = default;
 
@@ -29,6 +46,30 @@ Engine::~Engine()
 {
     // RAII safety net for early exits.
     Shutdown();
+}
+
+// Screen management
+void Engine::SetCurrentScreen(std::unique_ptr<Screen> screen)
+{
+    // Exit current screen if exists
+    if (m_CurrentScreen)
+    {
+        m_CurrentScreen->OnExit();
+    }
+
+    // Set new screen
+    m_CurrentScreen = std::move(screen);
+
+    // Enter new screen
+    if (m_CurrentScreen)
+    {
+        m_CurrentScreen->OnEnter();
+    }
+
+    // Clear any pending screen and reset transition state (immediate change)
+    m_PendingScreen.reset();
+    m_TransitionState = TransitionState::None;
+    m_TransitionTimer = 0.0f;
 }
 
 bool Engine::Initialize(Window* window)
@@ -56,14 +97,49 @@ bool Engine::Initialize(Window* window)
         return false;
     }
 
+    // Register the engine itself for systems that need to reach back into it.
+    ServiceLocator::Provide(std::shared_ptr<Engine>(this, [](Engine*) {}));
+
     // Create and register the asset manager.
     m_AssetManager = std::make_shared<AssetManager>();
     ServiceLocator::Provide(m_AssetManager);
+
+    // Create and register UI rendering services.
+    m_SpriteBatch = std::make_shared<SpriteBatch>();
+    ServiceLocator::Provide(m_SpriteBatch);
+
+    m_Font = std::make_shared<Font>();
+    const std::filesystem::path fontCandidates[] =
+    {
+        "C:/Windows/Fonts/segoeui.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/calibri.ttf"
+    };
+
+    for (const auto& fontPath : fontCandidates)
+    {
+        if (std::filesystem::exists(fontPath) && m_Font->Load(fontPath.string(), 24))
+        {
+            break;
+        }
+    }
+
+    if (!m_Font->IsLoaded())
+    {
+        Logger::Warning("Engine: no system font could be loaded; text rendering will be disabled.");
+    }
+
+    ServiceLocator::Provide(m_Font);
 
     // Initialize ECS Managers
     m_pEntityManager = std::make_shared<StrixVerse::ECS::EntityManager>();
     m_pComponentManager = std::make_shared<StrixVerse::ECS::ComponentManager>(m_pEntityManager->MAX_ENTITIES);
     m_pSystemManager = std::make_shared<StrixVerse::ECS::SystemManager>(m_pEntityManager.get(), m_pComponentManager.get());
+
+    // Wire up the ECS notification chain
+    m_pEntityManager->SetComponentManager(m_pComponentManager.get());
+    m_pEntityManager->SetSystemManager(m_pSystemManager.get());
+    m_pComponentManager->SetSystemManager(m_pSystemManager.get());
 
     // Register ECS managers with service locator
     ServiceLocator::Provide(m_pEntityManager);
@@ -77,6 +153,7 @@ bool Engine::Initialize(Window* window)
     m_pComponentManager->registerComponent<StrixVerse::ECS::InputComponent>();
     m_pComponentManager->registerComponent<StrixVerse::ECS::NetworkComponent>();
     m_pComponentManager->registerComponent<StrixVerse::ECS::PlayerComponent>();
+    m_pComponentManager->registerComponent<StrixVerse::ECS::Camera2DComponent>();
 
     // Create and register essential systems
     auto movementSystem = m_pSystemManager->createSystem<StrixVerse::ECS::MovementSystem>();
@@ -87,22 +164,28 @@ bool Engine::Initialize(Window* window)
     renderSystem->setSignature<StrixVerse::ECS::Transform, StrixVerse::ECS::SpriteComponent>();
     m_pSystemManager->addSystem(renderSystem);
 
-    auto inputSystem = m_pSystemManager->createSystem<StrixVerse::ECS::InputSystem>();
-    inputSystem->setSignature<StrixVerse::ECS::InputComponent>();
-    m_pSystemManager->addSystem(inputSystem);
+    auto cameraSystem = m_pSystemManager->createSystem<StrixVerse::ECS::Camera2DSystem>();
+    cameraSystem->setSignature<StrixVerse::ECS::Camera2DComponent, StrixVerse::ECS::Transform>();
+    m_pSystemManager->addSystem(cameraSystem);
 
-    auto networkSyncSystem = m_pSystemManager->createSystem<StrixVerse::ECS::NetworkSyncSystem>();
-    networkSyncSystem->setSignature<StrixVerse::ECS::Transform, StrixVerse::ECS::NetworkComponent>();
-    m_pSystemManager->addSystem(networkSyncSystem);
+    // Initialize UI Manager
+    m_UIManager = std::make_shared<UIManager>();
+    ServiceLocator::Provide(m_UIManager);
 
-    m_Game = std::make_unique<Game>();
+    // Create fade overlay for transitions
+    m_FadeOverlay = std::make_shared<UIPanel>();
+    int width, height;
+    m_Window->GetSize(width, height);
+    m_FadeOverlay->setSize(static_cast<float>(width), static_cast<float>(height));
+    m_FadeOverlay->setPosition(0.0f, 0.0f);
+    m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.0f}); // start fully transparent
+    m_UIManager->addElement(m_FadeOverlay);
 
-    if (!m_Game->Initialize())
-    {
-        Logger::Error("Engine: failed to initialize game layer.");
-        m_Game.reset();
-        return false;
-    }
+    // Initialize AuthService
+    m_AuthService = std::make_unique<AuthService>();
+
+    // Initialize WorldManager
+    m_WorldManager = std::make_unique<WorldManager>();
 
     // Initialize network manager
     if (!m_NetworkManager.initialize())
@@ -110,6 +193,9 @@ bool Engine::Initialize(Window* window)
         Logger::Error("Engine: failed to initialize network manager.");
         return false;
     }
+
+    // Initialize screen system - start with splash screen
+    SetCurrentScreen(std::make_unique<SplashScreen>(this));
 
     m_State = EngineState::Initialized;
 
@@ -122,77 +208,266 @@ void Engine::Run()
 {
     if (m_State != EngineState::Initialized)
     {
-        Logger::Error("Engine: Run called before successful Initialize.");
+        Logger::Error("Engine: Cannot run engine - not initialized or already running/shutdown.");
         return;
     }
 
     m_State = EngineState::Running;
+    Logger::Info("Engine: Starting main loop");
 
-    Logger::Info("Entering main loop...");
-
+    // Main game loop
     while (m_State == EngineState::Running)
     {
-        Timer::Update();
+        // Calculate delta time
+        float deltaTime = Timer::GetDeltaTime();
+        float fixedDeltaTime = Timer::GetFixedTimestep();
 
+        // Process events (input, window events, etc.)
         ProcessEvents();
 
+        // Update game logic (fixed timestep for physics, etc.)
         Update();
 
+        // Render the frame
         Render();
+
+        // Update timer for next frame
+        Timer::Update();
     }
+
+    Logger::Info("Engine: Main loop ended");
+}
+
+void Engine::ProcessEvents()
+{
+    if (!m_Window)
+        return;
+
+    // Process window events (keyboard, mouse, window close, etc.)
+    SDL_Event event;
+    while (SDL_PollEvent(&event))
+    {
+        // Handle window events
+        if (event.type == SDL_EVENT_QUIT)
+        {
+            Stop();
+            return;
+        }
+
+        // Forward event to UI manager
+        if (m_UIManager)
+        {
+            switch (event.type)
+            {
+                case SDL_EVENT_MOUSE_MOTION:
+                    m_UIManager->handleMouseMove(event.motion.x, event.motion.y);
+                    break;
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                    m_UIManager->handleMouseDown(event.button.x, event.button.y);
+                    break;
+                case SDL_EVENT_MOUSE_BUTTON_UP:
+                    m_UIManager->handleMouseUp(event.button.x, event.button.y);
+                    break;
+                case SDL_EVENT_KEY_DOWN:
+                    if (event.key.key < 256) // Regular character key
+                        m_UIManager->handleKeyPressed(static_cast<char>(event.key.key));
+                    else // Special key (arrow keys, etc.)
+                        m_UIManager->handleSpecialKeyPressed(event.key.key);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // Forward event to current screen
+        if (m_CurrentScreen)
+        {
+            m_CurrentScreen->HandleInput();
+        }
+    }
+}
+
+void Engine::Update()
+{
+    if (m_State != EngineState::Running)
+        return;
+
+    // Get fixed time step for consistent physics/gameplay updates
+    float fixedDeltaTime = Timer::GetFixedTimestep();
+
+    // Update ECS systems
+    if (m_pSystemManager)
+    {
+        m_pSystemManager->update(fixedDeltaTime);
+    }
+
+    // Update current screen
+    if (m_CurrentScreen)
+    {
+        m_CurrentScreen->Update(fixedDeltaTime);
+    }
+
+    // Handle screen transitions
+    if (m_PendingScreen)
+    {
+        // Handle transition based on current state
+        switch (m_TransitionState)
+        {
+            case TransitionState::None:
+                // Start fading out
+                m_TransitionState = TransitionState::FadingOut;
+                m_TransitionTimer = 0.0f;
+                m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.0f});
+                break;
+
+            case TransitionState::FadingOut:
+                m_TransitionTimer += fixedDeltaTime;
+                if (m_TransitionTimer >= m_TransitionDuration)
+                {
+                    // Finish fade out, switch screens
+                    m_TransitionTimer = m_TransitionDuration;
+
+                    // Hide current screen
+                    if (m_CurrentScreen)
+                    {
+                        m_CurrentScreen->OnExit();
+                    }
+                    m_CurrentScreen.reset();
+
+                    // Show new screen
+                    m_CurrentScreen = std::move(m_PendingScreen);
+                    if (m_CurrentScreen)
+                    {
+                        m_CurrentScreen->OnEnter();
+                    }
+
+                    // Start fading in
+                    m_TransitionState = TransitionState::FadingIn;
+                    m_TransitionTimer = 0.0f;
+                }
+                else
+                {
+                    // Continue fading out
+                    float alpha = m_TransitionTimer / m_TransitionDuration;
+                    m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, alpha});
+                }
+                break;
+
+            case TransitionState::FadingIn:
+                m_TransitionTimer += fixedDeltaTime;
+                if (m_TransitionTimer >= m_TransitionDuration)
+                {
+                    // Finish fade in
+                    m_TransitionTimer = m_TransitionDuration;
+                    m_TransitionState = TransitionState::None;
+                    m_PendingScreen.reset();
+                }
+                else
+                {
+                    // Continue fading in
+                    float alpha = 1.0f - (m_TransitionTimer / m_TransitionDuration);
+                    m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, alpha});
+                }
+                break;
+        }
+    }
+
+    // Update fade overlay (for transitions)
+    if (m_FadeOverlay)
+    {
+        // Fade overlay is updated implicitly through the transition logic above
+    }
+
+    // Update HUDs or other UI elements that need per-frame updates
+    // (This would typically be handled by individual screens or systems)
+}
+
+void Engine::Render()
+{
+    if (m_State != EngineState::Running)
+        return;
+
+    // Clear the screen
+    Renderer::SetClearColor({0.1f, 0.1f, 0.1f, 1.0f}); // Dark gray background
+    Renderer::BeginFrame();
+
+    // Render ECS systems (sprites, etc.)
+    if (m_pSystemManager)
+    {
+        m_pSystemManager->render();
+    }
+
+    // Render current screen
+    if (m_CurrentScreen)
+    {
+        m_CurrentScreen->Render();
+    }
+
+    // Render UI (including fade overlay)
+    if (m_UIManager)
+    {
+        m_UIManager->render();
+    }
+
+    // Present the frame
+    Renderer::EndFrame();
 }
 
 void Engine::Shutdown()
 {
-    if (m_State == EngineState::Shutdown ||
-        m_State == EngineState::Uninitialized)
-    {
+    if (m_State == EngineState::Shutdown)
         return;
-    }
 
-    // If we are still running, stop the loop.
+    Logger::Info("Engine: Shutting down");
+
+    // Stop the engine if it's running
     if (m_State == EngineState::Running)
-        Stop();
-
-    // Shutdown the game.
-    if (m_Game)
     {
-        m_Game->Shutdown();
-        m_Game.reset();
+        Stop();
     }
 
-    // Disconnect the network manager.
-    m_NetworkManager.disconnect();
+    // Clean up current screen
+    if (m_CurrentScreen)
+    {
+        m_CurrentScreen->OnExit();
+        m_CurrentScreen.reset();
+    }
 
-    // Unregister ECS managers from service locator
-    ServiceLocator::Remove<StrixVerse::ECS::EntityManager>();
-    ServiceLocator::Remove<StrixVerse::ECS::ComponentManager>();
-    ServiceLocator::Remove<StrixVerse::ECS::SystemManager>();
+    // Clean up pending screen
+    m_PendingScreen.reset();
 
-    // Shutdown ECS (in reverse order of initialization).
+    // Clean up UI manager (this will destroy UI elements and their textures)
+    m_UIManager.reset();
+
+    // Clean up ECS managers
     m_pSystemManager.reset();
     m_pComponentManager.reset();
     m_pEntityManager.reset();
 
-    // Unregister and destroy the asset manager.
-    if (m_AssetManager)
-    {
-        ServiceLocator::Remove<AssetManager>();
-        m_AssetManager.reset();
-    }
+    // Clean up asset manager (this will destroy textures, shaders, etc.)
+    m_AssetManager.reset();
 
-    // Clear the window pointer (the Window object owns the SDL window and context).
-    m_Window = nullptr;
+    // Clean up services (AuthService, WorldManager) - note: these are unique_ptrs
+    m_WorldManager.reset();
+    m_AuthService.reset();
+
+    // Shutdown renderer (this will destroy the OpenGL context)
+    Renderer::Shutdown();
+
+    // Shutdown timer
+    // Timer::Shutdown(); // Timer doesn't have a shutdown method
 
     m_State = EngineState::Shutdown;
-
-    Logger::Info("Engine shutdown.");
+    Logger::Info("Engine: Shutdown complete");
 }
 
 void Engine::Stop()
 {
-    if (m_State == EngineState::Running)
-        m_State = EngineState::Stopped;
+    if (m_State != EngineState::Running)
+        return;
+
+    Logger::Info("Engine: Stopping");
+    m_State = EngineState::Stopped;
 }
 
 Engine::EngineState Engine::GetState() const
@@ -203,65 +478,4 @@ Engine::EngineState Engine::GetState() const
 bool Engine::IsRunning() const
 {
     return m_State == EngineState::Running;
-}
-
-void Engine::ProcessEvents()
-{
-    if (!m_Window)
-        return;
-
-    SDL_Event event;
-
-    while (SDL_PollEvent(&event))
-    {
-        if (event.type == SDL_EVENT_QUIT)
-        {
-            Stop();
-        }
-        else if (event.type == SDL_EVENT_WINDOW_RESIZED)
-        {
-            // Update the viewport to match the new window size.
-            int width = 0, height = 0;
-            SDL_GetWindowSize(m_Window->GetSDLWindow(), &width, &height);
-            glViewport(0, 0, width, height);
-        }
-    }
-}
-
-void Engine::Update()
-{
-    if (!m_Game)
-        return;
-
-    // Fixed timestep update (physics, netcode).
-    while (Timer::ConsumeFixedStep())
-    {
-        m_Game->FixedUpdate(Timer::GetFixedTimestep());
-        m_NetworkManager.update(Timer::GetFixedTimestep());
-    }
-
-    // Variable-rate gameplay logic.
-    m_Game->Update(Timer::GetDeltaTime());
-
-    // Update ECS systems.
-    // Note: The order of updates is important. We'll update systems in the order they were added.
-    // We'll update all systems with the variable time step (dt). Some systems might want to use fixed timestep.
-    // For simplicity, we'll pass the variable dt to all systems. Systems that need fixed timestep can use a fixed dt from Timer.
-    float dt = Timer::GetDeltaTime();
-    m_pSystemManager->update(dt);
-}
-
-void Engine::Render()
-{
-    if (!m_Window)
-        return;
-
-    // Clear the screen and begin the frame.
-    Renderer::BeginFrame();
-
-    // Render ECS systems (which will draw sprites, etc.)
-    m_pSystemManager->render();
-
-    // Present the frame.
-    m_Window->EndFrame();
 }

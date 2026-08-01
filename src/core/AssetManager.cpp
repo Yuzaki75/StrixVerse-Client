@@ -144,6 +144,19 @@ std::shared_ptr<Texture> AssetManager::GetTexture(const std::string& filePath) c
     return nullptr;
 }
 
+Texture* AssetManager::GetTextureByRendererID(unsigned int rendererID) const
+{
+    std::lock_guard<std::mutex> lock(m_Mutex);
+    for (const auto& pair : m_Textures)
+    {
+        if (pair.second.texture && pair.second.texture->GetRendererID() == rendererID)
+        {
+            return pair.second.texture.get();
+        }
+    }
+    return nullptr;
+}
+
 std::shared_ptr<Shader> AssetManager::GetShader(const std::string& vertexPath,
                                                 const std::string& fragmentPath,
                                                 const std::string& geometryPath) const
@@ -189,7 +202,7 @@ size_t AssetManager::UnloadUnused()
         // Remove textures that are no longer shared outside.
         for (auto it = m_Textures.begin(); it != m_Textures.end();)
         {
-            if (it->second.texture.unique())
+            if (it->second.texture.use_count() == 1)
             {
                 it = m_Textures.erase(it);
                 ++count;
@@ -202,7 +215,7 @@ size_t AssetManager::UnloadUnused()
         // Remove shaders that are no longer shared outside.
         for (auto it = m_Shaders.begin(); it != m_Shaders.end();)
         {
-            if (it->second.shader.unique())
+            if (it->second.shader.use_count() == 1)
             {
                 it = m_Shaders.erase(it);
                 ++count;

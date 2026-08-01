@@ -24,6 +24,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DB617BB6-9358-3204-A14B-D86A676747F0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
+    <MultiProcessorCompilation>false</MultiProcessorCompilation>
     <VcpkgEnabled>false</VcpkgEnabled>
     <WindowsTargetPlatformVersion>10.0.28000.0</WindowsTargetPlatformVersion>
     <Platform>x64</Platform>
@@ -60,13 +61,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Projects\StrixVerse\Client\build\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Projects\StrixVerse\Client\bin\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">StrixVerseClient.dir\Debug\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">StrixVerseClient</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Projects\StrixVerse\Client\build\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Projects\StrixVerse\Client\bin\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">StrixVerseClient.dir\Release\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">StrixVerseClient</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
@@ -88,7 +89,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\..\..\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include"</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /FS</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <BufferSecurityCheck></BufferSecurityCheck>
@@ -109,12 +110,12 @@
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;STRIX_GIT_COMMIT="e5bb772";CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;STRIX_GIT_COMMIT="01938f7";CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;STRIX_GIT_COMMIT=\"e5bb772\";CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;STRIX_GIT_COMMIT=\"01938f7\";CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\..\..\vcpkg\installed\x64-windows\include;C:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -128,7 +129,7 @@
     <PostBuildEvent>
       <Message>	</Message>
       <Command>setlocal
-C:\vcpkg\vcpkg.exe z-applocal --target-binary=C:/Projects/StrixVerse/Client/build/StrixVerseClient.exe --installed-bin-dir=C:/vcpkg/installed/x64-windows/debug/bin
+C:\vcpkg\vcpkg.exe z-applocal --target-binary=C:/Projects/StrixVerse/Client/bin/Debug/StrixVerseClient.exe --installed-bin-dir=C:/vcpkg/installed/x64-windows/debug/bin
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -137,6 +138,12 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd
 setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin/Debug
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin/Release
+if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/build/assets
 if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/build/configs
@@ -155,7 +162,7 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>C:\vcpkg\installed\x64-windows\debug\lib\SDL3.lib;C:\vcpkg\installed\x64-windows\debug\lib\glm.lib;C:\vcpkg\installed\x64-windows\debug\lib\glad.lib;C:\vcpkg\installed\x64-windows\debug\lib\freetyped.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\vcpkg\installed\x64-windows\debug\lib\SDL3.lib;C:\vcpkg\installed\x64-windows\debug\lib\glm.lib;C:\vcpkg\installed\x64-windows\debug\lib\glad.lib;Ws2_32.lib;C:\vcpkg\installed\x64-windows\debug\lib\freetyped.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
@@ -164,7 +171,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
       <ImportLibrary>C:/Projects/StrixVerse/Client/build/debug/Debug/StrixVerseClient.lib</ImportLibrary>
       <LinkErrorReporting></LinkErrorReporting>
-      <ProgramDataBaseFile>C:/Projects/StrixVerse/Client/build/StrixVerseClient.pdb</ProgramDataBaseFile>
+      <ProgramDataBaseFile>C:/Projects/StrixVerse/Client/bin/Debug/StrixVerseClient.pdb</ProgramDataBaseFile>
       <RandomizedBaseAddress></RandomizedBaseAddress>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -175,7 +182,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\..\..\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include"</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /FS</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck></BufferSecurityCheck>
@@ -195,14 +202,14 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="e5bb772";CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="01938f7";CMAKE_INTDIR="Release"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"e5bb772\";CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"01938f7\";CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\..\..\vcpkg\installed\x64-windows\include;C:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -216,7 +223,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <PostBuildEvent>
       <Message>	</Message>
       <Command>setlocal
-C:\vcpkg\vcpkg.exe z-applocal --target-binary=C:/Projects/StrixVerse/Client/build/StrixVerseClient.exe --installed-bin-dir=C:/vcpkg/installed/x64-windows/bin
+C:\vcpkg\vcpkg.exe z-applocal --target-binary=C:/Projects/StrixVerse/Client/bin/Release/StrixVerseClient.exe --installed-bin-dir=C:/vcpkg/installed/x64-windows/bin
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -225,6 +232,12 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd
 setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin/Debug
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin/Release
+if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/build/assets
 if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/build/configs
@@ -243,7 +256,7 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>C:\vcpkg\installed\x64-windows\lib\SDL3.lib;C:\vcpkg\installed\x64-windows\lib\glm.lib;C:\vcpkg\installed\x64-windows\lib\glad.lib;C:\vcpkg\installed\x64-windows\lib\freetype.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\vcpkg\installed\x64-windows\lib\SDL3.lib;C:\vcpkg\installed\x64-windows\lib\glm.lib;C:\vcpkg\installed\x64-windows\lib\glad.lib;Ws2_32.lib;C:\vcpkg\installed\x64-windows\lib\freetype.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
@@ -252,7 +265,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
       <ImportLibrary>C:/Projects/StrixVerse/Client/build/debug/Release/StrixVerseClient.lib</ImportLibrary>
       <LinkErrorReporting></LinkErrorReporting>
-      <ProgramDataBaseFile>C:/Projects/StrixVerse/Client/build/StrixVerseClient.pdb</ProgramDataBaseFile>
+      <ProgramDataBaseFile>C:/Projects/StrixVerse/Client/bin/Release/StrixVerseClient.pdb</ProgramDataBaseFile>
       <RandomizedBaseAddress></RandomizedBaseAddress>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -263,7 +276,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\..\..\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include"</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /FS</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck></BufferSecurityCheck>
@@ -283,14 +296,14 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="e5bb772";CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="01938f7";CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"e5bb772\";CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"01938f7\";CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\..\..\vcpkg\installed\x64-windows\include;C:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -313,6 +326,12 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd
 setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin/Debug
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin/Release
+if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/build/assets
 if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/build/configs
@@ -331,7 +350,7 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>C:\vcpkg\installed\x64-windows\lib\SDL3.lib;C:\vcpkg\installed\x64-windows\lib\glm.lib;C:\vcpkg\installed\x64-windows\lib\glad.lib;C:\vcpkg\installed\x64-windows\lib\freetype.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\vcpkg\installed\x64-windows\lib\SDL3.lib;C:\vcpkg\installed\x64-windows\lib\glm.lib;C:\vcpkg\installed\x64-windows\lib\glad.lib;Ws2_32.lib;C:\vcpkg\installed\x64-windows\lib\freetype.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
@@ -351,7 +370,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\..\..\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include"</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /FS</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck></BufferSecurityCheck>
@@ -372,12 +391,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="e5bb772";CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="01938f7";CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"e5bb772\";CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"01938f7\";CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\..\..\vcpkg\installed\x64-windows\include;C:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -400,6 +419,12 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd
 setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin/Debug
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/bin/Release
+if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/build/assets
 if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory C:/Projects/StrixVerse/Client/build/configs
@@ -418,7 +443,7 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>C:\vcpkg\installed\x64-windows\lib\SDL3.lib;C:\vcpkg\installed\x64-windows\lib\glm.lib;C:\vcpkg\installed\x64-windows\lib\glad.lib;C:\vcpkg\installed\x64-windows\lib\freetype.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\vcpkg\installed\x64-windows\lib\SDL3.lib;C:\vcpkg\installed\x64-windows\lib\glm.lib;C:\vcpkg\installed\x64-windows\lib\glad.lib;Ws2_32.lib;C:\vcpkg\installed\x64-windows\lib\freetype.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
@@ -503,11 +528,85 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\Timer.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\Version.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\Window.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\Scheduler.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\AuthService.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\WorldManager.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\AssetManager.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\world\Tile.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\world\Chunk.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\world\World.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Animation.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Camera2D.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Camera.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Color.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Font.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\FrameBuffer.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Mesh.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Renderer.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\RenderTarget.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Shader.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\SpriteBatch.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Texture.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Vertex.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\OpenGL\GLContext.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\Connection.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\NetworkManager.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\Packet.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketBuffer.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketFactory.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketDispatcher.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketRegistry.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketReader.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketSerializer.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketSender.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketHandler.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketWriter.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\CharacterPacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\HandshakePacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\KeepAlive.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\KeepAlivePacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\LoginPacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\LoginResultPacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\NetworkStatistics.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PingManager.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PingPacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PongPacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PlayerMovePacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PlayerRemovePacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PlayerSpawnPacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PlayerStatePacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\RegisterPacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\SessionPacket.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\Entity.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\EntityManager.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\ComponentManager.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\SystemManager.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\MovementSystem.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\InputSystem.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\NetworkSyncSystem.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\PlayerSystem.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\RenderSystem.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\TileRendererSystem.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\Camera2DSystem.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIElement.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIManager.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIPanel.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIButton.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UITextBox.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIImage.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UILabel.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\Screen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\ScreenFactory.cpp" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\ScreenIDs.h" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\SplashScreen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\LoadingScreen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\LoginScreen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\RegisterScreen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\ContinueScreen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\WorldBrowserScreen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\SettingsScreen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\GameScreen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\hud\HUD.cpp" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\Application.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\Config.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\Engine.h" />
@@ -518,14 +617,97 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\Timer.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\Version.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\Window.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\Scheduler.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\AuthService.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\WorldManager.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\AssetManager.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\world\Tile.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\world\Chunk.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\world\World.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Animation.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Camera2D.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Camera.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Color.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Font.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\FrameBuffer.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Mesh.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Renderer.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\RenderTarget.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Shader.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\SpriteBatch.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Texture.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Vertex.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\OpenGL\GLContext.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\OpenGL\GLBuffer.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\Connection.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\NetworkManager.h" />
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Texture.cpp" />
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\OpenGL\GLContext.cpp" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\Packet.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketBuffer.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketFactory.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketHandler.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketDispatcher.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketRegistry.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketReader.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketSerializer.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketSender.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketWriter.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\CharacterPacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\HandshakePacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\KeepAlive.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\KeepAlivePacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\LoginPacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\LoginResultPacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\NetworkStatistics.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PingManager.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PingPacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PongPacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerMovePacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerRemovePacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerSpawnPacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerStatePacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\RegisterPacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\SessionPacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\Component.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\Entity.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\EntityManager.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\ComponentManager.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\SystemManager.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\System.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\AnimationComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\Camera2DComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\ColliderComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\HealthComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\InputComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\InputSystem.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\MovementSystem.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\NetworkComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\NetworkSyncSystem.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\PlayerComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\PlayerSystem.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\RenderSystem.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\SpriteComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\TransformComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\VelocityComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\Camera2DSystem.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\TileRendererSystem.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIElement.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIManager.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIPanel.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIButton.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UITextBox.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIImage.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UILabel.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\Screen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\ScreenFactory.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\SplashScreen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\LoadingScreen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\LoginScreen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\RegisterScreen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\ContinueScreen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\WorldBrowserScreen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\SettingsScreen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\GameScreen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\hud\HUD.h" />
     <ResourceCompile Include="C:\Projects\StrixVerse\Client\resources\client.rc" />
   </ItemGroup>
   <ItemGroup />

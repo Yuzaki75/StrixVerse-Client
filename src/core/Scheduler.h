@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <queue>
 #include <string>
 #include <thread>
@@ -33,6 +34,7 @@ public:
     using Duration = Clock::duration;
     using Milliseconds = std::chrono::milliseconds;
     using Seconds = std::chrono::duration<float>;
+    using Delay = std::chrono::duration<float, std::ratio<1>>; // seconds as float
 
     struct Task
     {
@@ -77,7 +79,6 @@ public:
 
 private:
     using TaskPtr = std::shared_ptr<Task>;
-    using Delay = std::chrono::duration<float, std::ratio<1>>; // seconds as float
 
     void WorkerLoop();
 
@@ -85,7 +86,7 @@ private:
     uint64_t GenerateId();
 
     std::thread m_Thread;
-    std::mutex m_Mutex;
+    mutable std::mutex m_Mutex;
     std::condition_variable m_Cv;
     bool m_Running = false;
     bool m_StopRequested = false;

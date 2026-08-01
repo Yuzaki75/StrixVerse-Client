@@ -13,6 +13,9 @@ public:
         m_buffer.reserve(reserveSize);
     }
 
+    // Maximum string length allowed in packets (to prevent buffer overflow attacks)
+    static const uint32_t MAX_STRING_LENGTH = 4096;
+
     // Clear the buffer and reset read position
     void clear() {
         m_buffer.clear();
@@ -78,6 +81,9 @@ public:
     // Write a string with length prefix (uint32_t)
     void writeString(const std::string& str) {
         uint32_t length = static_cast<uint32_t>(str.size());
+        if (length > MAX_STRING_LENGTH) {
+            throw std::length_error("String too long for packet (max " + std::to_string(MAX_STRING_LENGTH) + " bytes)");
+        }
         write(length);
         if (length > 0) {
             write(str.data(), length);
@@ -87,8 +93,8 @@ public:
     // Read a string with length prefix (uint32_t)
     std::string readString() {
         uint32_t length = read<uint32_t>();
-        if (length == 0) {
-            return "";
+        if (length > MAX_STRING_LENGTH) {
+            throw std::runtime_error("String length too long (max " + std::to_string(MAX_STRING_LENGTH) + " bytes)");
         }
         if (m_readPos + length > m_buffer.size()) {
             throw std::out_of_range("Not enough bytes in buffer to read string");

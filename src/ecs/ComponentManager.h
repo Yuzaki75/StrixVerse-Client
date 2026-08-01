@@ -1,215 +1,288 @@
 #pragma once
 
 #include <vector>
-#include <memory>
-#include <cstdint>
-#include <stdexcept>
+#include <array>
 #include <bitset>
+#include <cassert>
+#include <cstdint>
+#include <memory>
 #include "Entity.h"
 #include "Component.h"
-#include "System.h" // For MAX_COMPONENTS
+#include "SystemManager.h"
 
 namespace StrixVerse
 {
     namespace ECS
     {
-        // Forward declaration.
+        struct ComponentTypeInfo
+        {
+            std::size_t size = 0;
+            std::size_t alignment = 0;
+            std::uint32_t id = 0; // Will be set to ComponentType::template Get<T>()
+        };
+
         class EntityManager;
-
-        // Interface for a component array.
-        class IComponentArray
-        {
-        public:
-            virtual ~IComponentArray() = default;
-            virtual void entityDestroyed(Entity entity) = 0;
-            // We'll add methods to get the component and check if an entity has it.
-            // These will be implemented in the derived template class.
-        };
-
-        template<typename T>
-        class ComponentArray : public IComponentArray
-        {
-        public:
-            explicit ComponentArray(uint32_t maxEntities)
-                : m_ComponentArray(maxEntities), m_EntityMask(maxEntities, false)
-            {
-                // We assume T is default constructible for the sake of simplicity.
-                // If not, we would need to use a different approach (like optional or pointer).
-                // For now, we'll proceed with this assumption.
-            }
-
-            void insertEntity(Entity entity, T component)
-            {
-                uint32_t idx = entity.getID().index;
-                if (idx >= m_ComponentArray.size())
-                {
-                    throw std::out_of_range("Entity index out of range.");
-                }
-                m_ComponentArray[idx] = component;
-                m_EntityMask[idx] = true;
-            }
-
-            void removeEntity(Entity entity)
-            {
-                uint32_t idx = entity.getID().index;
-                if (idx >= m_EntityMask.size())
-                {
-                    return;
-                }
-                m_EntityMask[idx] = false;
-            }
-
-            T& getComponent(Entity entity)
-            {
-                uint32_t idx = entity.getID().index;
-                if (idx >= m_ComponentArray.size() || !m_EntityMask[idx])
-                {
-                    throw std::runtime_error("Component not found for entity.");
-                }
-                return m_ComponentArray[idx];
-            }
-
-            bool hasComponent(Entity entity) const
-            {
-                uint32_t idx = entity.getID().index;
-                if (idx >= m_EntityMask.size())
-                {
-                    return false;
-                }
-                return m_EntityMask[idx];
-            }
-
-            void entityDestroyed(Entity entity) override
-            {
-                removeEntity(entity);
-            }
-
-        private:
-            std::vector<T> m_ComponentArray;
-            std::vector<bool> m_EntityMask;
-        };
 
         class ComponentManager
         {
         public:
-            explicit ComponentManager(uint32_t maxEntities)
-                : m_MaxEntities(maxEntities)
-            {
-                // Initialize the component signature for each entity.
-                m_EntityComponentSignature.resize(maxEntities);
-                // Reserve space for component types (we don't know how many, but we can reserve a reasonable amount).
-                m_ComponentArrays.reserve(128);
-            }
-
+            ComponentManager();
+            explicit ComponentManager(size_t maxEntities);
             ~ComponentManager() = default;
-            ComponentManager(const ComponentManager&) = delete;
-            ComponentManager& operator=(const ComponentManager&) = delete;
-            ComponentManager(ComponentManager&&) = delete;
-            ComponentManager& operator=(ComponentManager&&) = delete;
 
-            // Register a component type. Must be called before using the component type.
-            template<typename T>
+            // Initialize the component manager with the maximum number of entities.
+            void Initialize(size_t maxEntities);
+
+            // Set the system manager for notification chain.
+            void SetSystemManager(SystemManager *sm) { m_pSystemManager = sm; }
+
+            // Register a component type (called automatically when first used).
+            template <typename T>
             void registerComponent()
             {
-                const uint32_t componentID = ComponentType::Get<T>();
-                if (componentID >= MAX_COMPONENTS)
+                const size_t compID = ComponentType::template Get<T>();
+                assert(compID < MAX_COMPONENTS && "Component type ID out of range.");
+
+                // Store type info
+                m_ComponentTypes[compID] = {sizeof(T), alignof(T), static_cast<std::uint32_t>(compID)};
+
+                // Ensure storage exists for this component type
+                if (!m_ComponentStorage[compID])
                 {
-                    throw std::runtime_error("Exceeded maximum number of component types.");
+                    m_ComponentStorage[compID] = std::make_unique<std::vector<std::byte>>();
+                    // Reserve space for all entities
+                    m_ComponentStorage[compID]->resize(m_MaxEntities * sizeof(T));
                 }
-                // Ensure our vector is big enough.
-                if (componentID >= m_ComponentArrays.size())
+
+                // Ensure entity tracking exists
+                if (m_ComponentEntities.size() <= compID)
                 {
-                    m_ComponentArrays.resize(componentID + 1, nullptr);
+                    m_ComponentEntities.resize(MAX_COMPONENTS);
+                    m_ComponentCounts.resize(MAX_COMPONENTS, 0);
                 }
-                m_ComponentArrays[componentID] = std::make_unique<ComponentArray<T>>(m_MaxEntities);
+                if (m_ComponentEntities[compID].empty())
+                {
+                    // One bit per entity, rounded up to 64-bit words
+                    size_t numWords = (m_MaxEntities + 63) / 64;
+                    m_ComponentEntities[compID].assign(numWords, 0);
+                }
             }
 
-            // Add a component to an entity.
-            template<typename T>
-            void addComponent(Entity entity, T component)
+            // Add a component of type T to the given entity.
+            // Returns a reference to the added component.
+            template <typename T>
+            T &addComponent(Entity entity, T component)
             {
-                getComponentArray<T>()->insertEntity(entity, component);
-                // Update the entity's component signature.
-                uint32_t componentID = ComponentType::Get<T>();
-                if (entity.getID().index < m_EntityComponentSignature.size())
+                const size_t compID = ComponentType::template Get<T>();
+                assert(compID < MAX_COMPONENTS && "Component type ID out of range.");
+                assert(m_ComponentTypes[compID].size == sizeof(T) && "Component type mismatch.");
+
+                // Ensure storage exists
+                if (!m_ComponentStorage[compID])
                 {
-                    m_EntityComponentSignature[entity.getID().index].set(componentID);
+                    m_ComponentStorage[compID] = std::make_unique<std::vector<std::byte>>();
+                    m_ComponentStorage[compID]->resize(m_MaxEntities * sizeof(T));
                 }
+
+                // Ensure entity tracking exists
+                if (m_ComponentEntities.size() <= compID)
+                {
+                    m_ComponentEntities.resize(MAX_COMPONENTS);
+                    m_ComponentCounts.resize(MAX_COMPONENTS, 0);
+                }
+                if (m_ComponentEntities[compID].empty())
+                {
+                    size_t numWords = (m_MaxEntities + 63) / 64;
+                    m_ComponentEntities[compID].assign(numWords, 0);
+                }
+
+                // Placement new to construct the object
+                std::size_t offset = entity.id * sizeof(T);
+                void *ptr = &(*m_ComponentStorage[compID])[offset];
+                T *constructed = new (ptr) T(std::move(component));
+
+                // Mark that this entity has this component
+                size_t wordIndex = entity.id / 64;
+                if (wordIndex < m_ComponentEntities[compID].size())
+                {
+                    m_ComponentEntities[compID][wordIndex] |= (1ULL << (entity.id % 64));
+                }
+
+                // Update count (approximate - we're not tracking removals perfectly here)
+                if (m_ComponentCounts[compID] <= entity.id)
+                {
+                    m_ComponentCounts[compID] = entity.id + 1;
+                }
+
+                // Notify system manager about signature change
+                if (m_pSystemManager)
+                {
+                    m_pSystemManager->onEntitySignatureChanged(entity);
+                }
+
+                return *constructed;
             }
 
-            // Remove a component from an entity.
-            template<typename T>
+            // Remove a component of type T from the given entity.
+            template <typename T>
             void removeComponent(Entity entity)
             {
-                getComponentArray<T>()->removeEntity(entity);
-                // Update the entity's component signature.
-                uint32_t componentID = ComponentType::Get<T>();
-                if (entity.getID().index < m_EntityComponentSignature.size())
+                const size_t compID = ComponentType::template Get<T>();
+                assert(compID < MAX_COMPONENTS && "Component type ID out of range.");
+
+                if (m_ComponentTypes[compID].size > 0 &&
+                    m_ComponentStorage[compID] &&
+                    entity.id < m_MaxEntities)
                 {
-                    m_EntityComponentSignature[entity.getID().index].reset(componentID);
-                }
-            }
-
-            // Get a component from an entity.
-            template<typename T>
-            T& getComponent(Entity entity)
-            {
-                return getComponentArray<T>()->getComponent(entity);
-            }
-
-            // Check if an entity has a component.
-            template<typename T>
-            bool hasComponent(Entity entity) const
-            {
-                return getComponentArray<T>()->hasComponent(entity);
-            }
-
-            // Notify that an entity has been destroyed (to clean up its components).
-            void entityDestroyed(Entity entity)
-            {
-                // Notify each component array that the entity was destroyed.
-                for (auto& componentArray : m_ComponentArrays)
-                {
-                    if (componentArray)
+                    // Call destructor
+                    std::size_t offset = entity.id * sizeof(T);
+                    if (offset + sizeof(T) <= m_ComponentStorage[compID]->size())
                     {
-                        componentArray->entityDestroyed(entity);
+                        void *ptr = &(*m_ComponentStorage[compID])[offset];
+                        std::destroy_at(static_cast<T *>(ptr));
+                    }
+
+                    // Mark that this entity no longer has this component
+                    if (m_ComponentEntities.size() > compID && !m_ComponentEntities[compID].empty())
+                    {
+                        size_t wordIndex = entity.id / 64;
+                        if (wordIndex < m_ComponentEntities[compID].size())
+                        {
+                            m_ComponentEntities[compID][wordIndex] &= ~(1ULL << (entity.id % 64));
+                        }
+                    }
+
+                    // Notify system manager about signature change
+                    if (m_pSystemManager)
+                    {
+                        m_pSystemManager->onEntitySignatureChanged(entity);
                     }
                 }
-                // Clear the entity's component signature.
-                if (entity.getID().index < m_EntityComponentSignature.size())
-                {
-                    m_EntityComponentSignature[entity.getID().index].reset();
-                }
             }
 
-            // Get the component signature for an entity (which components it has).
-            const std::bitset<MAX_COMPONENTS>& getEntitySignature(Entity entity) const
+            // Get a reference to the component of type T for the given entity.
+            // Returns nullptr if the entity does not have the component.
+            template <typename T>
+            T *getComponent(Entity entity)
             {
-                if (entity.getID().index >= m_EntityComponentSignature.size())
+                const size_t compID = ComponentType::template Get<T>();
+                assert(compID < MAX_COMPONENTS && "Component type ID out of range.");
+
+                if (m_ComponentTypes[compID].size == 0 ||
+                    !m_ComponentStorage[compID] ||
+                    entity.id >= m_MaxEntities)
                 {
-                    static std::bitset<MAX_COMPONENTS> empty;
-                    return empty;
+                    return nullptr;
                 }
-                return m_EntityComponentSignature[entity.getID().index];
+
+                // Check if entity has this component
+                if (m_ComponentEntities.size() > compID && !m_ComponentEntities[compID].empty())
+                {
+                    size_t wordIndex = entity.id / 64;
+                    if (wordIndex < m_ComponentEntities[compID].size() &&
+                        (m_ComponentEntities[compID][wordIndex] & (1ULL << (entity.id % 64))))
+                    {
+                        // Return pointer to the constructed object
+                        std::size_t offset = entity.id * sizeof(T);
+                        if (offset + sizeof(T) <= m_ComponentStorage[compID]->size())
+                        {
+                            return reinterpret_cast<T *>(&(*m_ComponentStorage[compID])[offset]);
+                        }
+                    }
+                }
+
+                return nullptr;
             }
+
+            // Get a const reference to the component of type T for the given entity.
+            // Returns nullptr if the entity does not have the component.
+            template <typename T>
+            const T *getComponent(Entity entity) const
+            {
+                const size_t compID = ComponentType::template Get<T>();
+                assert(compID < MAX_COMPONENTS && "Component type ID out of range.");
+
+                if (m_ComponentTypes[compID].size == 0 ||
+                    !m_ComponentStorage[compID] ||
+                    entity.id >= m_MaxEntities)
+                {
+                    return nullptr;
+                }
+
+                // Check if entity has this component
+                if (m_ComponentEntities.size() > compID && !m_ComponentEntities[compID].empty())
+                {
+                    size_t wordIndex = entity.id / 64;
+                    if (wordIndex < m_ComponentEntities[compID].size() &&
+                        (m_ComponentEntities[compID][wordIndex] & (1ULL << (entity.id % 64))))
+                    {
+                        // Return pointer to the constructed object
+                        std::size_t offset = entity.id * sizeof(T);
+                        if (offset + sizeof(T) <= m_ComponentStorage[compID]->size())
+                        {
+                            return reinterpret_cast<const T *>(&(*m_ComponentStorage[compID])[offset]);
+                        }
+                    }
+                }
+
+                return nullptr;
+            }
+
+            // Check if the entity has a component of type T.
+            template <typename T>
+            bool hasComponent(Entity entity) const
+            {
+                const size_t compID = ComponentType::template Get<T>();
+                assert(compID < MAX_COMPONENTS && "Component type ID out of range.");
+
+                if (!m_ComponentTypes[compID].size ||
+                    !m_ComponentStorage[compID] ||
+                    entity.id >= m_MaxEntities ||
+                    m_ComponentEntities.size() <= compID ||
+                    m_ComponentEntities[compID].empty())
+                {
+                    return false;
+                }
+
+                // Check if this specific entity has this component
+                if (entity.id < m_ComponentEntities[compID].size() * 64)
+                {
+                    size_t wordIndex = entity.id / 64;
+                    if (wordIndex < m_ComponentEntities[compID].size())
+                    {
+                        return (m_ComponentEntities[compID][wordIndex] & (1ULL << (entity.id % 64))) != 0;
+                    }
+                }
+
+                return false;
+            }
+
+            // Get the signature (bitset) of the entity, indicating which components it has.
+            std::bitset<MAX_COMPONENTS> getEntitySignature(Entity entity) const;
+
+            // Remove all components from the given entity (called when entity is destroyed).
+            void entityDestroyed(Entity entity);
 
         private:
-            // Helper to get the component array for a given type.
-            template<typename T>
-            ComponentArray<T>* getComponentArray()
-            {
-                uint32_t componentID = ComponentType::Get<T>();
-                if (componentID >= m_ComponentArrays.size() || !m_ComponentArrays[componentID])
-                {
-                    throw std::runtime_error("Component not registered.");
-                }
-                return static_cast<ComponentArray<T>*>(m_ComponentArrays[componentID].get());
-            }
+            // For each component type, we store the type information
+            std::vector<ComponentTypeInfo> m_ComponentTypes;
 
-            uint32_t m_MaxEntities;
-            std::vector<std::unique_ptr<IComponentArray>> m_ComponentArrays;
-            // For each entity, store a bitset of which components it has.
-            std::vector<std::bitset<MAX_COMPONENTS>> m_EntityComponentSignature;
+            // Storage for component data: one vector per component type
+            // Each vector holds raw bytes for all entities (indexed by entity ID)
+            std::vector<std::unique_ptr<std::vector<std::byte>>> m_ComponentStorage;
+
+            // For each component type, we store a bit array indicating which entities have that component
+            // Each inner vector contains 64-bit words, where each bit represents an entity
+            std::vector<std::vector<uint64_t>> m_ComponentEntities;
+
+            // Track the number of components of each type (approximate)
+            std::vector<size_t> m_ComponentCounts;
+
+            // Track the maximum number of entities we can handle
+            size_t m_MaxEntities = 0;
+
+            // Non-owning pointer to the system manager for notification chain
+            SystemManager *m_pSystemManager = nullptr;
         };
     }
 }

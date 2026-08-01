@@ -68,6 +68,15 @@ bool Shader::Load(const std::string& vertexFile, const std::string& fragmentFile
 
     // Link program
     m_Program = glCreateProgram();
+    if (m_Program == 0)
+    {
+        Logger::Error("Failed to create GL program object.");
+        // Cleanup shaders
+        glDeleteShader(vertex);
+        glDeleteShader(fragment);
+        if (hasGeometry) glDeleteShader(geometry);
+        return false;
+    }
     glAttachShader(m_Program, vertex);
     glAttachShader(m_Program, fragment);
     if (hasGeometry)

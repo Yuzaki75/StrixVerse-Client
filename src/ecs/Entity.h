@@ -45,6 +45,8 @@ namespace StrixVerse
             bool operator==(const Entity& other) const;
             bool operator!=(const Entity& other) const;
 
+            uint32_t id = 0;  // Convenience alias for m_ID.index
+
         private:
             EntityID m_ID{};
         };

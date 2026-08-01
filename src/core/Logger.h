@@ -13,6 +13,12 @@ enum class LogLevel
     Error
 };
 
+// Convenience macros for formatted logging
+#define LOG_DEBUG(msg)   Logger::Debug(msg)
+#define LOG_INFO(msg)    Logger::Info(msg)
+#define LOG_WARN(msg)    Logger::Warning(msg)
+#define LOG_ERROR(msg)   Logger::Error(msg)
+
 // -----------------------------------------------------------------------------
 // Logger
 //

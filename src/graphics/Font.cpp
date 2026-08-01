@@ -8,6 +8,7 @@
 #include FT_FREETYPE_H
 
 #include <iostream>
+#include <vector>
 
 Font::Font()
 {
@@ -130,13 +131,30 @@ bool Font::Load(
 
     FT_Done_FreeType(library);
 
+    // Configure VAO/VBO for texture quads
     glGenVertexArrays(
         1,
         &m_VAO);
-
     glGenBuffers(
         1,
         &m_VBO);
+
+    glBindVertexArray(m_VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+
+    // We'll allocate enough space for 6 vertices (2 triangles) per character, but we'll update per character
+    // We allocate a buffer that can hold 6 vertices * 4 floats (x, y, u, v) per vertex
+    glBufferData(GL_ARRAY_BUFFER, 6 * 4 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+
+    // Position attribute
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // TexCoord attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 
     m_Size = size;
 
@@ -190,36 +208,57 @@ void Font::DrawText(
     shader.Bind();
 
     glBindVertexArray(m_VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+
+    // We'll iterate over each character and draw a quad for it
+    float cursorX = x;
+    float cursorY = y;
 
     for (char c : text)
     {
         auto it = m_Characters.find(c);
-
         if (it == m_Characters.end())
+        {
+            // Move cursor forward by the advance of a space? Or just skip?
+            // We'll skip and not advance the cursor.
             continue;
+        }
 
         Character& ch = it->second;
 
-        float xpos =
-            x + ch.Bearing.x * scale;
+        // Calculate the vertex positions and texture coordinates for the glyph's quad
+        float xpos = cursorX + ch.Bearing.x * scale;
+        float ypos = cursorY - (ch.Size.y - ch.Bearing.y) * scale;
 
-        float ypos =
-            y - (ch.Size.y - ch.Bearing.y) * scale;
+        float w = ch.Size.x * scale;
+        float h = ch.Size.y * scale;
 
-        float width =
-            ch.Size.x * scale;
+        // Vertices for two triangles (6 vertices) in the order:
+        // bottom-left, top-left, top-right, bottom-left, top-right, bottom-right
+        float vertices[6][4] = {
+            // x,      y,      u,      v
+            { xpos,     ypos + h,   0.0f, 0.0f },             // bottom-left
+            { xpos,     ypos,       0.0f, 1.0f },             // top-left
+            { xpos + w, ypos,       1.0f, 1.0f },             // top-right
+            { xpos,     ypos + h,   0.0f, 0.0f },             // bottom-left (again)
+            { xpos + w, ypos,       1.0f, 1.0f },             // top-right (again)
+            { xpos + w, ypos + h,   1.0f, 0.0f }              // bottom-right
+        };
 
-        float height =
-            ch.Size.y * scale;
+        // Bind the glyph's texture
+        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
 
-        (void)xpos;
-        (void)ypos;
-        (void)width;
-        (void)height;
+        // Update the VBO with the vertex data for this glyph
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
-        x += (ch.Advance >> 6) * scale;
+        // Draw the 6 vertices (2 triangles)
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // Advance the cursor for the next character
+        cursorX += (ch.Advance >> 6) * scale; // Bitshift by 6 to get pixels (since 1/64th of a pixel)
     }
 
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
 
@@ -233,7 +272,6 @@ glm::vec2 Font::MeasureText(
     for (char c : text)
     {
         auto it = m_Characters.find(c);
-
         if (it == m_Characters.end())
             continue;
 

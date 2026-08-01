@@ -140,6 +140,9 @@ void SpriteBatch::Flush()
     glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size()));
     glBindVertexArray(0);
 
+    // Unbind VBO
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     // Unbind texture
     glBindTexture(GL_TEXTURE_2D, 0);
 }

@@ -10,12 +10,17 @@ namespace StrixVerse
             for (Entity entity : entities)
             {
                 // Get the transform and velocity components.
-                Transform& transform = m_pComponentManager->getComponent<Transform>(entity);
-                Velocity& velocity = m_pComponentManager->getComponent<Velocity>(entity);
+                auto* transform = m_pComponentManager->getComponent<Transform>(entity);
+                auto* velocity = m_pComponentManager->getComponent<VelocityComponent>(entity);
+
+                if (!transform || !velocity)
+                {
+                    continue;
+                }
 
                 // Update position based on velocity and delta time.
-                transform.position.x += velocity.vx * dt;
-                transform.position.y += velocity.vy * dt;
+                transform->position.x += velocity->vx * dt;
+                transform->position.y += velocity->vy * dt;
             }
         }
     }
