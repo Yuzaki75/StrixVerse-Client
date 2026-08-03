@@ -48,10 +48,10 @@ public:
     Engine();
     ~Engine();
 
-    Engine(const Engine&) = delete;
-    Engine& operator=(const Engine&) = delete;
+    Engine(const Engine &) = delete;
+    Engine &operator=(const Engine &) = delete;
 
-    bool Initialize(Window* window);
+    bool Initialize(Window *window);
 
     void Run();
 
@@ -72,40 +72,40 @@ public:
     bool IsRunning() const;
 
     // Get reference to the network manager (for game to use)
-    NetworkManager& getNetworkManager() { return m_NetworkManager; }
-    const NetworkManager& getNetworkManager() const { return m_NetworkManager; }
+    NetworkManager &getNetworkManager() { return m_NetworkManager; }
+    const NetworkManager &getNetworkManager() const { return m_NetworkManager; }
 
     // ECS Manager accessors
-    StrixVerse::ECS::EntityManager& GetEntityManager() { return *m_pEntityManager; }
-    const StrixVerse::ECS::EntityManager& GetEntityManager() const { return *m_pEntityManager; }
-    StrixVerse::ECS::ComponentManager& GetComponentManager() { return *m_pComponentManager; }
-    const StrixVerse::ECS::ComponentManager& GetComponentManager() const { return *m_pComponentManager; }
-    StrixVerse::ECS::SystemManager& GetSystemManager() { return *m_pSystemManager; }
-    const StrixVerse::ECS::SystemManager& GetSystemManager() const { return *m_pSystemManager; }
+    StrixVerse::ECS::EntityManager &GetEntityManager() { return *m_pEntityManager; }
+    const StrixVerse::ECS::EntityManager &GetEntityManager() const { return *m_pEntityManager; }
+    StrixVerse::ECS::ComponentManager &GetComponentManager() { return *m_pComponentManager; }
+    const StrixVerse::ECS::ComponentManager &GetComponentManager() const { return *m_pComponentManager; }
+    StrixVerse::ECS::SystemManager &GetSystemManager() { return *m_pSystemManager; }
+    const StrixVerse::ECS::SystemManager &GetSystemManager() const { return *m_pSystemManager; }
 
     // AuthService access
-    AuthService* GetAuthService() { return m_AuthService.get(); }
-    const AuthService* GetAuthService() const { return m_AuthService.get(); }
+    AuthService *GetAuthService() { return m_AuthService.get(); }
+    const AuthService *GetAuthService() const { return m_AuthService.get(); }
 
     // WorldManager access
-    WorldManager* GetWorldManager() { return m_WorldManager.get(); }
-    const WorldManager* GetWorldManager() const { return m_WorldManager.get(); }
+    WorldManager *GetWorldManager() { return m_WorldManager.get(); }
+    const WorldManager *GetWorldManager() const { return m_WorldManager.get(); }
 
     // Camera access
-    Camera2D& GetCamera() { return m_Camera; }
-    const Camera2D& GetCamera() const { return m_Camera; }
+    Camera2D &GetCamera() { return m_Camera; }
+    const Camera2D &GetCamera() const { return m_Camera; }
 
     // Window access
-    Window* GetWindow() { return m_Window; }
-    const Window* GetWindow() const { return m_Window; }
+    Window *GetWindow() { return m_Window; }
+    const Window *GetWindow() const { return m_Window; }
 
     // UIManager access
-    UIManager* GetUIManager() { return m_UIManager.get(); }
-    const UIManager* GetUIManager() const { return m_UIManager.get(); }
+    UIManager *GetUIManager() { return m_UIManager.get(); }
+    const UIManager *GetUIManager() const { return m_UIManager.get(); }
 
     // Selected world management (for world selection flow)
-    void SetSelectedWorldName(const std::string& name) { m_SelectedWorldName = name; }
-    const std::string& GetSelectedWorldName() const { return m_SelectedWorldName; }
+    void SetSelectedWorldName(const std::string &name) { m_SelectedWorldName = name; }
+    const std::string &GetSelectedWorldName() const { return m_SelectedWorldName; }
 
 private:
     void ProcessEvents();
@@ -113,7 +113,7 @@ private:
     void Render();
 
 private:
-    Window* m_Window = nullptr;
+    Window *m_Window = nullptr;
     std::unique_ptr<Game> m_Game;
     std::shared_ptr<AssetManager> m_AssetManager;
     std::shared_ptr<StrixVerse::ECS::EntityManager> m_pEntityManager;
@@ -135,7 +135,12 @@ private:
     void SetCurrentScreen(std::unique_ptr<Screen> screen);
 
     // Transition state
-    enum class TransitionState { None, FadingOut, FadingIn };
+    enum class TransitionState
+    {
+        None,
+        FadingOut,
+        FadingIn
+    };
     TransitionState m_TransitionState = TransitionState::None;
     float m_TransitionTimer = 0.0f;
     float m_TransitionDuration = 0.5f; // seconds

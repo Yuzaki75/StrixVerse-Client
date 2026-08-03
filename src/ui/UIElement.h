@@ -13,9 +13,11 @@ class Font;
 /**
  * Base class for all UI elements
  */
-class UIElement {
+class UIElement
+{
 public:
-    enum class AnchorPoint {
+    enum class AnchorPoint
+    {
         TopLeft,
         TopCenter,
         TopRight,
@@ -40,8 +42,12 @@ public:
     float getWidth() const { return width_; }
     float getHeight() const { return height_; }
 
-    struct Position { float x; float y; };
-    Position getPosition() const { return { x_, y_ }; }
+    struct Position
+    {
+        float x;
+        float y;
+    };
+    Position getPosition() const { return {x_, y_}; }
 
     // Visibility and interaction
     void setVisible(bool visible);
@@ -64,28 +70,28 @@ public:
 
     // Update and render
     virtual void update(float deltaTime);
-    virtual void render(SpriteBatch& spriteBatch, Font& font) const;
+    virtual void render(SpriteBatch &spriteBatch, Font &font) const;
 
     // Children management (for containers)
     void addChild(std::shared_ptr<UIElement> child);
     void removeChild(std::shared_ptr<UIElement> child);
     void clearChildren();
-    const std::vector<std::shared_ptr<UIElement>>& getChildren() const { return children_; }
+    const std::vector<std::shared_ptr<UIElement>> &getChildren() const { return children_; }
 
 protected:
-    float x_, y_;           // Position
-    float width_, height_;  // Size
-    AnchorPoint anchor_;    // Anchor point
+    float x_, y_;          // Position
+    float width_, height_; // Size
+    AnchorPoint anchor_;   // Anchor point
 
-    bool visible_;          // Whether the element is visible
-    bool enabled_;          // Whether the element is interactive
+    bool visible_; // Whether the element is visible
+    bool enabled_; // Whether the element is interactive
 
     std::vector<std::shared_ptr<UIElement>> children_; // Child elements
 
     // Helper methods for rendering
-    virtual void renderSelf(SpriteBatch& spriteBatch, Font& font) const = 0;
-    void renderChildren(SpriteBatch& spriteBatch, Font& font) const;
+    virtual void renderSelf(SpriteBatch &spriteBatch, Font &font) const = 0;
+    void renderChildren(SpriteBatch &spriteBatch, Font &font) const;
 
     // Calculate actual position based on anchor
-    void calculateRenderPosition(float& renderX, float& renderY) const;
+    void calculateRenderPosition(float &renderX, float &renderY) const;
 };

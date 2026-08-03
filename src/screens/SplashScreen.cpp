@@ -3,16 +3,15 @@
 #include "../core/Logger.h"
 #include "../graphics/Color.h"
 
-SplashScreen::SplashScreen(Engine* engine)
-    : Screen(engine)
-    , titleLabel_(nullptr)
-    , timer_(0.0f)
+SplashScreen::SplashScreen(Engine *engine)
+    : Screen(engine), titleLabel_(nullptr), timer_(0.0f)
 {
 }
 
 void SplashScreen::OnEnter()
 {
-    if (!uiManager_) {
+    if (!uiManager_)
+    {
         LOG_ERROR("SplashScreen: UIManager not available");
         return;
     }
@@ -33,7 +32,8 @@ void SplashScreen::OnEnter()
 
 void SplashScreen::OnExit()
 {
-    if (uiManager_ && titleLabel_) {
+    if (uiManager_ && titleLabel_)
+    {
         uiManager_->removeElement(titleLabel_);
         titleLabel_.reset();
     }
@@ -49,7 +49,8 @@ void SplashScreen::Update(float deltaTime)
     // In a real implementation, we'd get the window size from the engine
 
     // After 3 seconds, request to change to login screen
-    if (timer_ >= 3.0f) {
+    if (timer_ >= 3.0f)
+    {
         RequestScreenChange(ScreenID::Login);
     }
 }

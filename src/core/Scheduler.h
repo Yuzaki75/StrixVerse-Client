@@ -39,31 +39,31 @@ public:
     struct Task
     {
         std::function<void()> callback;
-        TimePoint triggerTime; // When the task should next run.
+        TimePoint triggerTime;            // When the task should next run.
         std::optional<Duration> interval; // If set, the task repeats every interval.
-        std::string name; // For debugging.
+        std::string name;                 // For debugging.
         bool active = true;
 
         // For priority queue: earlier triggerTime has higher priority.
-        bool operator>(const Task& other) const
+        bool operator>(const Task &other) const
         {
             return triggerTime > other.triggerTime;
         }
     };
 
-    explicit Scheduler(const std::string& name = "Scheduler");
+    explicit Scheduler(const std::string &name = "Scheduler");
     ~Scheduler();
 
-    Scheduler(const Scheduler&) = delete;
-    Scheduler& operator=(const Scheduler&) = delete;
+    Scheduler(const Scheduler &) = delete;
+    Scheduler &operator=(const Scheduler &) = delete;
 
     // Schedule a one-shot task to run after the given delay.
     // Returns an ID that can be used to cancel the task.
-    uint64_t Schedule(std::function<void()> callback, Delay delay, const std::string& name = "");
+    uint64_t Schedule(std::function<void()> callback, Delay delay, const std::string &name = "");
 
     // Schedule a repeating task that runs every interval, starting after the initial delay.
     // Returns an ID that can be used to cancel the task.
-    uint64_t ScheduleRepeating(std::function<void()> callback, Delay initialDelay, Duration interval, const std::string& name = "");
+    uint64_t ScheduleRepeating(std::function<void()> callback, Delay initialDelay, Duration interval, const std::string &name = "");
 
     // Cancel a scheduled task by its ID. Returns true if the task was found and removed.
     bool Cancel(uint64_t id);

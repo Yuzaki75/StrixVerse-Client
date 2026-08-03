@@ -72,7 +72,7 @@ void Engine::SetCurrentScreen(std::unique_ptr<Screen> screen)
     m_TransitionTimer = 0.0f;
 }
 
-bool Engine::Initialize(Window* window)
+bool Engine::Initialize(Window *window)
 {
     if (m_State != EngineState::Uninitialized)
     {
@@ -98,7 +98,7 @@ bool Engine::Initialize(Window* window)
     }
 
     // Register the engine itself for systems that need to reach back into it.
-    ServiceLocator::Provide(std::shared_ptr<Engine>(this, [](Engine*) {}));
+    ServiceLocator::Provide(std::shared_ptr<Engine>(this, [](Engine *) {}));
 
     // Create and register the asset manager.
     m_AssetManager = std::make_shared<AssetManager>();
@@ -110,13 +110,12 @@ bool Engine::Initialize(Window* window)
 
     m_Font = std::make_shared<Font>();
     const std::filesystem::path fontCandidates[] =
-    {
-        "C:/Windows/Fonts/segoeui.ttf",
-        "C:/Windows/Fonts/arial.ttf",
-        "C:/Windows/Fonts/calibri.ttf"
-    };
+        {
+            "C:/Windows/Fonts/segoeui.ttf",
+            "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/calibri.ttf"};
 
-    for (const auto& fontPath : fontCandidates)
+    for (const auto &fontPath : fontCandidates)
     {
         if (std::filesystem::exists(fontPath) && m_Font->Load(fontPath.string(), 24))
         {
@@ -259,23 +258,23 @@ void Engine::ProcessEvents()
         {
             switch (event.type)
             {
-                case SDL_EVENT_MOUSE_MOTION:
-                    m_UIManager->handleMouseMove(event.motion.x, event.motion.y);
-                    break;
-                case SDL_EVENT_MOUSE_BUTTON_DOWN:
-                    m_UIManager->handleMouseDown(event.button.x, event.button.y);
-                    break;
-                case SDL_EVENT_MOUSE_BUTTON_UP:
-                    m_UIManager->handleMouseUp(event.button.x, event.button.y);
-                    break;
-                case SDL_EVENT_KEY_DOWN:
-                    if (event.key.key < 256) // Regular character key
-                        m_UIManager->handleKeyPressed(static_cast<char>(event.key.key));
-                    else // Special key (arrow keys, etc.)
-                        m_UIManager->handleSpecialKeyPressed(event.key.key);
-                    break;
-                default:
-                    break;
+            case SDL_EVENT_MOUSE_MOTION:
+                m_UIManager->handleMouseMove(event.motion.x, event.motion.y);
+                break;
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                m_UIManager->handleMouseDown(event.button.x, event.button.y);
+                break;
+            case SDL_EVENT_MOUSE_BUTTON_UP:
+                m_UIManager->handleMouseUp(event.button.x, event.button.y);
+                break;
+            case SDL_EVENT_KEY_DOWN:
+                if (event.key.key < 256) // Regular character key
+                    m_UIManager->handleKeyPressed(static_cast<char>(event.key.key));
+                else // Special key (arrow keys, etc.)
+                    m_UIManager->handleSpecialKeyPressed(event.key.key);
+                break;
+            default:
+                break;
             }
         }
 
@@ -313,62 +312,62 @@ void Engine::Update()
         // Handle transition based on current state
         switch (m_TransitionState)
         {
-            case TransitionState::None:
-                // Start fading out
-                m_TransitionState = TransitionState::FadingOut;
+        case TransitionState::None:
+            // Start fading out
+            m_TransitionState = TransitionState::FadingOut;
+            m_TransitionTimer = 0.0f;
+            m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.0f});
+            break;
+
+        case TransitionState::FadingOut:
+            m_TransitionTimer += fixedDeltaTime;
+            if (m_TransitionTimer >= m_TransitionDuration)
+            {
+                // Finish fade out, switch screens
+                m_TransitionTimer = m_TransitionDuration;
+
+                // Hide current screen
+                if (m_CurrentScreen)
+                {
+                    m_CurrentScreen->OnExit();
+                }
+                m_CurrentScreen.reset();
+
+                // Show new screen
+                m_CurrentScreen = std::move(m_PendingScreen);
+                if (m_CurrentScreen)
+                {
+                    m_CurrentScreen->OnEnter();
+                }
+
+                // Start fading in
+                m_TransitionState = TransitionState::FadingIn;
                 m_TransitionTimer = 0.0f;
-                m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.0f});
-                break;
+            }
+            else
+            {
+                // Continue fading out
+                float alpha = m_TransitionTimer / m_TransitionDuration;
+                m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, alpha});
+            }
+            break;
 
-            case TransitionState::FadingOut:
-                m_TransitionTimer += fixedDeltaTime;
-                if (m_TransitionTimer >= m_TransitionDuration)
-                {
-                    // Finish fade out, switch screens
-                    m_TransitionTimer = m_TransitionDuration;
-
-                    // Hide current screen
-                    if (m_CurrentScreen)
-                    {
-                        m_CurrentScreen->OnExit();
-                    }
-                    m_CurrentScreen.reset();
-
-                    // Show new screen
-                    m_CurrentScreen = std::move(m_PendingScreen);
-                    if (m_CurrentScreen)
-                    {
-                        m_CurrentScreen->OnEnter();
-                    }
-
-                    // Start fading in
-                    m_TransitionState = TransitionState::FadingIn;
-                    m_TransitionTimer = 0.0f;
-                }
-                else
-                {
-                    // Continue fading out
-                    float alpha = m_TransitionTimer / m_TransitionDuration;
-                    m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, alpha});
-                }
-                break;
-
-            case TransitionState::FadingIn:
-                m_TransitionTimer += fixedDeltaTime;
-                if (m_TransitionTimer >= m_TransitionDuration)
-                {
-                    // Finish fade in
-                    m_TransitionTimer = m_TransitionDuration;
-                    m_TransitionState = TransitionState::None;
-                    m_PendingScreen.reset();
-                }
-                else
-                {
-                    // Continue fading in
-                    float alpha = 1.0f - (m_TransitionTimer / m_TransitionDuration);
-                    m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, alpha});
-                }
-                break;
+        case TransitionState::FadingIn:
+            m_TransitionTimer += fixedDeltaTime;
+            if (m_TransitionTimer >= m_TransitionDuration)
+            {
+                // Finish fade in
+                m_TransitionTimer = m_TransitionDuration;
+                m_TransitionState = TransitionState::None;
+                m_PendingScreen.reset();
+            }
+            else
+            {
+                // Continue fading in
+                float alpha = 1.0f - (m_TransitionTimer / m_TransitionDuration);
+                m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, alpha});
+            }
+            break;
         }
     }
 

@@ -5,13 +5,13 @@ namespace StrixVerse
 {
     namespace ECS
     {
-        void MovementSystem::update(const std::vector<Entity>& entities, float dt)
+        void MovementSystem::update(const std::vector<Entity> &entities, float dt)
         {
             for (Entity entity : entities)
             {
                 // Get the transform and velocity components.
-                auto* transform = m_pComponentManager->getComponent<Transform>(entity);
-                auto* velocity = m_pComponentManager->getComponent<VelocityComponent>(entity);
+                auto *transform = m_pComponentManager->getComponent<Transform>(entity);
+                auto *velocity = m_pComponentManager->getComponent<VelocityComponent>(entity);
 
                 if (!transform || !velocity)
                 {

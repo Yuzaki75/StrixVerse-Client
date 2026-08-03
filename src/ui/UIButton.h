@@ -6,9 +6,11 @@
 /**
  * Button UI element with multiple states
  */
-class UIButton : public UIElement {
+class UIButton : public UIElement
+{
 public:
-    enum class ButtonState {
+    enum class ButtonState
+    {
         Normal,
         Hover,
         Pressed,
@@ -19,14 +21,14 @@ public:
     ~UIButton() override = default;
 
     // Appearance
-    void setNormalColors(const Color& bgColor, const Color& textColor);
-    void setHoverColors(const Color& bgColor, const Color& textColor);
-    void setPressedColors(const Color& bgColor, const Color& textColor);
-    void setDisabledColors(const Color& bgColor, const Color& textColor);
+    void setNormalColors(const Color &bgColor, const Color &textColor);
+    void setHoverColors(const Color &bgColor, const Color &textColor);
+    void setPressedColors(const Color &bgColor, const Color &textColor);
+    void setDisabledColors(const Color &bgColor, const Color &textColor);
 
     // Content
-    void setText(const std::string& text);
-    const std::string& getText() const { return text_; }
+    void setText(const std::string &text);
+    const std::string &getText() const { return text_; }
 
     void setIcon(unsigned int textureID);
     unsigned int getIcon() const { return iconTexture_; }
@@ -44,17 +46,17 @@ public:
     void setEnabled(bool enabled);
 
     // Convenience methods for setting single-state colors
-    void setBackgroundColor(const Color& color) { normalBgColor_ = color; }
-    void setTextColor(const Color& color) { normalTextColor_ = color; }
-    void setNormalColor(const Color& color);
-    void setHoverColor(const Color& color);
-    void setPressedColor(const Color& color);
-    void setDisabledColor(const Color& color);
+    void setBackgroundColor(const Color &color) { normalBgColor_ = color; }
+    void setTextColor(const Color &color) { normalTextColor_ = color; }
+    void setNormalColor(const Color &color);
+    void setHoverColor(const Color &color);
+    void setPressedColor(const Color &color);
+    void setDisabledColor(const Color &color);
     void setFontSize(float) { /* No-op: font size handled by rendering */ }
 
     // UIElement overrides
     void update(float deltaTime) override;
-    void renderSelf(SpriteBatch& spriteBatch, Font& font) const override;
+    void renderSelf(SpriteBatch &spriteBatch, Font &font) const override;
 
 protected:
     ButtonState getCurrentState() const;

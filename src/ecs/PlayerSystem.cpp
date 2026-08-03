@@ -11,19 +11,19 @@ namespace StrixVerse
 {
     namespace ECS
     {
-        void PlayerSystem::init(EntityManager* entityManager, ComponentManager* componentManager)
+        void PlayerSystem::init(EntityManager *entityManager, ComponentManager *componentManager)
         {
             // Require PlayerComponent, InputComponent, and VelocityComponent
             setSignature<PlayerComponent, InputComponent, VelocityComponent>();
             LOG_INFO("PlayerSystem: Initialized");
         }
 
-        void PlayerSystem::update(const std::vector<Entity>& entities, float deltaTime)
+        void PlayerSystem::update(const std::vector<Entity> &entities, float deltaTime)
         {
             for (Entity entity : entities)
             {
-                auto* input = m_pComponentManager->getComponent<InputComponent>(entity);
-                auto* velocity = m_pComponentManager->getComponent<VelocityComponent>(entity);
+                auto *input = m_pComponentManager->getComponent<InputComponent>(entity);
+                auto *velocity = m_pComponentManager->getComponent<VelocityComponent>(entity);
 
                 if (!input || !velocity)
                     continue;

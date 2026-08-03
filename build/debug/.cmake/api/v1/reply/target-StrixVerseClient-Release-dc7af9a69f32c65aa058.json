@@ -180,7 +180,7 @@
 			[
 				{
 					"backtrace" : 15,
-					"define" : "STRIX_GIT_COMMIT=\"01938f7\""
+					"define" : "STRIX_GIT_COMMIT=\"a3522c7\""
 				}
 			],
 			"includes" : 
@@ -315,7 +315,7 @@
 			[
 				{
 					"backtrace" : 15,
-					"define" : "STRIX_GIT_COMMIT=\"01938f7\""
+					"define" : "STRIX_GIT_COMMIT=\"a3522c7\""
 				}
 			],
 			"includes" : 

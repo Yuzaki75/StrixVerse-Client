@@ -7,7 +7,7 @@ namespace StrixVerse
 {
     namespace ECS
     {
-        void NetworkSyncSystem::update(const std::vector<Entity>& entities, float dt)
+        void NetworkSyncSystem::update(const std::vector<Entity> &entities, float dt)
         {
             for (Entity entity : entities)
             {
@@ -15,8 +15,8 @@ namespace StrixVerse
                 if (m_pComponentManager->hasComponent<NetworkComponent>(entity) &&
                     m_pComponentManager->hasComponent<Transform>(entity))
                 {
-                    auto* net = m_pComponentManager->getComponent<NetworkComponent>(entity);
-                    auto* transform = m_pComponentManager->getComponent<Transform>(entity);
+                    auto *net = m_pComponentManager->getComponent<NetworkComponent>(entity);
+                    auto *transform = m_pComponentManager->getComponent<Transform>(entity);
 
                     if (!net || !transform)
                     {

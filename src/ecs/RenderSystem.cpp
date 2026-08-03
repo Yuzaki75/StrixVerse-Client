@@ -14,7 +14,7 @@ namespace StrixVerse
 {
     namespace ECS
     {
-        void RenderSystem::render(const std::vector<Entity>& entities)
+        void RenderSystem::render(const std::vector<Entity> &entities)
         {
             auto spriteBatch = ServiceLocator::Get<SpriteBatch>();
             if (!spriteBatch)
@@ -26,8 +26,8 @@ namespace StrixVerse
             struct SpriteEntity
             {
                 Entity entity;
-                SpriteComponent* sprite = nullptr;
-                Transform* transform = nullptr;
+                SpriteComponent *sprite = nullptr;
+                Transform *transform = nullptr;
             };
             std::vector<SpriteEntity> sprites;
             sprites.reserve(entities.size());
@@ -37,28 +37,27 @@ namespace StrixVerse
                 if (m_pComponentManager->hasComponent<Transform>(entity) &&
                     m_pComponentManager->hasComponent<SpriteComponent>(entity))
                 {
-                    auto* sprite = m_pComponentManager->getComponent<SpriteComponent>(entity);
-                    auto* transform = m_pComponentManager->getComponent<Transform>(entity);
+                    auto *sprite = m_pComponentManager->getComponent<SpriteComponent>(entity);
+                    auto *transform = m_pComponentManager->getComponent<Transform>(entity);
                     if (!sprite || !transform)
                     {
                         continue;
                     }
-                    sprites.push_back({ entity, sprite, transform });
+                    sprites.push_back({entity, sprite, transform});
                 }
             }
 
             // Sort by layer (ascending), then by texture ID (to batch by texture).
-            std::sort(sprites.begin(), sprites.end(), [](const SpriteEntity& a, const SpriteEntity& b)
-            {
+            std::sort(sprites.begin(), sprites.end(), [](const SpriteEntity &a, const SpriteEntity &b)
+                      {
                 if (a.sprite->layer != b.sprite->layer)
                     return a.sprite->layer < b.sprite->layer;
-                return a.sprite->textureID < b.sprite->textureID;
-            });
+                return a.sprite->textureID < b.sprite->textureID; });
 
             // Begin the sprite batch.
             spriteBatch->Begin();
 
-            for (const auto& se : sprites)
+            for (const auto &se : sprites)
             {
                 // Get the texture from the AssetManager by renderer ID.
                 auto assetManager = ServiceLocator::Get<AssetManager>();
@@ -67,7 +66,7 @@ namespace StrixVerse
                     continue;
                 }
 
-                Texture* texture = assetManager->GetTextureByRendererID(se.sprite->textureID);
+                Texture *texture = assetManager->GetTextureByRendererID(se.sprite->textureID);
                 if (!texture)
                 {
                     continue;

@@ -9,14 +9,8 @@
 #include "../ecs/ComponentManager.h"
 #include "../ecs/SystemManager.h"
 
-GameScreen::GameScreen(Engine* engine)
-    : Screen(engine)
-    , m_Panel(nullptr)
-    , m_TitleLabel(nullptr)
-    , m_SettingsButton(nullptr)
-    , m_HUD(nullptr)
-    , m_World(nullptr)
-    , m_TileRenderer(nullptr)
+GameScreen::GameScreen(Engine *engine)
+    : Screen(engine), m_Panel(nullptr), m_TitleLabel(nullptr), m_SettingsButton(nullptr), m_HUD(nullptr), m_World(nullptr), m_TileRenderer(nullptr)
 {
 }
 
@@ -76,7 +70,8 @@ void GameScreen::InitializeUI()
     m_SettingsButton->setText("Settings");
     m_SettingsButton->setBackgroundColor({0.0f, 0.0f, 0.6f, 1.0f}); // Blue
     m_SettingsButton->setTextColor({1.0f, 1.0f, 1.0f, 1.0f});
-    m_SettingsButton->setOnClickCallback([this]() { this->OnSettingsButtonClicked(); });
+    m_SettingsButton->setOnClickCallback([this]()
+                                         { this->OnSettingsButtonClicked(); });
     m_Panel->addChild(m_SettingsButton);
 }
 
@@ -133,12 +128,12 @@ void GameScreen::InitializeWorld()
     m_World->GenerateNewWorld(4, 4, 1);
 
     LOG_INFO("GameScreen: Initialized world with " +
-         std::to_string(m_World->GetWidthInChunks()) + "x" +
-         std::to_string(m_World->GetHeightInChunks()) + "x" +
-         std::to_string(m_World->GetDepthInChunks()) + " chunks (" +
-         std::to_string(m_World->GetWidthInTiles()) + "x" +
-         std::to_string(m_World->GetHeightInTiles()) + "x" +
-         std::to_string(m_World->GetDepthInTiles()) + " tiles");
+             std::to_string(m_World->GetWidthInChunks()) + "x" +
+             std::to_string(m_World->GetHeightInChunks()) + "x" +
+             std::to_string(m_World->GetDepthInChunks()) + " chunks (" +
+             std::to_string(m_World->GetWidthInTiles()) + "x" +
+             std::to_string(m_World->GetHeightInTiles()) + "x" +
+             std::to_string(m_World->GetDepthInTiles()) + " tiles");
 
     // Example: Modify a few tiles to show different terrain types
     auto grassTile = std::make_shared<StrixVerse::World::Tile>(StrixVerse::World::Tile::Type::Grass);
@@ -146,8 +141,8 @@ void GameScreen::InitializeWorld()
     auto waterTile = std::make_shared<StrixVerse::World::Tile>(StrixVerse::World::Tile::Type::Water);
 
     // Set some specific tiles
-    m_World->SetTileAt(10, 10, 0, stoneTile);  // Stone at position (10, 10, 0)
-    m_World->SetTileAt(20, 20, 0, waterTile);  // Water at position (20, 20, 0)
+    m_World->SetTileAt(10, 10, 0, stoneTile); // Stone at position (10, 10, 0)
+    m_World->SetTileAt(20, 20, 0, waterTile); // Water at position (20, 20, 0)
 
     // Create and initialize the tile renderer system
     m_TileRenderer = std::make_unique<StrixVerse::ECS::TileRendererSystem>();
@@ -165,9 +160,9 @@ void GameScreen::InitializeWorld()
     if (m_HUD)
     {
         m_HUD->AddChatMessage("World initialized: " +
-                             std::to_string(m_World->GetWidthInTiles()) + "x" +
-                             std::to_string(m_World->GetHeightInTiles()) + "x" +
-                             std::to_string(m_World->GetDepthInTiles()) + " tiles");
+                              std::to_string(m_World->GetWidthInTiles()) + "x" +
+                              std::to_string(m_World->GetHeightInTiles()) + "x" +
+                              std::to_string(m_World->GetDepthInTiles()) + " tiles");
     }
 }
 

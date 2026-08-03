@@ -24,7 +24,7 @@ bool WorldManager::EnsureSaveDirectoryExists() const
             std::filesystem::create_directories(dirPath);
             LOG_INFO("WorldManager: Created save directory at {}", dirPath.string());
         }
-        catch (const std::filesystem::filesystem_error& e)
+        catch (const std::filesystem::filesystem_error &e)
         {
             LOG_ERROR("WorldManager: Failed to create save directory: {}", e.what());
             return false;
@@ -33,7 +33,7 @@ bool WorldManager::EnsureSaveDirectoryExists() const
     return true;
 }
 
-bool WorldManager::SaveWorld(const std::string& worldName)
+bool WorldManager::SaveWorld(const std::string &worldName)
 {
     try
     {
@@ -60,14 +60,14 @@ bool WorldManager::SaveWorld(const std::string& worldName)
         // For now, we're just saving the world name as a placeholder
         return true;
     }
-    catch (const std::exception& e)
+    catch (const std::exception &e)
     {
         LOG_ERROR("WorldManager: Exception while saving world: {}", e.what());
         return false;
     }
 }
 
-bool WorldManager::LoadWorld(std::string& outWorldName, StrixVerse::World::World& world)
+bool WorldManager::LoadWorld(std::string &outWorldName, StrixVerse::World::World &world)
 {
     try
     {
@@ -121,7 +121,7 @@ bool WorldManager::LoadWorld(std::string& outWorldName, StrixVerse::World::World
         LOG_ERROR("WorldManager: Invalid save file format at {}", m_SaveFilePath.string());
         return false;
     }
-    catch (const std::exception& e)
+    catch (const std::exception &e)
     {
         LOG_ERROR("WorldManager: Exception while loading world: {}", e.what());
         return false;
@@ -149,7 +149,7 @@ bool WorldManager::DeleteSavedWorld()
             return true; // Nothing to delete is still a success
         }
     }
-    catch (const std::exception& e)
+    catch (const std::exception &e)
     {
         LOG_ERROR("WorldManager: Exception while deleting save file: {}", e.what());
         return false;

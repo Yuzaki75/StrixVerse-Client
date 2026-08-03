@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "C:/Projects/StrixVerse/Client/build/RelWithDebInfo/StrixVerseClient.exe"
+			"path" : "C:/Projects/StrixVerse/Client/bin/Debug/StrixVerseClient.exe"
 		},
 		{
-			"path" : "C:/Projects/StrixVerse/Client/build/RelWithDebInfo/StrixVerseClient.pdb"
+			"path" : "C:/Projects/StrixVerse/Client/bin/Debug/StrixVerseClient.pdb"
 		}
 	],
 	"backtrace" : 2,
@@ -165,7 +165,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /EHsc /Zi /O2 /Ob1 /DNDEBUG -std:c++20 -MD"
+					"fragment" : "/DWIN32 /D_WINDOWS /EHsc /Zi /Ob0 /Od /RTC1 -std:c++20 -MDd"
 				},
 				{
 					"backtrace" : 13,
@@ -180,7 +180,7 @@
 			[
 				{
 					"backtrace" : 15,
-					"define" : "STRIX_GIT_COMMIT=\"01938f7\""
+					"define" : "STRIX_GIT_COMMIT=\"a3522c7\""
 				}
 			],
 			"includes" : 
@@ -308,14 +308,14 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-DWIN32"
+					"fragment" : "-DWIN32 -D_DEBUG"
 				}
 			],
 			"defines" : 
 			[
 				{
 					"backtrace" : 15,
-					"define" : "STRIX_GIT_COMMIT=\"01938f7\""
+					"define" : "STRIX_GIT_COMMIT=\"a3522c7\""
 				}
 			],
 			"includes" : 
@@ -357,7 +357,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "/DWIN32 /D_WINDOWS /EHsc /Zi /O2 /Ob1 /DNDEBUG -MD",
+				"fragment" : "/DWIN32 /D_WINDOWS /EHsc /Zi /Ob0 /Od /RTC1 -MDd",
 				"role" : "flags"
 			},
 			{
@@ -370,17 +370,17 @@
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "C:\\vcpkg\\installed\\x64-windows\\lib\\SDL3.lib",
+				"fragment" : "C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\SDL3.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "C:\\vcpkg\\installed\\x64-windows\\lib\\glm.lib",
+				"fragment" : "C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\glm.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "C:\\vcpkg\\installed\\x64-windows\\lib\\glad.lib",
+				"fragment" : "C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\glad.lib",
 				"role" : "libraries"
 			},
 			{
@@ -390,7 +390,7 @@
 			},
 			{
 				"backtrace" : 11,
-				"fragment" : "C:\\vcpkg\\installed\\x64-windows\\lib\\freetype.lib",
+				"fragment" : "C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\freetyped.lib",
 				"role" : "libraries"
 			},
 			{

@@ -7,16 +7,16 @@ namespace StrixVerse
 {
     namespace ECS
     {
-        void InputSystem::update(const std::vector<Entity>& entities, float dt)
+        void InputSystem::update(const std::vector<Entity> &entities, float dt)
         {
             // Get the current keyboard state from SDL.
-            const bool* state = SDL_GetKeyboardState(nullptr);
+            const bool *state = SDL_GetKeyboardState(nullptr);
 
             for (Entity entity : entities)
             {
                 if (m_pComponentManager->hasComponent<InputComponent>(entity))
                 {
-                    auto* input = m_pComponentManager->getComponent<InputComponent>(entity);
+                    auto *input = m_pComponentManager->getComponent<InputComponent>(entity);
                     if (!input)
                     {
                         continue;

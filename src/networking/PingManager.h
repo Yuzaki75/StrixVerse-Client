@@ -6,9 +6,10 @@
 #include <chrono>
 #include "PacketSender.h"
 
-class PingManager {
+class PingManager
+{
 public:
-    explicit PingManager(PacketSender* sender, float sendIntervalSeconds = 5.0f, size_t maxHistory = 100);
+    explicit PingManager(PacketSender *sender, float sendIntervalSeconds = 5.0f, size_t maxHistory = 100);
     ~PingManager() = default;
 
     void update(float deltaTime);
@@ -29,7 +30,7 @@ public:
 private:
     void sendPing();
 
-    PacketSender* m_sender;
+    PacketSender *m_sender;
     float m_sendIntervalSeconds;
     float m_timeSinceLastPing;
     std::vector<uint32_t> m_rttHistory;

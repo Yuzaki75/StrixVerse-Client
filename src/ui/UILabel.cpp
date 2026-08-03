@@ -7,39 +7,49 @@
 #include "../core/Logger.h"
 
 UILabel::UILabel()
-    : fontSize_(16.0f)        // Default font size
-    , textColor_(1.0f, 1.0f, 1.0f, 1.0f)  // White text
-    , hAlign_(0)              // Left aligned
-    , vAlign_(0)              // Top aligned
+    : fontSize_(16.0f) // Default font size
+      ,
+      textColor_(1.0f, 1.0f, 1.0f, 1.0f) // White text
+      ,
+      hAlign_(0) // Left aligned
+      ,
+      vAlign_(0) // Top aligned
 {
     // Labels typically size themselves to their text
     // But we'll allow explicit sizing as well
 }
 
-void UILabel::setText(const std::string& text) {
+void UILabel::setText(const std::string &text)
+{
     text_ = text;
     // Optionally auto-size to fit text
     // setSize(font.MeasureText(text_).x, font.MeasureText(text_).y);
 }
 
-void UILabel::setFontSize(float size) {
+void UILabel::setFontSize(float size)
+{
     fontSize_ = size;
 }
 
-void UILabel::setTextColor(const Color& color) {
+void UILabel::setTextColor(const Color &color)
+{
     textColor_ = color;
 }
 
-void UILabel::setHorizontalAlignment(int alignment) {
+void UILabel::setHorizontalAlignment(int alignment)
+{
     hAlign_ = alignment;
 }
 
-void UILabel::setVerticalAlignment(int alignment) {
+void UILabel::setVerticalAlignment(int alignment)
+{
     vAlign_ = alignment;
 }
 
-void UILabel::renderSelf(SpriteBatch& spriteBatch, Font& font) const {
-    if (text_.empty()) {
+void UILabel::renderSelf(SpriteBatch &spriteBatch, Font &font) const
+{
+    if (text_.empty())
+    {
         return;
     }
 
@@ -51,29 +61,31 @@ void UILabel::renderSelf(SpriteBatch& spriteBatch, Font& font) const {
     float textY = getY();
 
     // Apply horizontal alignment
-    switch (hAlign_) {
-        case 1: // Center
-            textX = getX() + (getWidth() - textWidth) / 2.0f;
-            break;
-        case 2: // Right
-            textX = getX() + getWidth() - textWidth;
-            break;
-        default: // Left (0)
-            textX = getX();
-            break;
+    switch (hAlign_)
+    {
+    case 1: // Center
+        textX = getX() + (getWidth() - textWidth) / 2.0f;
+        break;
+    case 2: // Right
+        textX = getX() + getWidth() - textWidth;
+        break;
+    default: // Left (0)
+        textX = getX();
+        break;
     }
 
     // Apply vertical alignment
-    switch (vAlign_) {
-        case 1: // Middle
-            textY = getY() + (getHeight() - textHeight) / 2.0f;
-            break;
-        case 2: // Bottom
-            textY = getY() + getHeight() - textHeight;
-            break;
-        default: // Top (0)
-            textY = getY();
-            break;
+    switch (vAlign_)
+    {
+    case 1: // Middle
+        textY = getY() + (getHeight() - textHeight) / 2.0f;
+        break;
+    case 2: // Bottom
+        textY = getY() + getHeight() - textHeight;
+        break;
+    default: // Top (0)
+        textY = getY();
+        break;
     }
 
     // Calculate render position based on anchor
@@ -86,7 +98,8 @@ void UILabel::renderSelf(SpriteBatch& spriteBatch, Font& font) const {
 
     // Get shader from AssetManager for font rendering
     auto assetManager = ServiceLocator::Get<AssetManager>();
-    if (!assetManager) {
+    if (!assetManager)
+    {
         Logger::Error("UILabel: AssetManager not available");
         return;
     }
@@ -95,10 +108,12 @@ void UILabel::renderSelf(SpriteBatch& spriteBatch, Font& font) const {
     // In a real implementation, we might have a specific shader for fonts
     // For now, we'll try to get a default shader or create a simple one
     std::shared_ptr<Shader> shader = assetManager->GetShader("default.vert", "default.frag");
-    if (!shader) {
+    if (!shader)
+    {
         // If we can't get a shader, try to load a basic one
         shader = assetManager->LoadShader("shaders/default.vert", "shaders/default.frag");
-        if (!shader) {
+        if (!shader)
+        {
             Logger::Error("UILabel: Failed to get or create shader for text rendering");
             return;
         }

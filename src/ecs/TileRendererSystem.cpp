@@ -15,7 +15,7 @@ namespace StrixVerse
 {
     namespace ECS
     {
-        void TileRendererSystem::init(EntityManager* entityManager, ComponentManager* componentManager)
+        void TileRendererSystem::init(EntityManager *entityManager, ComponentManager *componentManager)
         {
             // Store the entity and component managers
             m_pEntityManager = entityManager;
@@ -42,7 +42,7 @@ namespace StrixVerse
             LOG_INFO("TileRendererSystem: Initialized");
         }
 
-        void TileRendererSystem::update(const std::vector<Entity>& entities, float dt)
+        void TileRendererSystem::update(const std::vector<Entity> &entities, float dt)
         {
             // In a real game, we might want to animate tiles (like water) or handle dynamic changes
             // For now, this is a placeholder
@@ -50,7 +50,7 @@ namespace StrixVerse
             (void)dt;
         }
 
-        void TileRendererSystem::render(const std::vector<Entity>& entities)
+        void TileRendererSystem::render(const std::vector<Entity> &entities)
         {
             // This system doesn't render directly - it creates entities that are rendered by the RenderSystem
             // The RenderSystem will handle all entities with Transform and Sprite components
@@ -67,25 +67,37 @@ namespace StrixVerse
 
             switch (type)
             {
-                case StrixVerse::World::Tile::Type::Grass:
-                    r = 34; g = 139; b = 34; // Forest green
-                    break;
-                case StrixVerse::World::Tile::Type::Dirt:
-                    r = 139; g = 69; b = 19; // Saddle brown
-                    break;
-                case StrixVerse::World::Tile::Type::Stone:
-                    r = 128; g = 128; b = 128; // Gray
-                    break;
-                case StrixVerse::World::Tile::Type::Water:
-                    r = 30; g = 144; b = 255; // Dodger blue
-                    break;
-                case StrixVerse::World::Tile::Type::Sand:
-                    r = 238; g = 203; b = 173; // Peach puff
-                    break;
-                default:
-                    r = 255; g = 0; b = 255; // Magenta for error
-                    a = 255;
-                    break;
+            case StrixVerse::World::Tile::Type::Grass:
+                r = 34;
+                g = 139;
+                b = 34; // Forest green
+                break;
+            case StrixVerse::World::Tile::Type::Dirt:
+                r = 139;
+                g = 69;
+                b = 19; // Saddle brown
+                break;
+            case StrixVerse::World::Tile::Type::Stone:
+                r = 128;
+                g = 128;
+                b = 128; // Gray
+                break;
+            case StrixVerse::World::Tile::Type::Water:
+                r = 30;
+                g = 144;
+                b = 255; // Dodger blue
+                break;
+            case StrixVerse::World::Tile::Type::Sand:
+                r = 238;
+                g = 203;
+                b = 173; // Peach puff
+                break;
+            default:
+                r = 255;
+                g = 0;
+                b = 255; // Magenta for error
+                a = 255;
+                break;
             }
 
             // Fill the texture with the color
@@ -167,7 +179,7 @@ namespace StrixVerse
                         auto tile = m_World->GetTileAt(worldX, worldY, worldZ);
                         if (tile)
                         {
-                            auto* sprite = m_pComponentManager->getComponent<SpriteComponent>(entity);
+                            auto *sprite = m_pComponentManager->getComponent<SpriteComponent>(entity);
                             if (sprite)
                             {
                                 // Update the texture if it changed
