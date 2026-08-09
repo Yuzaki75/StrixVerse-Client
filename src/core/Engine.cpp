@@ -409,7 +409,7 @@ void Engine::Render()
     }
 
     // Present the frame
-    Renderer::EndFrame();
+    m_Window->EndFrame();
 }
 
 void Engine::Shutdown()

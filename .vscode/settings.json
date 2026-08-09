@@ -17,6 +17,7 @@
     "cmake.parallelJobs": 0,
     "cSpell.words": [
         "buildsystems",
+        "charl",
         "ENet",
         "failbit",
         "Freetype",
@@ -24,6 +25,7 @@
         "GLM",
         "MSVC",
         "SDL",
+        "stbi",
         "Strix",
         "StrixVerse",
         "vcpkg",

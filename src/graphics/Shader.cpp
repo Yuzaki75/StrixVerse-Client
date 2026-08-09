@@ -118,6 +118,87 @@ bool Shader::Load(const std::string& vertexFile, const std::string& fragmentFile
     return true;
 }
 
+bool Shader::LoadFromSource(const std::string& vertexCode, const std::string& fragmentCode, const std::string& geometryCode)
+{
+    // Clean up any existing program
+    if (m_Program != 0)
+    {
+        glDeleteProgram(m_Program);
+        m_Program = 0;
+    }
+    m_UniformCache.clear();
+
+    bool hasGeometry = !geometryCode.empty();
+
+    if (vertexCode.empty() || fragmentCode.empty() || (hasGeometry && geometryCode.empty()))
+    {
+        Logger::Error("Failed to load shader from source: empty source code provided");
+        return false;
+    }
+
+    // Compile shaders
+    unsigned int vertex = CompileShader(GL_VERTEX_SHADER, vertexCode);
+    unsigned int fragment = CompileShader(GL_FRAGMENT_SHADER, fragmentCode);
+    unsigned int geometry = 0;
+    if (hasGeometry)
+        geometry = CompileShader(GL_GEOMETRY_SHADER, geometryCode);
+
+    if (vertex == 0 || fragment == 0 || (hasGeometry && geometry == 0))
+    {
+        if (vertex) glDeleteShader(vertex);
+        if (fragment) glDeleteShader(fragment);
+        if (hasGeometry && geometry) glDeleteShader(geometry);
+        return false;
+    }
+
+    // Link program
+    m_Program = glCreateProgram();
+    if (m_Program == 0)
+    {
+        Logger::Error("Failed to create GL program object.");
+        glDeleteShader(vertex);
+        glDeleteShader(fragment);
+        if (hasGeometry) glDeleteShader(geometry);
+        return false;
+    }
+    glAttachShader(m_Program, vertex);
+    glAttachShader(m_Program, fragment);
+    if (hasGeometry)
+        glAttachShader(m_Program, geometry);
+    glLinkProgram(m_Program);
+
+    // Check linking
+    int success;
+    char infoLog[512];
+    glGetProgramiv(m_Program, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(m_Program, 512, nullptr, infoLog);
+        std::string errorMsg = std::format("Shader program linking failed: {}", infoLog);
+        Logger::Error(errorMsg);
+        glDeleteProgram(m_Program);
+        m_Program = 0;
+        glDeleteShader(vertex);
+        glDeleteShader(fragment);
+        if (hasGeometry) glDeleteShader(geometry);
+        return false;
+    }
+
+    // Detach and delete shaders (they're no longer needed after linking)
+    glDetachShader(m_Program, vertex);
+    glDetachShader(m_Program, fragment);
+    if (hasGeometry)
+        glDetachShader(m_Program, geometry);
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
+    if (hasGeometry)
+        glDeleteShader(geometry);
+
+    Logger::Info("Shader program created successfully from source code");
+
+    return true;
+}
+
 void Shader::Destroy()
 {
     if (m_Program != 0)

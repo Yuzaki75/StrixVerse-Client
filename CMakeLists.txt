@@ -1,19 +1,17 @@
 cmake_minimum_required(VERSION 3.20)
-# Test comment
 
+project(StrixVerseClient LANGUAGES C CXX)
 
-project(StrixVerseClient LANGUAGES CXX)
-
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)                        # NEW: strict ISO C++20
-
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # --------------------------------------------------
 # Compiler
 # --------------------------------------------------
-
 
 if(MSVC)
     add_compile_options(/W4)
@@ -21,30 +19,31 @@ else()
     add_compile_options(-Wall -Wextra)
 endif()
 
-
-# --------------------------------------------------mersyeon123@gmail.com
+# --------------------------------------------------
 # Find Packages
 # --------------------------------------------------
-
 
 find_package(SDL3 CONFIG REQUIRED)
 find_package(Freetype CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
-# Set the directory for glad package
-set(glad_DIR "${CMAKE_CURRENT_LIST_DIR}/../../vcpkg/installed/x64-windows/share/glad")
-find_package(glad CONFIG REQUIRED)
-find_package(Threads REQUIRED)                       # NEW: ThreadPool / Logger
-
+find_package(Threads REQUIRED)
 
 # --------------------------------------------------
 # Source Files
 # --------------------------------------------------
 
-
 set(SOURCES
+
+    # Entry
     src/main.cpp
 
+    # Third Party
+    third_party/glad/src/glad.c
+
+    # --------------------------------------------------
     # Core
+    # --------------------------------------------------
+
     src/core/Application.cpp
     src/core/Config.cpp
     src/core/Engine.cpp
@@ -58,14 +57,18 @@ set(SOURCES
     src/core/AuthService.cpp
     src/core/WorldManager.cpp
     src/core/AssetManager.cpp
+
     src/core/world/Tile.cpp
     src/core/world/Chunk.cpp
     src/core/world/World.cpp
 
+    # --------------------------------------------------
     # Graphics
+    # --------------------------------------------------
+
     src/graphics/Animation.cpp
-    src/graphics/Camera2D.cpp
     src/graphics/Camera.cpp
+    src/graphics/Camera2D.cpp
     src/graphics/Color.cpp
     src/graphics/Font.cpp
     src/graphics/FrameBuffer.cpp
@@ -76,21 +79,27 @@ set(SOURCES
     src/graphics/SpriteBatch.cpp
     src/graphics/Texture.cpp
     src/graphics/Vertex.cpp
+
     src/graphics/OpenGL/GLContext.cpp
 
+    # --------------------------------------------------
     # Networking
+    # --------------------------------------------------
+
     src/networking/Connection.cpp
     src/networking/NetworkManager.cpp
+
     src/networking/Packet.cpp
     src/networking/PacketBuffer.cpp
-    src/networking/PacketFactory.cpp
     src/networking/PacketDispatcher.cpp
-    src/networking/PacketRegistry.cpp
-    src/networking/PacketReader.cpp
-    src/networking/PacketSerializer.cpp
-    src/networking/PacketSender.cpp
+    src/networking/PacketFactory.cpp
     src/networking/PacketHandler.cpp
+    src/networking/PacketReader.cpp
+    src/networking/PacketRegistry.cpp
+    src/networking/PacketSender.cpp
+    src/networking/PacketSerializer.cpp
     src/networking/PacketWriter.cpp
+
     src/networking/CharacterPacket.cpp
     src/networking/HandshakePacket.cpp
     src/networking/KeepAlive.cpp
@@ -108,20 +117,27 @@ set(SOURCES
     src/networking/RegisterPacket.cpp
     src/networking/SessionPacket.cpp
 
+    # --------------------------------------------------
     # ECS
+    # --------------------------------------------------
+
     src/ecs/Entity.cpp
     src/ecs/EntityManager.cpp
     src/ecs/ComponentManager.cpp
     src/ecs/SystemManager.cpp
-    src/ecs/MovementSystem.cpp
+
     src/ecs/InputSystem.cpp
+    src/ecs/MovementSystem.cpp
     src/ecs/NetworkSyncSystem.cpp
     src/ecs/PlayerSystem.cpp
     src/ecs/RenderSystem.cpp
     src/ecs/TileRendererSystem.cpp
     src/ecs/Camera2DSystem.cpp
 
+    # --------------------------------------------------
     # UI
+    # --------------------------------------------------
+
     src/ui/UIElement.cpp
     src/ui/UIManager.cpp
     src/ui/UIPanel.cpp
@@ -130,10 +146,13 @@ set(SOURCES
     src/ui/UIImage.cpp
     src/ui/UILabel.cpp
 
+    # --------------------------------------------------
     # Screens
+    # --------------------------------------------------
+
     src/screens/Screen.cpp
     src/screens/ScreenFactory.cpp
-    src/screens/ScreenIDs.h     # Header-only
+
     src/screens/SplashScreen.cpp
     src/screens/LoadingScreen.cpp
     src/screens/LoginScreen.cpp
@@ -143,40 +162,50 @@ set(SOURCES
     src/screens/SettingsScreen.cpp
     src/screens/GameScreen.cpp
 
+    # --------------------------------------------------
     # HUD
+    # --------------------------------------------------
+
     src/hud/HUD.cpp
 )
-
 
 # --------------------------------------------------
 # Header Files
 # --------------------------------------------------
 
-
 set(HEADERS
+
+    # --------------------------------------------------
     # Core
+    # --------------------------------------------------
+
     src/core/Application.h
+    src/core/AssetManager.h
+    src/core/AuthService.h
     src/core/Config.h
     src/core/Engine.h
     src/core/Game.h
     src/core/Logger.h
+    src/core/Scheduler.h
     src/core/ServiceLocator.h
     src/core/ThreadPool.h
     src/core/Timer.h
     src/core/Version.h
     src/core/Window.h
-    src/core/Scheduler.h
-    src/core/AuthService.h
-    src/core/WorldManager.h
-    src/core/AssetManager.h
-    src/core/world/Tile.h
+
     src/core/world/Chunk.h
+    src/core/world/Tile.h
     src/core/world/World.h
 
+    src/core/WorldManager.h
+
+    # --------------------------------------------------
     # Graphics
+    # --------------------------------------------------
+
     src/graphics/Animation.h
-    src/graphics/Camera2D.h
     src/graphics/Camera.h
+    src/graphics/Camera2D.h
     src/graphics/Color.h
     src/graphics/Font.h
     src/graphics/FrameBuffer.h
@@ -187,22 +216,28 @@ set(HEADERS
     src/graphics/SpriteBatch.h
     src/graphics/Texture.h
     src/graphics/Vertex.h
-    src/graphics/OpenGL/GLContext.h
-    src/graphics/OpenGL/GLBuffer.h
 
+    src/graphics/OpenGL/GLBuffer.h
+    src/graphics/OpenGL/GLContext.h
+
+    # --------------------------------------------------
     # Networking
+    # --------------------------------------------------
+
     src/networking/Connection.h
     src/networking/NetworkManager.h
+
     src/networking/Packet.h
     src/networking/PacketBuffer.h
+    src/networking/PacketDispatcher.h
     src/networking/PacketFactory.h
     src/networking/PacketHandler.h
-    src/networking/PacketDispatcher.h
-    src/networking/PacketRegistry.h
     src/networking/PacketReader.h
-    src/networking/PacketSerializer.h
+    src/networking/PacketRegistry.h
     src/networking/PacketSender.h
+    src/networking/PacketSerializer.h
     src/networking/PacketWriter.h
+
     src/networking/CharacterPacket.h
     src/networking/HandshakePacket.h
     src/networking/KeepAlive.h
@@ -220,16 +255,18 @@ set(HEADERS
     src/networking/RegisterPacket.h
     src/networking/SessionPacket.h
 
+    # --------------------------------------------------
     # ECS
-    src/ecs/Component.h
-    src/ecs/Entity.h
-    src/ecs/EntityManager.h
-    src/ecs/ComponentManager.h
-    src/ecs/SystemManager.h
-    src/ecs/System.h
+    # --------------------------------------------------
+
     src/ecs/AnimationComponent.h
     src/ecs/Camera2DComponent.h
+    src/ecs/Camera2DSystem.h
     src/ecs/ColliderComponent.h
+    src/ecs/Component.h
+    src/ecs/ComponentManager.h
+    src/ecs/Entity.h
+    src/ecs/EntityManager.h
     src/ecs/HealthComponent.h
     src/ecs/InputComponent.h
     src/ecs/InputSystem.h
@@ -240,42 +277,50 @@ set(HEADERS
     src/ecs/PlayerSystem.h
     src/ecs/RenderSystem.h
     src/ecs/SpriteComponent.h
+    src/ecs/System.h
+    src/ecs/SystemManager.h
+    src/ecs/TileRendererSystem.h
     src/ecs/TransformComponent.h
     src/ecs/VelocityComponent.h
-    src/ecs/Camera2DSystem.h
-    src/ecs/TileRendererSystem.h
 
+    # --------------------------------------------------
     # UI
-    src/ui/UIElement.h
-    src/ui/UIManager.h
-    src/ui/UIPanel.h
+    # --------------------------------------------------
+
     src/ui/UIButton.h
-    src/ui/UITextBox.h
+    src/ui/UIElement.h
     src/ui/UIImage.h
     src/ui/UILabel.h
+    src/ui/UIManager.h
+    src/ui/UIPanel.h
+    src/ui/UITextBox.h
 
+    # --------------------------------------------------
     # Screens
-    src/screens/Screen.h
-    src/screens/ScreenFactory.h
-    src/screens/ScreenIDs.h
-    src/screens/SplashScreen.h
+    # --------------------------------------------------
+
+    src/screens/ContinueScreen.h
+    src/screens/GameScreen.h
     src/screens/LoadingScreen.h
     src/screens/LoginScreen.h
     src/screens/RegisterScreen.h
-    src/screens/ContinueScreen.h
-    src/screens/WorldBrowserScreen.h
+    src/screens/Screen.h
+    src/screens/ScreenFactory.h
+    src/screens/ScreenIDs.h
     src/screens/SettingsScreen.h
-    src/screens/GameScreen.h
+    src/screens/SplashScreen.h
+    src/screens/WorldBrowserScreen.h
 
+    # --------------------------------------------------
     # HUD
+    # --------------------------------------------------
+
     src/hud/HUD.h
 )
-
 
 # --------------------------------------------------
 # Executable
 # --------------------------------------------------
-
 
 add_executable(StrixVerseClient
     ${SOURCES}
@@ -283,7 +328,6 @@ add_executable(StrixVerseClient
     resources/client.rc
 )
 
-# Force serialized PDB writes for parallel MSVC builds
 if(MSVC)
     target_compile_options(StrixVerseClient PRIVATE /FS)
     set_target_properties(StrixVerseClient PROPERTIES
@@ -291,40 +335,34 @@ if(MSVC)
     )
 endif()
 
-
 # --------------------------------------------------
 # Include Directories
 # --------------------------------------------------
 
-
 target_include_directories(StrixVerseClient PRIVATE
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/third_party
-    ${CMAKE_CURRENT_LIST_DIR}/../../vcpkg/installed/x64-windows/include
+    ${PROJECT_SOURCE_DIR}/third_party/glad/include
 )
-
 
 # --------------------------------------------------
 # Link Libraries
 # --------------------------------------------------
-
 
 target_link_libraries(StrixVerseClient PRIVATE
     SDL3::SDL3
     Freetype::Freetype
     glm::glm
     Threads::Threads
-    glad::glad
     Ws2_32
 )
 
-
 # --------------------------------------------------
-# Version Stamping (optional git commit)             # NEW section
+# Git Version
 # --------------------------------------------------
-
 
 find_package(Git QUIET)
+
 if(GIT_FOUND)
     execute_process(
         COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
@@ -334,6 +372,7 @@ if(GIT_FOUND)
         ERROR_QUIET
         RESULT_VARIABLE STRIX_GIT_RESULT
     )
+
     if(STRIX_GIT_RESULT EQUAL 0 AND STRIX_GIT_COMMIT)
         target_compile_definitions(StrixVerseClient PRIVATE
             STRIX_GIT_COMMIT="${STRIX_GIT_COMMIT}"
@@ -341,11 +380,9 @@ if(GIT_FOUND)
     endif()
 endif()
 
-
 # --------------------------------------------------
-# Output Directory
+# Output Directories
 # --------------------------------------------------
-
 
 set_target_properties(StrixVerseClient PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/build"
@@ -353,18 +390,52 @@ set_target_properties(StrixVerseClient PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${PROJECT_SOURCE_DIR}/bin/Release"
 )
 
-
 # --------------------------------------------------
-# Create Runtime Folders
+# Runtime Directories
 # --------------------------------------------------
-
 
 add_custom_command(TARGET StrixVerseClient POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/bin"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/bin/Debug"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/bin/Release"
+
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/assets"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/cache"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/configs"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/logs"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/screenshots"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/cache")
+
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/bin/Debug/shaders"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/bin/Release/shaders"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/shaders"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/shaders/default.vert"
+        "${PROJECT_SOURCE_DIR}/bin/Debug/shaders/default.vert"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/shaders/default.frag"
+        "${PROJECT_SOURCE_DIR}/bin/Debug/shaders/default.frag"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/shaders/default.vert"
+        "${PROJECT_SOURCE_DIR}/bin/Release/shaders/default.vert"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/shaders/default.frag"
+        "${PROJECT_SOURCE_DIR}/bin/Release/shaders/default.frag"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/shaders/default.vert"
+        "${PROJECT_SOURCE_DIR}/build/shaders/default.vert"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/shaders/default.frag"
+        "${PROJECT_SOURCE_DIR}/build/shaders/default.frag"
+)
+
+# --------------------------------------------------
+# Visual Studio Source Groups
+# --------------------------------------------------
+
+source_group(TREE ${PROJECT_SOURCE_DIR}/third_party PREFIX "Third Party"
+    FILES
+        third_party/glad/src/glad.c
+)

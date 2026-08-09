@@ -16,6 +16,7 @@ public:
 
     bool Load(const std::string& vertexFile, const std::string& fragmentFile);
     bool Load(const std::string& vertexFile, const std::string& fragmentFile, const std::string& geometryFile);
+    bool LoadFromSource(const std::string& vertexSource, const std::string& fragmentSource, const std::string& geometrySource = "");
 
     void Destroy();
 

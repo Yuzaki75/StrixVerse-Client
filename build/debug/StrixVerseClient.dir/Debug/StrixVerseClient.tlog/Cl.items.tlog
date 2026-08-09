@@ -1,4 +1,5 @@
 C:\Projects\StrixVerse\Client\src\main.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\main.obj
+C:\Projects\StrixVerse\Client\third_party\glad\src\glad.c;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\glad.obj
 C:\Projects\StrixVerse\Client\src\core\Application.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Application.obj
 C:\Projects\StrixVerse\Client\src\core\Config.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Config.obj
 C:\Projects\StrixVerse\Client\src\core\Engine.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Engine.obj
@@ -16,8 +17,8 @@ C:\Projects\StrixVerse\Client\src\core\world\Tile.cpp;C:\Projects\StrixVerse\Cli
 C:\Projects\StrixVerse\Client\src\core\world\Chunk.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Chunk.obj
 C:\Projects\StrixVerse\Client\src\core\world\World.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\World.obj
 C:\Projects\StrixVerse\Client\src\graphics\Animation.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Animation.obj
-C:\Projects\StrixVerse\Client\src\graphics\Camera2D.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Camera2D.obj
 C:\Projects\StrixVerse\Client\src\graphics\Camera.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Camera.obj
+C:\Projects\StrixVerse\Client\src\graphics\Camera2D.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Camera2D.obj
 C:\Projects\StrixVerse\Client\src\graphics\Color.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Color.obj
 C:\Projects\StrixVerse\Client\src\graphics\Font.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Font.obj
 C:\Projects\StrixVerse\Client\src\graphics\FrameBuffer.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\FrameBuffer.obj
@@ -33,13 +34,13 @@ C:\Projects\StrixVerse\Client\src\networking\Connection.cpp;C:\Projects\StrixVer
 C:\Projects\StrixVerse\Client\src\networking\NetworkManager.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\NetworkManager.obj
 C:\Projects\StrixVerse\Client\src\networking\Packet.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Packet.obj
 C:\Projects\StrixVerse\Client\src\networking\PacketBuffer.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketBuffer.obj
-C:\Projects\StrixVerse\Client\src\networking\PacketFactory.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketFactory.obj
 C:\Projects\StrixVerse\Client\src\networking\PacketDispatcher.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketDispatcher.obj
-C:\Projects\StrixVerse\Client\src\networking\PacketRegistry.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketRegistry.obj
-C:\Projects\StrixVerse\Client\src\networking\PacketReader.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketReader.obj
-C:\Projects\StrixVerse\Client\src\networking\PacketSerializer.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketSerializer.obj
-C:\Projects\StrixVerse\Client\src\networking\PacketSender.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketSender.obj
+C:\Projects\StrixVerse\Client\src\networking\PacketFactory.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketFactory.obj
 C:\Projects\StrixVerse\Client\src\networking\PacketHandler.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketHandler.obj
+C:\Projects\StrixVerse\Client\src\networking\PacketReader.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketReader.obj
+C:\Projects\StrixVerse\Client\src\networking\PacketRegistry.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketRegistry.obj
+C:\Projects\StrixVerse\Client\src\networking\PacketSender.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketSender.obj
+C:\Projects\StrixVerse\Client\src\networking\PacketSerializer.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketSerializer.obj
 C:\Projects\StrixVerse\Client\src\networking\PacketWriter.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PacketWriter.obj
 C:\Projects\StrixVerse\Client\src\networking\CharacterPacket.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\CharacterPacket.obj
 C:\Projects\StrixVerse\Client\src\networking\HandshakePacket.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\HandshakePacket.obj
@@ -61,8 +62,8 @@ C:\Projects\StrixVerse\Client\src\ecs\Entity.cpp;C:\Projects\StrixVerse\Client\b
 C:\Projects\StrixVerse\Client\src\ecs\EntityManager.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\EntityManager.obj
 C:\Projects\StrixVerse\Client\src\ecs\ComponentManager.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\ComponentManager.obj
 C:\Projects\StrixVerse\Client\src\ecs\SystemManager.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\SystemManager.obj
-C:\Projects\StrixVerse\Client\src\ecs\MovementSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\MovementSystem.obj
 C:\Projects\StrixVerse\Client\src\ecs\InputSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\InputSystem.obj
+C:\Projects\StrixVerse\Client\src\ecs\MovementSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\MovementSystem.obj
 C:\Projects\StrixVerse\Client\src\ecs\NetworkSyncSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\NetworkSyncSystem.obj
 C:\Projects\StrixVerse\Client\src\ecs\PlayerSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PlayerSystem.obj
 C:\Projects\StrixVerse\Client\src\ecs\RenderSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\RenderSystem.obj

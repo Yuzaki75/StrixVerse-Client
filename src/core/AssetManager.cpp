@@ -115,13 +115,9 @@ std::shared_ptr<Shader> AssetManager::LoadShader(const std::string& vertexPath,
         return nullptr;
     }
 
-    const char* vShaderCode = vertexCode.c_str();
-    const char* fShaderCode = fragmentCode.c_str();
-    const char* gShaderCode = geometryCode.c_str();
-
-    // Create Shader object.
+    // Create Shader object using pre-read source code (avoids double file I/O)
     auto shader = std::make_shared<Shader>();
-    if (!shader->Load(vertexPath, fragmentPath, geometryPath))
+    if (!shader->LoadFromSource(vertexCode, fragmentCode, geometryCode))
     {
         std::string errorMsg = std::format("Failed to compile shader: {}", key);
         Logger::Error(errorMsg);
