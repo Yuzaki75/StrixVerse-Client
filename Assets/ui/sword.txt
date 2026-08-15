@@ -1,2 +1,0 @@
-Placeholder for 32x32 sword icon (weapon).
-Replace with sword pixel art.
