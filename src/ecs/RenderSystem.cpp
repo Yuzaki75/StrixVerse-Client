@@ -14,6 +14,13 @@ namespace StrixVerse
 {
     namespace ECS
     {
+        void RenderSystem::init(EntityManager *entityManager, ComponentManager *componentManager)
+        {
+            System::init(entityManager, componentManager);
+
+            setSignature<Transform, SpriteComponent>();
+        }
+
         void RenderSystem::render(const std::vector<Entity> &entities)
         {
             auto spriteBatch = ServiceLocator::Get<SpriteBatch>();

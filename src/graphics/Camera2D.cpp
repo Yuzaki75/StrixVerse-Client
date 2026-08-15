@@ -59,17 +59,22 @@ float Camera2D::GetRotation() const
 
 glm::mat4 Camera2D::GetViewMatrix() const
 {
+    // The camera position is the point that lands in the middle of the viewport:
+    //
+    //     screen = (world - position) * zoom, rotated, then offset to the centre
+    //
+    // Composition runs right to left, so the world is moved relative to the
+    // camera first and only then scaled and centred. The previous version
+    // translated before scaling, which zoomed about the world origin rather
+    // than about the camera and put the camera's target in the top-left corner
+    // instead of the middle - unusable for a follow camera.
     glm::mat4 view = glm::mat4(1.0f);
-    // Apply translation: move the world so that the camera position is at the origin.
-    view = glm::translate(view, glm::vec3(-m_Position, 0.0f));
-    // Apply rotation: rotate around the origin (camera position after translation).
+
+    view = glm::translate(view, glm::vec3(m_Viewport * 0.5f, 0.0f));
     view = glm::rotate(view, -m_Rotation, glm::vec3(0.0f, 0.0f, 1.0f));
-    // Apply zoom: scale the view (zoom in/out).
-    // Note: zooming in (zoom > 1) makes objects appear larger, so we scale by zoom.
-    // We'll scale by zoom (so that when zoom increases, we see less of the world).
-    // Since we already translated by -position, the origin is at the camera position.
-    // Scaling around the camera position is correct.
     view = glm::scale(view, glm::vec3(m_Zoom, m_Zoom, 1.0f));
+    view = glm::translate(view, glm::vec3(-m_Position, 0.0f));
+
     return view;
 }
 

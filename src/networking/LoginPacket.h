@@ -1,43 +1,30 @@
-#ifndef LOGIN_PACKET_H
-#define LOGIN_PACKET_H
+#pragma once
 
 #include "Packet.h"
+
 #include <string>
 
-class LoginPacket : public Packet {
+// Credentials submitted by the login screen.
+// Field order and types mirror Server/src/network/Packets/LoginPacket.cpp exactly.
+class LoginPacket final : public Packet
+{
 public:
-    LoginPacket() = default;
-    LoginPacket(const std::string& username, const std::string& password)
-        : m_username(username), m_password(password) {}
+    std::string Username;
+    std::string Password;
 
-    PacketType getType() const override { return PacketType::Login; }
+    Opcode getOpcode() const override { return Opcode::Login; }
 
-    void serialize(PacketBuffer& buffer) const override {
-        buffer.writeString(m_username);
-        buffer.writeString(m_password);
+    const char* getName() const override { return "LoginPacket"; }
+
+    void serialize(PacketBuffer& buffer) const override
+    {
+        buffer.writeString(Username, ProtocolLimits::MaxUsernameLength);
+        buffer.writeString(Password, ProtocolLimits::MaxPasswordLength);
     }
 
-    void deserialize(PacketBuffer& buffer) override {
-        m_username = buffer.readString();
-        m_password = buffer.readString();
+    void deserialize(PacketBuffer& buffer) override
+    {
+        Username = buffer.readString(ProtocolLimits::MaxUsernameLength);
+        Password = buffer.readString(ProtocolLimits::MaxPasswordLength);
     }
-
-    // Getters
-    const std::string& getUsername() const { return m_username; }
-    const std::string& getPassword() const { return m_password; }
-
-    // Setters
-    void setUsername(const std::string& username) { m_username = username; }
-    void setPassword(const std::string& password) { m_password = password; }
-
-protected:
-    std::shared_ptr<Packet> createInstance() const override {
-        return std::make_shared<LoginPacket>();
-    }
-
-private:
-    std::string m_username;
-    std::string m_password;
 };
-
-#endif // LOGIN_PACKET_H

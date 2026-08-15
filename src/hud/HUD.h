@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <vector>
 #include <string>
@@ -10,6 +11,7 @@ class UILabel;
 class UIImage;
 class UIPanel;
 class UIButton;
+class UITextBox;
 
 /**
  * Heads-Up Display (HUD) for the game.
@@ -41,6 +43,17 @@ public:
     // Add a chat message
     void AddChatMessage(const std::string& message);
 
+    // --- Chat entry --------------------------------------------------------
+    // Called with the typed line when the player submits it. The HUD does not
+    // echo it; the owner decides what reaches the log and when.
+    void SetChatSubmitHandler(std::function<void(const std::string&)> handler);
+
+    // Puts the caret in the chat field. Movement keys stop reaching the player
+    // while it holds focus.
+    void FocusChatInput();
+
+    bool IsChatInputFocused() const;
+
     // Show a temporary notification
     void ShowNotification(const std::string& message, float duration = 3.0f);
 
@@ -69,8 +82,14 @@ private:
     std::shared_ptr<UILabel> m_GemLabel;
     std::shared_ptr<UIImage> m_GemIcon;
 
-    std::shared_ptr<UIPanel> m_ChatBackground;
-    std::shared_ptr<UILabel> m_ChatText;
+    std::shared_ptr<UIPanel>   m_ChatBackground;
+    std::shared_ptr<UITextBox> m_ChatInput;
+
+    std::function<void(const std::string&)> m_OnChatSubmit;
+
+    // One label per visible chat line; UILabel is single-line by design.
+    std::vector<std::shared_ptr<UILabel>> m_ChatLines;
+
     std::vector<std::string> m_ChatMessages;
     static const int MAX_CHAT_MESSAGES = 10;
 

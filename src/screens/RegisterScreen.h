@@ -1,47 +1,56 @@
 #pragma once
 
+#include <memory>
+#include <string>
+
 #include "Screen.h"
-#include "../ui/UIPanel.h"
-#include "../ui/UILabel.h"
-#include "../ui/UITextBox.h"
-#include "../ui/UIButton.h"
+
+class UIButton;
+class UICheckBox;
+class UILabel;
+class UIPanel;
+class UITextBox;
 
 /**
- * Registration screen for creating a new account.
+ * Register screen.
+ *
+ * Implements the style guide's split layout: the purple-accented
+ * "YOUR LOOK = YOUR JOURNEY" notice on the left, and the four-field account
+ * form on the right.
+ *
+ * Validation runs per field before the request is sent, and the asynchronous
+ * AuthService result drives the success and failure states.
  */
 class RegisterScreen : public Screen
 {
 public:
-    RegisterScreen(Engine* engine);
+    explicit RegisterScreen(Engine* engine);
     ~RegisterScreen() override = default;
 
-    // Screen overrides
     void OnEnter() override;
-    void OnExit() override;
     void Update(float deltaTime) override;
-    void Render() const override;
+    void OnKeyDown(int key, bool ctrl, bool shift) override;
 
 private:
-    // UI elements
-    std::shared_ptr<UIPanel> m_Panel;
-    std::shared_ptr<UILabel> m_TitleLabel;
-    std::shared_ptr<UILabel> m_UsernameLabel;
-    std::shared_ptr<UITextBox> m_UsernameBox;
-    std::shared_ptr<UILabel> m_PasswordLabel;
-    std::shared_ptr<UITextBox> m_PasswordBox;
-    std::shared_ptr<UILabel> m_EmailLabel;
-    std::shared_ptr<UITextBox> m_EmailBox;
-    std::shared_ptr<UIButton> m_RegisterButton;
-    std::shared_ptr<UIButton> m_BackButton;
-    std::shared_ptr<UILabel> m_StatusLabel;
+    void BuildBrandColumn(float columnWidth);
+    void BuildForm(float columnX, float columnWidth);
 
-    // UI state
-    std::string m_Username;
-    std::string m_Password;
-    std::string m_Email;
-    std::string m_StatusMessage;
+    // Returns an empty string when the form is valid, otherwise the message to
+    // show and the field to focus.
+    std::string Validate(std::shared_ptr<UITextBox>& fieldToFocus) const;
 
-    // Helper methods
-    void OnRegisterButtonClicked();
-    void OnBackButtonClicked();
+    void Submit();
+    void SetStatus(const std::string& message, const Color& color);
+    void SetBusy(bool busy);
+
+    std::shared_ptr<UITextBox>  usernameBox_;
+    std::shared_ptr<UITextBox>  emailBox_;
+    std::shared_ptr<UITextBox>  passwordBox_;
+    std::shared_ptr<UITextBox>  confirmBox_;
+    std::shared_ptr<UICheckBox> termsBox_;
+    std::shared_ptr<UIButton>   createButton_;
+    std::shared_ptr<UILabel>    statusLabel_;
+    std::shared_ptr<UILabel>    signInLink_;
+
+    bool submitting_ = false;
 };

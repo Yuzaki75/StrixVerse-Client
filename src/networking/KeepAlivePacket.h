@@ -1,26 +1,26 @@
-#ifndef KEEP_ALIVE_PACKET_H
-#define KEEP_ALIVE_PACKET_H
+#pragma once
 
 #include "Packet.h"
 
-class KeepAlivePacket : public Packet {
+
+// Idle-timeout heartbeat.
+// Field order and types mirror Server/src/network/Packets/KeepAlivePacket.cpp exactly.
+class KeepAlivePacket final : public Packet
+{
 public:
-    KeepAlivePacket() = default;
+    uint64_t Timestamp = 0;
 
-    PacketType getType() const override { return PacketType::KeepAlive; }
+    Opcode getOpcode() const override { return Opcode::KeepAlive; }
 
-    void serialize(PacketBuffer& buffer) const override {
-        // No payload
+    const char* getName() const override { return "KeepAlivePacket"; }
+
+    void serialize(PacketBuffer& buffer) const override
+    {
+        buffer.write(Timestamp);
     }
 
-    void deserialize(PacketBuffer& buffer) override {
-        // No payload to read
-    }
-
-protected:
-    std::shared_ptr<Packet> createInstance() const override {
-        return std::make_shared<KeepAlivePacket>();
+    void deserialize(PacketBuffer& buffer) override
+    {
+        Timestamp = buffer.read<uint64_t>();
     }
 };
-
-#endif // KEEP_ALIVE_PACKET_H

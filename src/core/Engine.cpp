@@ -1,44 +1,65 @@
 #include "Engine.h"
 
-#include "Game.h"
-
+#include "AssetManager.h"
+#include "Config.h"
 #include "Logger.h"
+#include "ServiceLocator.h"
 #include "Timer.h"
 #include "Window.h"
+
 #include "../graphics/Renderer.h"
-#include "AssetManager.h"
-#include "../graphics/Font.h"
-#include "../graphics/SpriteBatch.h"
-#include "ServiceLocator.h"
-#include "networking/NetworkManager.h"
+#include "../graphics/UIRenderer.h"
+#include "../ui/UITheme.h"
 
-#include <filesystem>
-
-// UI Includes
-#include "ui/UIManager.h"
-#include "ui/UIPanel.h"
-
-// Screen Includes
 #include "screens/SplashScreen.h"
-#include "screens/ScreenFactory.h"
-#include "core/AuthService.h"
-#include "core/WorldManager.h"
 
 // Component and System includes for ECS setup
-#include "ecs/TransformComponent.h"
-#include "ecs/SpriteComponent.h"
-#include "ecs/VelocityComponent.h"
-#include "ecs/InputComponent.h"
-#include "ecs/NetworkComponent.h"
-#include "ecs/PlayerComponent.h"
-#include "ecs/MovementSystem.h"
-#include "ecs/RenderSystem.h"
-#include "ecs/InputSystem.h"
-#include "ecs/NetworkSyncSystem.h"
-#include "ecs/SystemManager.h"
-#include "ecs/PlayerSystem.h"
-#include "ecs/Camera2DSystem.h"
 #include "ecs/Camera2DComponent.h"
+#include "ecs/Camera2DSystem.h"
+#include "ecs/ColliderComponent.h"
+#include "ecs/CollisionSystem.h"
+#include "ecs/InputComponent.h"
+#include "ecs/InputSystem.h"
+#include "ecs/MovementSystem.h"
+#include "ecs/NetworkComponent.h"
+#include "ecs/NetworkSyncSystem.h"
+#include "ecs/PlayerComponent.h"
+#include "ecs/PlayerSystem.h"
+#include "ecs/RenderSystem.h"
+#include "ecs/SpriteComponent.h"
+#include "ecs/SystemManager.h"
+#include "ecs/TileRendererSystem.h"
+#include "ecs/TransformComponent.h"
+#include "ecs/VelocityComponent.h"
+
+#include <SDL3/SDL.h>
+
+#include <algorithm>
+
+namespace
+{
+    // Translates SDL key codes into the UI's own key enum so nothing under
+    // ui/ or screens/ has to include SDL.
+    int TranslateKey(SDL_Keycode key)
+    {
+        switch (key)
+        {
+        case SDLK_BACKSPACE: return UIKey::Backspace;
+        case SDLK_DELETE:    return UIKey::Delete;
+        case SDLK_LEFT:      return UIKey::Left;
+        case SDLK_RIGHT:     return UIKey::Right;
+        case SDLK_UP:        return UIKey::Up;
+        case SDLK_DOWN:      return UIKey::Down;
+        case SDLK_HOME:      return UIKey::Home;
+        case SDLK_END:       return UIKey::End;
+        case SDLK_TAB:       return UIKey::Tab;
+        case SDLK_RETURN:
+        case SDLK_KP_ENTER:  return UIKey::Enter;
+        case SDLK_ESCAPE:    return UIKey::Escape;
+        default:             return UIKey::None;
+        }
+    }
+}
 
 Engine::Engine() = default;
 
@@ -48,31 +69,7 @@ Engine::~Engine()
     Shutdown();
 }
 
-// Screen management
-void Engine::SetCurrentScreen(std::unique_ptr<Screen> screen)
-{
-    // Exit current screen if exists
-    if (m_CurrentScreen)
-    {
-        m_CurrentScreen->OnExit();
-    }
-
-    // Set new screen
-    m_CurrentScreen = std::move(screen);
-
-    // Enter new screen
-    if (m_CurrentScreen)
-    {
-        m_CurrentScreen->OnEnter();
-    }
-
-    // Clear any pending screen and reset transition state (immediate change)
-    m_PendingScreen.reset();
-    m_TransitionState = TransitionState::None;
-    m_TransitionTimer = 0.0f;
-}
-
-bool Engine::Initialize(Window *window)
+bool Engine::Initialize(Window* window, Config* config)
 {
     if (m_State != EngineState::Uninitialized)
     {
@@ -87,6 +84,7 @@ bool Engine::Initialize(Window *window)
     }
 
     m_Window = window;
+    m_Config = config;
 
     Timer::Initialize();
 
@@ -98,37 +96,30 @@ bool Engine::Initialize(Window *window)
     }
 
     // Register the engine itself for systems that need to reach back into it.
-    ServiceLocator::Provide(std::shared_ptr<Engine>(this, [](Engine *) {}));
+    ServiceLocator::Provide(std::shared_ptr<Engine>(this, [](Engine*) {}));
 
-    // Create and register the asset manager.
     m_AssetManager = std::make_shared<AssetManager>();
     ServiceLocator::Provide(m_AssetManager);
 
-    // Create and register UI rendering services.
     m_SpriteBatch = std::make_shared<SpriteBatch>();
     ServiceLocator::Provide(m_SpriteBatch);
 
-    m_Font = std::make_shared<Font>();
-    const std::filesystem::path fontCandidates[] =
-        {
-            "C:/Windows/Fonts/segoeui.ttf",
-            "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/calibri.ttf"};
-
-    for (const auto &fontPath : fontCandidates)
+    m_UIRenderer = std::make_shared<UIRenderer>();
+    if (!m_UIRenderer->Initialize(*m_AssetManager))
     {
-        if (std::filesystem::exists(fontPath) && m_Font->Load(fontPath.string(), 24))
-        {
-            break;
-        }
+        Logger::Error("Engine: failed to initialize the UI renderer.");
+        return false;
     }
+    ServiceLocator::Provide(m_UIRenderer);
 
-    if (!m_Font->IsLoaded())
-    {
-        Logger::Warning("Engine: no system font could be loaded; text rendering will be disabled.");
-    }
+    // Rasterise the design's typefaces. A missing font file is logged and the
+    // client still starts, just without text in that role.
+    m_UIFonts = std::make_shared<UIFonts>();
+    m_UIFonts->Initialize(*m_AssetManager);
+    ServiceLocator::Provide(m_UIFonts);
 
-    ServiceLocator::Provide(m_Font);
+    // Establish the canvas mapping before any screen lays itself out.
+    HandleResize();
 
     // Initialize ECS Managers
     m_pEntityManager = std::make_shared<StrixVerse::ECS::EntityManager>();
@@ -140,7 +131,6 @@ bool Engine::Initialize(Window *window)
     m_pEntityManager->SetSystemManager(m_pSystemManager.get());
     m_pComponentManager->SetSystemManager(m_pSystemManager.get());
 
-    // Register ECS managers with service locator
     ServiceLocator::Provide(m_pEntityManager);
     ServiceLocator::Provide(m_pComponentManager);
     ServiceLocator::Provide(m_pSystemManager);
@@ -153,54 +143,93 @@ bool Engine::Initialize(Window *window)
     m_pComponentManager->registerComponent<StrixVerse::ECS::NetworkComponent>();
     m_pComponentManager->registerComponent<StrixVerse::ECS::PlayerComponent>();
     m_pComponentManager->registerComponent<StrixVerse::ECS::Camera2DComponent>();
+    m_pComponentManager->registerComponent<StrixVerse::ECS::ColliderComponent>();
 
-    // Create and register essential systems
+    // Systems run in registration order, for both update and render, so this
+    // single order has to satisfy both:
+    //
+    //   update: sample input -> turn it into velocity -> integrate -> follow
+    //   render: tiles first, then the entities standing on them
+    //
+    // Each system declares its own signature in init(), so none is set here.
+    auto inputSystem = m_pSystemManager->createSystem<StrixVerse::ECS::InputSystem>();
+    m_pSystemManager->addSystem(inputSystem);
+
+    auto playerSystem = m_pSystemManager->createSystem<StrixVerse::ECS::PlayerSystem>();
+    m_pSystemManager->addSystem(playerSystem);
+
+    // Collision clamps the velocity before MovementSystem integrates it.
+    auto collisionSystem = m_pSystemManager->createSystem<StrixVerse::ECS::CollisionSystem>();
+    m_pSystemManager->addSystem(collisionSystem);
+
     auto movementSystem = m_pSystemManager->createSystem<StrixVerse::ECS::MovementSystem>();
-    movementSystem->setSignature<StrixVerse::ECS::Transform, StrixVerse::ECS::VelocityComponent>();
     m_pSystemManager->addSystem(movementSystem);
 
-    auto renderSystem = m_pSystemManager->createSystem<StrixVerse::ECS::RenderSystem>();
-    renderSystem->setSignature<StrixVerse::ECS::Transform, StrixVerse::ECS::SpriteComponent>();
-    m_pSystemManager->addSystem(renderSystem);
+    // Remote entities are driven by the network rather than by input, so their
+    // transforms are refreshed after local integration and before the camera
+    // and renderer read them.
+    auto networkSyncSystem = m_pSystemManager->createSystem<StrixVerse::ECS::NetworkSyncSystem>();
+    m_pSystemManager->addSystem(networkSyncSystem);
 
     auto cameraSystem = m_pSystemManager->createSystem<StrixVerse::ECS::Camera2DSystem>();
-    cameraSystem->setSignature<StrixVerse::ECS::Camera2DComponent, StrixVerse::ECS::Transform>();
     m_pSystemManager->addSystem(cameraSystem);
 
-    // Initialize UI Manager
+    auto tileRendererSystem = m_pSystemManager->createSystem<StrixVerse::ECS::TileRendererSystem>();
+    m_pSystemManager->addSystem(tileRendererSystem);
+
+    auto renderSystem = m_pSystemManager->createSystem<StrixVerse::ECS::RenderSystem>();
+    m_pSystemManager->addSystem(renderSystem);
+
     m_UIManager = std::make_shared<UIManager>();
     ServiceLocator::Provide(m_UIManager);
 
-    // Create fade overlay for transitions
-    m_FadeOverlay = std::make_shared<UIPanel>();
-    int width, height;
-    m_Window->GetSize(width, height);
-    m_FadeOverlay->setSize(static_cast<float>(width), static_cast<float>(height));
-    m_FadeOverlay->setPosition(0.0f, 0.0f);
-    m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.0f}); // start fully transparent
-    m_UIManager->addElement(m_FadeOverlay);
-
-    // Initialize AuthService
     m_AuthService = std::make_unique<AuthService>();
-
-    // Initialize WorldManager
     m_WorldManager = std::make_unique<WorldManager>();
 
-    // Initialize network manager
     if (!m_NetworkManager.initialize())
     {
         Logger::Error("Engine: failed to initialize network manager.");
         return false;
     }
 
-    // Initialize screen system - start with splash screen
-    SetCurrentScreen(std::make_unique<SplashScreen>(this));
+    // Authentication runs over the session once one exists. In offline mode it
+    // resolves locally instead - an explicit choice, never a silent fallback.
+    m_AuthService->SetNetworkManager(&m_NetworkManager);
+    m_AuthService->SetOfflineMode(IsOfflineMode());
+
+    if (IsOfflineMode())
+        Logger::Warning("Engine: offline mode is enabled; the server will not be contacted.");
+
+    // Start on the splash screen.
+    m_CurrentScreen = std::make_unique<SplashScreen>(this);
+    m_CurrentScreen->OnEnter();
 
     m_State = EngineState::Initialized;
 
     Logger::Info("Engine initialized.");
 
     return true;
+}
+
+bool Engine::IsOfflineMode() const
+{
+    return m_Config != nullptr && m_Config->IsOfflineMode();
+}
+
+bool Engine::ConnectToServer()
+{
+    if (IsOfflineMode())
+        return false;
+
+    if (m_NetworkManager.isConnected())
+        return true;
+
+    const std::string host = m_Config ? m_Config->GetServerHost() : std::string("127.0.0.1");
+    const uint16_t    port = static_cast<uint16_t>(m_Config ? m_Config->GetServerPort() : 17091);
+
+    Logger::Info(std::format("Engine: connecting to {}:{}...", host, port));
+
+    return m_NetworkManager.connect(host, port);
 }
 
 void Engine::Run()
@@ -214,27 +243,41 @@ void Engine::Run()
     m_State = EngineState::Running;
     Logger::Info("Engine: Starting main loop");
 
-    // Main game loop
     while (m_State == EngineState::Running)
     {
-        // Calculate delta time
-        float deltaTime = Timer::GetDeltaTime();
-        float fixedDeltaTime = Timer::GetFixedTimestep();
+        // Real frame time drives the UI, animations and transitions; the ECS
+        // keeps its own fixed step for deterministic simulation.
+        const float deltaTime = std::min(Timer::GetDeltaTime(), 0.1f);
 
-        // Process events (input, window events, etc.)
         ProcessEvents();
-
-        // Update game logic (fixed timestep for physics, etc.)
-        Update();
-
-        // Render the frame
+        Update(deltaTime);
         Render();
 
-        // Update timer for next frame
         Timer::Update();
     }
 
     Logger::Info("Engine: Main loop ended");
+}
+
+void Engine::HandleResize()
+{
+    if (!m_Window)
+        return;
+
+    int width = 0;
+    int height = 0;
+    m_Window->GetSize(width, height);
+
+    if (width <= 0 || height <= 0)
+        return;
+
+    Renderer::SetViewport(width, height);
+
+    m_UIScale.Update(width, height);
+
+    // The camera owns the world projection, so it needs the new viewport; the
+    // SpriteBatch picks the matrix up per frame in Render().
+    m_Camera.SetViewport(static_cast<float>(width), static_cast<float>(height));
 }
 
 void Engine::ProcessEvents()
@@ -242,143 +285,216 @@ void Engine::ProcessEvents()
     if (!m_Window)
         return;
 
-    // Process window events (keyboard, mouse, window close, etc.)
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
-        // Handle window events
-        if (event.type == SDL_EVENT_QUIT)
+        switch (event.type)
         {
+        case SDL_EVENT_QUIT:
             Stop();
             return;
+
+        case SDL_EVENT_WINDOW_RESIZED:
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+            HandleResize();
+            break;
+
+        case SDL_EVENT_MOUSE_MOTION:
+        {
+            const glm::vec2 canvas = m_UIScale.ToCanvas(event.motion.x, event.motion.y);
+            if (m_UIManager)
+                m_UIManager->handleMouseMove(canvas.x, canvas.y);
+            break;
         }
 
-        // Forward event to UI manager
-        if (m_UIManager)
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
         {
-            switch (event.type)
-            {
-            case SDL_EVENT_MOUSE_MOTION:
-                m_UIManager->handleMouseMove(event.motion.x, event.motion.y);
+            if (event.button.button != SDL_BUTTON_LEFT)
                 break;
-            case SDL_EVENT_MOUSE_BUTTON_DOWN:
-                m_UIManager->handleMouseDown(event.button.x, event.button.y);
-                break;
-            case SDL_EVENT_MOUSE_BUTTON_UP:
-                m_UIManager->handleMouseUp(event.button.x, event.button.y);
-                break;
-            case SDL_EVENT_KEY_DOWN:
-                if (event.key.key < 256) // Regular character key
-                    m_UIManager->handleKeyPressed(static_cast<char>(event.key.key));
-                else // Special key (arrow keys, etc.)
-                    m_UIManager->handleSpecialKeyPressed(event.key.key);
-                break;
-            default:
-                break;
-            }
+
+            const glm::vec2 canvas = m_UIScale.ToCanvas(event.button.x, event.button.y);
+
+            if (m_UIManager)
+                m_UIManager->handleMouseDown(canvas.x, canvas.y);
+
+            if (m_CurrentScreen)
+                m_CurrentScreen->OnMouseDown(canvas.x, canvas.y);
+            break;
         }
 
-        // Forward event to current screen
-        if (m_CurrentScreen)
+        case SDL_EVENT_MOUSE_BUTTON_UP:
         {
-            m_CurrentScreen->HandleInput();
+            if (event.button.button != SDL_BUTTON_LEFT)
+                break;
+
+            const glm::vec2 canvas = m_UIScale.ToCanvas(event.button.x, event.button.y);
+            if (m_UIManager)
+                m_UIManager->handleMouseUp(canvas.x, canvas.y);
+            break;
         }
+
+        case SDL_EVENT_MOUSE_WHEEL:
+        {
+            float mouseX = 0.0f;
+            float mouseY = 0.0f;
+            SDL_GetMouseState(&mouseX, &mouseY);
+
+            const glm::vec2 canvas = m_UIScale.ToCanvas(mouseX, mouseY);
+            if (m_UIManager)
+                m_UIManager->handleScroll(canvas.x, canvas.y, event.wheel.y);
+            break;
+        }
+
+        case SDL_EVENT_TEXT_INPUT:
+        {
+            // Real text arrives here as UTF-8, already through the platform's
+            // keyboard layout and any IME.
+            if (m_UIManager && event.text.text)
+                m_UIManager->handleTextInput(event.text.text);
+            break;
+        }
+
+        case SDL_EVENT_KEY_DOWN:
+        {
+            const SDL_Keymod mods  = event.key.mod;
+            const bool       ctrl  = (mods & SDL_KMOD_CTRL) != 0;
+            const bool       shift = (mods & SDL_KMOD_SHIFT) != 0;
+            const int        key   = TranslateKey(event.key.key);
+
+            const bool uiConsumes = m_UIManager && m_UIManager->getFocusedElement() != nullptr;
+
+            if (key != UIKey::None && m_UIManager)
+                m_UIManager->handleKeyDown(key, ctrl, shift);
+
+            // Screen-level handlers run when nothing has keyboard focus, so a
+            // "press any key" screen never eats a keystroke meant for a field.
+            if (m_CurrentScreen && (!uiConsumes || m_CurrentScreen->WantsRawInput()))
+                m_CurrentScreen->OnKeyDown(key, ctrl, shift);
+            break;
+        }
+
+        default:
+            break;
+        }
+    }
+
+    // Keep the platform's text input service in step with UI focus.
+    if (m_UIManager && m_Window && m_Window->GetSDLWindow())
+    {
+        const bool wanted = m_UIManager->isTextInputActive();
+        const bool active = SDL_TextInputActive(m_Window->GetSDLWindow());
+
+        if (wanted && !active)
+            SDL_StartTextInput(m_Window->GetSDLWindow());
+        else if (!wanted && active)
+            SDL_StopTextInput(m_Window->GetSDLWindow());
     }
 }
 
-void Engine::Update()
+void Engine::RequestScreenChange(ScreenID id)
+{
+    if (m_TransitionState != TransitionState::None)
+        return;
+
+    m_NextScreen     = id;
+    m_HasNextScreen  = true;
+    m_TransitionState = TransitionState::FadingOut;
+    m_TransitionTimer = 0.0f;
+}
+
+void Engine::SwitchScreen(ScreenID id)
+{
+    if (m_CurrentScreen)
+    {
+        m_CurrentScreen->OnExit();
+        m_CurrentScreen.reset();
+    }
+
+    // Belt and braces: even if a screen forgets to tear down an element, no
+    // UI state survives into the next screen.
+    if (m_UIManager)
+        m_UIManager->clearAllElements();
+
+    m_CurrentScreen = ScreenFactory::CreateScreen(id, this);
+
+    if (!m_CurrentScreen)
+    {
+        Logger::Error("Engine: ScreenFactory returned no screen; falling back to Splash.");
+        m_CurrentScreen = ScreenFactory::CreateScreen(ScreenID::Splash, this);
+    }
+
+    if (m_CurrentScreen)
+        m_CurrentScreen->OnEnter();
+}
+
+void Engine::UpdateTransition(float deltaTime)
+{
+    // A screen asking to move on starts the fade.
+    if (m_TransitionState == TransitionState::None &&
+        m_CurrentScreen && m_CurrentScreen->HasPendingChange())
+    {
+        m_NextScreen = m_CurrentScreen->GetPendingChange();
+        m_CurrentScreen->ClearPendingChange();
+
+        m_HasNextScreen   = true;
+        m_TransitionState = TransitionState::FadingOut;
+        m_TransitionTimer = 0.0f;
+    }
+
+    switch (m_TransitionState)
+    {
+    case TransitionState::None:
+        m_FadeAlpha = 0.0f;
+        break;
+
+    case TransitionState::FadingOut:
+        m_TransitionTimer += deltaTime;
+        m_FadeAlpha = std::clamp(m_TransitionTimer / m_TransitionLength, 0.0f, 1.0f);
+
+        if (m_TransitionTimer >= m_TransitionLength)
+        {
+            m_FadeAlpha = 1.0f;
+
+            if (m_HasNextScreen)
+                SwitchScreen(m_NextScreen);
+
+            m_HasNextScreen   = false;
+            m_TransitionState = TransitionState::FadingIn;
+            m_TransitionTimer = 0.0f;
+        }
+        break;
+
+    case TransitionState::FadingIn:
+        m_TransitionTimer += deltaTime;
+        m_FadeAlpha = 1.0f - std::clamp(m_TransitionTimer / m_TransitionLength, 0.0f, 1.0f);
+
+        if (m_TransitionTimer >= m_TransitionLength)
+        {
+            m_FadeAlpha       = 0.0f;
+            m_TransitionState = TransitionState::None;
+            m_TransitionTimer = 0.0f;
+        }
+        break;
+    }
+}
+
+void Engine::Update(float deltaTime)
 {
     if (m_State != EngineState::Running)
         return;
 
-    // Get fixed time step for consistent physics/gameplay updates
-    float fixedDeltaTime = Timer::GetFixedTimestep();
-
-    // Update ECS systems
     if (m_pSystemManager)
-    {
-        m_pSystemManager->update(fixedDeltaTime);
-    }
+        m_pSystemManager->update(Timer::GetFixedTimestep());
 
-    // Update current screen
+    m_NetworkManager.update(deltaTime);
+
+    if (m_UIManager)
+        m_UIManager->update(deltaTime);
+
     if (m_CurrentScreen)
-    {
-        m_CurrentScreen->Update(fixedDeltaTime);
-    }
+        m_CurrentScreen->Update(deltaTime);
 
-    // Handle screen transitions
-    if (m_PendingScreen)
-    {
-        // Handle transition based on current state
-        switch (m_TransitionState)
-        {
-        case TransitionState::None:
-            // Start fading out
-            m_TransitionState = TransitionState::FadingOut;
-            m_TransitionTimer = 0.0f;
-            m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.0f});
-            break;
-
-        case TransitionState::FadingOut:
-            m_TransitionTimer += fixedDeltaTime;
-            if (m_TransitionTimer >= m_TransitionDuration)
-            {
-                // Finish fade out, switch screens
-                m_TransitionTimer = m_TransitionDuration;
-
-                // Hide current screen
-                if (m_CurrentScreen)
-                {
-                    m_CurrentScreen->OnExit();
-                }
-                m_CurrentScreen.reset();
-
-                // Show new screen
-                m_CurrentScreen = std::move(m_PendingScreen);
-                if (m_CurrentScreen)
-                {
-                    m_CurrentScreen->OnEnter();
-                }
-
-                // Start fading in
-                m_TransitionState = TransitionState::FadingIn;
-                m_TransitionTimer = 0.0f;
-            }
-            else
-            {
-                // Continue fading out
-                float alpha = m_TransitionTimer / m_TransitionDuration;
-                m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, alpha});
-            }
-            break;
-
-        case TransitionState::FadingIn:
-            m_TransitionTimer += fixedDeltaTime;
-            if (m_TransitionTimer >= m_TransitionDuration)
-            {
-                // Finish fade in
-                m_TransitionTimer = m_TransitionDuration;
-                m_TransitionState = TransitionState::None;
-                m_PendingScreen.reset();
-            }
-            else
-            {
-                // Continue fading in
-                float alpha = 1.0f - (m_TransitionTimer / m_TransitionDuration);
-                m_FadeOverlay->setBackgroundColor({0.0f, 0.0f, 0.0f, alpha});
-            }
-            break;
-        }
-    }
-
-    // Update fade overlay (for transitions)
-    if (m_FadeOverlay)
-    {
-        // Fade overlay is updated implicitly through the transition logic above
-    }
-
-    // Update HUDs or other UI elements that need per-frame updates
-    // (This would typically be handled by individual screens or systems)
+    UpdateTransition(deltaTime);
 }
 
 void Engine::Render()
@@ -386,29 +502,46 @@ void Engine::Render()
     if (m_State != EngineState::Running)
         return;
 
-    // Clear the screen
-    Renderer::SetClearColor({0.1f, 0.1f, 0.1f, 1.0f}); // Dark gray background
+    Renderer::SetClearColor(UITheme::Background);
     Renderer::BeginFrame();
 
-    // Render ECS systems (sprites, etc.)
+    // World layer. The camera is followed by Camera2DSystem during update, so
+    // its matrix is refreshed here, immediately before anything uses it.
+    // Without this the world drew through a fixed window-pixel projection and
+    // the camera had no effect on screen at all.
+    if (m_SpriteBatch)
+        m_SpriteBatch->SetProjection(m_Camera.GetViewProjectionMatrix());
+
     if (m_pSystemManager)
-    {
         m_pSystemManager->render();
-    }
 
-    // Render current screen
     if (m_CurrentScreen)
+        m_CurrentScreen->RenderGame();
+
+    // UI layer, drawn in one batched pass over the design canvas.
+    if (m_UIRenderer && m_UIRenderer->IsReady())
     {
-        m_CurrentScreen->Render();
+        m_UIRenderer->Begin(m_UIScale.GetVisibleCanvas(),
+                            m_UIScale.GetFramebufferWidth(),
+                            m_UIScale.GetFramebufferHeight());
+
+        if (m_UIManager)
+            m_UIManager->render(*m_UIRenderer);
+
+        // The transition fade is drawn last so it covers the whole screen.
+        if (m_FadeAlpha > 0.0f)
+        {
+            m_UIRenderer->SetGlobalOpacity(1.0f);
+            m_UIRenderer->DrawRect(m_UIScale.GetVisibleLeft(),
+                                   m_UIScale.GetVisibleTop(),
+                                   m_UIScale.GetVisibleWidth(),
+                                   m_UIScale.GetVisibleHeight(),
+                                   UIQuadStyle::Solid(Color(0.0f, 0.0f, 0.0f, m_FadeAlpha)));
+        }
+
+        m_UIRenderer->End();
     }
 
-    // Render UI (including fade overlay)
-    if (m_UIManager)
-    {
-        m_UIManager->render();
-    }
-
-    // Present the frame
     m_Window->EndFrame();
 }
 
@@ -419,42 +552,39 @@ void Engine::Shutdown()
 
     Logger::Info("Engine: Shutting down");
 
-    // Stop the engine if it's running
     if (m_State == EngineState::Running)
-    {
         Stop();
-    }
 
-    // Clean up current screen
     if (m_CurrentScreen)
     {
         m_CurrentScreen->OnExit();
         m_CurrentScreen.reset();
     }
 
-    // Clean up pending screen
-    m_PendingScreen.reset();
-
-    // Clean up UI manager (this will destroy UI elements and their textures)
+    if (m_UIManager)
+        m_UIManager->clearAllElements();
     m_UIManager.reset();
 
-    // Clean up ECS managers
     m_pSystemManager.reset();
     m_pComponentManager.reset();
     m_pEntityManager.reset();
 
-    // Clean up asset manager (this will destroy textures, shaders, etc.)
+    // The UI renderer and fonts own GL objects, so they must go before the
+    // asset manager drops the shaders and atlases they reference.
+    m_UIFonts.reset();
+
+    if (m_UIRenderer)
+        m_UIRenderer->Shutdown();
+    m_UIRenderer.reset();
+
+    m_SpriteBatch.reset();
+
     m_AssetManager.reset();
 
-    // Clean up services (AuthService, WorldManager) - note: these are unique_ptrs
     m_WorldManager.reset();
     m_AuthService.reset();
 
-    // Shutdown renderer (this will destroy the OpenGL context)
     Renderer::Shutdown();
-
-    // Shutdown timer
-    // Timer::Shutdown(); // Timer doesn't have a shutdown method
 
     m_State = EngineState::Shutdown;
     Logger::Info("Engine: Shutdown complete");

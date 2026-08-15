@@ -35,7 +35,7 @@ bool Application::Initialize()
         return false;
     }
 
-    if (!m_Engine.Initialize(&m_Window))
+    if (!m_Engine.Initialize(&m_Window, &m_Config))
     {
         Logger::Error("Failed to initialize engine.");
         return false;

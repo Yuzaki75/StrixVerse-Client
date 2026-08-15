@@ -1,48 +1,33 @@
-#ifndef REGISTER_PACKET_H
-#define REGISTER_PACKET_H
+#pragma once
 
 #include "Packet.h"
+
 #include <string>
 
-class RegisterPacket : public Packet {
+// New account details submitted by the register screen.
+// Field order and types mirror Server/src/network/Packets/RegisterPacket.cpp exactly.
+class RegisterPacket final : public Packet
+{
 public:
-    RegisterPacket() = default;
-    RegisterPacket(const std::string& username, const std::string& password, const std::string& email)
-        : m_username(username), m_password(password), m_email(email) {}
+    std::string Username;
+    std::string Email;
+    std::string Password;
 
-    PacketType getType() const override { return PacketType::Register; }
+    Opcode getOpcode() const override { return Opcode::Register; }
 
-    void serialize(PacketBuffer& buffer) const override {
-        buffer.writeString(m_username);
-        buffer.writeString(m_password);
-        buffer.writeString(m_email);
+    const char* getName() const override { return "RegisterPacket"; }
+
+    void serialize(PacketBuffer& buffer) const override
+    {
+        buffer.writeString(Username, ProtocolLimits::MaxUsernameLength);
+        buffer.writeString(Email, ProtocolLimits::MaxEmailLength);
+        buffer.writeString(Password, ProtocolLimits::MaxPasswordLength);
     }
 
-    void deserialize(PacketBuffer& buffer) override {
-        m_username = buffer.readString();
-        m_password = buffer.readString();
-        m_email = buffer.readString();
+    void deserialize(PacketBuffer& buffer) override
+    {
+        Username = buffer.readString(ProtocolLimits::MaxUsernameLength);
+        Email = buffer.readString(ProtocolLimits::MaxEmailLength);
+        Password = buffer.readString(ProtocolLimits::MaxPasswordLength);
     }
-
-    // Getters
-    const std::string& getUsername() const { return m_username; }
-    const std::string& getPassword() const { return m_password; }
-    const std::string& getEmail() const { return m_email; }
-
-    // Setters
-    void setUsername(const std::string& username) { m_username = username; }
-    void setPassword(const std::string& password) { m_password = password; }
-    void setEmail(const std::string& email) { m_email = email; }
-
-protected:
-    std::shared_ptr<Packet> createInstance() const override {
-        return std::make_shared<RegisterPacket>();
-    }
-
-private:
-    std::string m_username;
-    std::string m_password;
-    std::string m_email;
 };
-
-#endif // REGISTER_PACKET_H

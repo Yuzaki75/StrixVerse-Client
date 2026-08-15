@@ -83,7 +83,7 @@ CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE
 CMAKE_FIND_PACKAGE_REDIRECTS_DIR:STATIC=C:/Projects/StrixVerse/Client/build/debug/CMakeFiles/pkgRedirects
 
 //Install path prefix, prepended onto install directories.
-CMAKE_INSTALL_PREFIX:PATH=C:/Program Files (x86)/StrixVerseClient
+CMAKE_INSTALL_PREFIX:PATH=C:/Program Files/StrixVerseClient
 
 //Path to a program.
 CMAKE_LINKER:FILEPATH=C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.exe
@@ -273,9 +273,6 @@ ZLIB_LIBRARY_RELEASE:FILEPATH=C:/vcpkg/installed/x64-windows/lib/z.lib
 // triplet
 _VCPKG_INSTALLED_DIR:PATH=C:/vcpkg/installed
 
-//The directory containing a CMake configuration file for glad.
-glad_DIR:PATH=C:/vcpkg/installed/x64-windows/share/glad
-
 //The directory containing a CMake configuration file for glm.
 glm_DIR:PATH=C:/vcpkg/installed/x64-windows/share/glm
 
@@ -343,7 +340,7 @@ CMAKE_GENERATOR:INTERNAL=Visual Studio 18 2026
 //Generator instance identifier.
 CMAKE_GENERATOR_INSTANCE:INTERNAL=C:/Program Files/Microsoft Visual Studio/18/Community
 //Name of generator platform.
-CMAKE_GENERATOR_PLATFORM:INTERNAL=
+CMAKE_GENERATOR_PLATFORM:INTERNAL=x64
 //Name of generator toolset.
 CMAKE_GENERATOR_TOOLSET:INTERNAL=
 //Test CMAKE_HAVE_LIBC_PTHREAD

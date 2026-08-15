@@ -9,6 +9,7 @@ namespace StrixVerse
         class InputSystem : public System
         {
         public:
+            void init(EntityManager* entityManager, ComponentManager* componentManager) override;
             void update(const std::vector<Entity>& entities, float dt) override;
         };
     }

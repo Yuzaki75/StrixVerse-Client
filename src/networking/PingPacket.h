@@ -1,34 +1,26 @@
-#ifndef PING_PACKET_H
-#define PING_PACKET_H
+#pragma once
 
 #include "Packet.h"
-#include <cstdint>
 
-class PingPacket : public Packet {
+
+// Latency probe; the peer echoes the timestamp back in a PongPacket.
+// Field order and types mirror Server/src/network/Packets/PingPacket.cpp exactly.
+class PingPacket final : public Packet
+{
 public:
-    PingPacket() = default;
-    explicit PingPacket(uint64_t timestamp) : m_timestamp(timestamp) {}
+    uint64_t Timestamp = 0;
 
-    PacketType getType() const override { return PacketType::Ping; }
+    Opcode getOpcode() const override { return Opcode::Ping; }
 
-    void serialize(PacketBuffer& buffer) const override {
-        buffer.write(m_timestamp);
+    const char* getName() const override { return "PingPacket"; }
+
+    void serialize(PacketBuffer& buffer) const override
+    {
+        buffer.write(Timestamp);
     }
 
-    void deserialize(PacketBuffer& buffer) override {
-        m_timestamp = buffer.read<uint64_t>();
+    void deserialize(PacketBuffer& buffer) override
+    {
+        Timestamp = buffer.read<uint64_t>();
     }
-
-    uint64_t getTimestamp() const { return m_timestamp; }
-    void setTimestamp(uint64_t timestamp) { m_timestamp = timestamp; }
-
-protected:
-    std::shared_ptr<Packet> createInstance() const override {
-        return std::make_shared<PingPacket>();
-    }
-
-private:
-    uint64_t m_timestamp;
 };
-
-#endif // PING_PACKET_H

@@ -1,36 +1,26 @@
-#ifndef PLAYER_REMOVE_PACKET_H
-#define PLAYER_REMOVE_PACKET_H
+#pragma once
 
 #include "Packet.h"
 
-class PlayerRemovePacket : public Packet {
+
+// A player left view or disconnected.
+// Field order and types mirror Server/src/network/Packets/PlayerRemovePacket.cpp exactly.
+class PlayerRemovePacket final : public Packet
+{
 public:
-    PlayerRemovePacket() = default;
-    explicit PlayerRemovePacket(uint32_t entityId) : m_entityId(entityId) {}
+    uint64_t EntityID = 0;
 
-    PacketType getType() const override { return PacketType::PlayerRemove; }
+    Opcode getOpcode() const override { return Opcode::PlayerRemove; }
 
-    void serialize(PacketBuffer& buffer) const override {
-        buffer.write(m_entityId);
+    const char* getName() const override { return "PlayerRemovePacket"; }
+
+    void serialize(PacketBuffer& buffer) const override
+    {
+        buffer.write(EntityID);
     }
 
-    void deserialize(PacketBuffer& buffer) override {
-        m_entityId = buffer.read<uint32_t>();
+    void deserialize(PacketBuffer& buffer) override
+    {
+        EntityID = buffer.read<uint64_t>();
     }
-
-    // Getter
-    uint32_t getEntityId() const { return m_entityId; }
-
-    // Setter
-    void setEntityId(uint32_t id) { m_entityId = id; }
-
-protected:
-    std::shared_ptr<Packet> createInstance() const override {
-        return std::make_shared<PlayerRemovePacket>();
-    }
-
-private:
-    uint32_t m_entityId;
 };
-
-#endif // PLAYER_REMOVE_PACKET_H

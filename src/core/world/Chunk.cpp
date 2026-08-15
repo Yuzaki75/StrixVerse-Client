@@ -20,13 +20,11 @@ namespace StrixVerse
                     }
                 }
             }
-            LOG_DEBUG("Chunk: Created chunk with {}x{}x{} tiles", CHUNK_SIZE, CHUNK_SIZE, CHUNK_HEIGHT);
+            // No per-chunk logging: a world is hundreds of chunks and thousands
+            // of tiles, and the log write dominates generation time.
         }
 
-        Chunk::~Chunk()
-        {
-            LOG_DEBUG("Chunk: Destroyed chunk");
-        }
+        Chunk::~Chunk() = default;
 
         std::shared_ptr<Tile> Chunk::GetTile(int x, int y, int z)
         {

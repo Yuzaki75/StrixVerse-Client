@@ -1,159 +1,253 @@
 #include "UIElement.h"
-#include "../graphics/SpriteBatch.h"
-#include "../graphics/Font.h"
-#include "../core/Logger.h"
 
-UIElement::UIElement()
-    : x_(0), y_(0), width_(0), height_(0),
-      anchor_(AnchorPoint::TopLeft),
-      visible_(true), enabled_(true) {}
+#include "../graphics/UIRenderer.h"
+
+#include <algorithm>
+
+UIElement::UIElement() = default;
 
 UIElement::~UIElement() = default;
 
-void UIElement::setPosition(float x, float y) {
+void UIElement::setPosition(float x, float y)
+{
     x_ = x;
     y_ = y;
 }
 
-void UIElement::setSize(float width, float height) {
-    width_ = width;
+void UIElement::setSize(float width, float height)
+{
+    width_  = width;
     height_ = height;
 }
 
-void UIElement::setAnchor(AnchorPoint anchor) {
+void UIElement::setBounds(float x, float y, float width, float height)
+{
+    setPosition(x, y);
+    setSize(width, height);
+}
+
+void UIElement::setAnchor(AnchorPoint anchor)
+{
     anchor_ = anchor;
 }
 
-void UIElement::setVisible(bool visible) {
-    visible_ = visible;
+void UIElement::setOpacity(float opacity)
+{
+    opacity_ = std::clamp(opacity, 0.0f, 1.0f);
 }
 
-void UIElement::setEnabled(bool enabled) {
-    enabled_ = enabled;
-}
+void UIElement::calculateAnchorOffset(float& offsetX, float& offsetY) const
+{
+    offsetX = 0.0f;
+    offsetY = 0.0f;
 
-bool UIElement::containsPoint(float x, float y) const {
-    float renderX, renderY;
-    calculateRenderPosition(renderX, renderY);
-
-    return (x >= renderX && x <= renderX + width_ &&
-            y >= renderY && y <= renderY + height_);
-}
-
-void UIElement::onMouseDown(float x, float y) {
-    // Default implementation - can be overridden
-}
-
-void UIElement::onMouseUp(float x, float y) {
-    // Default implementation - can be overridden
-}
-
-void UIElement::onMouseMove(float x, float y) {
-    // Default implementation - can be overridden
-}
-
-void UIElement::onMouseEnter() {
-    // Default implementation - can be overridden
-}
-
-void UIElement::onMouseLeave() {
-    // Default implementation - can be overridden
-}
-
-void UIElement::onClick() {
-    // Default implementation - can be overridden
-}
-
-void UIElement::onFocusGained() {
-    // Default implementation - can be overridden
-}
-
-void UIElement::onFocusLost() {
-    // Default implementation - can be overridden
-}
-
-void UIElement::onKeyPressed(char key) {
-    // Default implementation - can be overridden
-}
-
-void UIElement::onSpecialKeyPressed(int key) {
-    // Default implementation - can be overridden
-}
-
-void UIElement::update(float deltaTime) {
-    // Update children
-    for (auto& child : children_) {
-        if (child->isVisible()) {
-            child->update(deltaTime);
-        }
+    switch (anchor_)
+    {
+    case AnchorPoint::TopLeft:
+        break;
+    case AnchorPoint::TopCenter:
+        offsetX = -width_ * 0.5f;
+        break;
+    case AnchorPoint::TopRight:
+        offsetX = -width_;
+        break;
+    case AnchorPoint::MiddleLeft:
+        offsetY = -height_ * 0.5f;
+        break;
+    case AnchorPoint::Center:
+        offsetX = -width_ * 0.5f;
+        offsetY = -height_ * 0.5f;
+        break;
+    case AnchorPoint::MiddleRight:
+        offsetX = -width_;
+        offsetY = -height_ * 0.5f;
+        break;
+    case AnchorPoint::BottomLeft:
+        offsetY = -height_;
+        break;
+    case AnchorPoint::BottomCenter:
+        offsetX = -width_ * 0.5f;
+        offsetY = -height_;
+        break;
+    case AnchorPoint::BottomRight:
+        offsetX = -width_;
+        offsetY = -height_;
+        break;
     }
 }
 
-void UIElement::render(SpriteBatch& spriteBatch, Font& font) const {
-    if (!visible_) return;
+float UIElement::getAbsoluteX() const
+{
+    float offsetX = 0.0f;
+    float offsetY = 0.0f;
+    calculateAnchorOffset(offsetX, offsetY);
 
-    renderSelf(spriteBatch, font);
-    renderChildren(spriteBatch, font);
+    float absolute = x_ + offsetX;
+
+    // Walk up the tree; each ancestor contributes its own anchored origin.
+    for (const UIElement* ancestor = parent_; ancestor != nullptr; ancestor = ancestor->parent_)
+    {
+        float ancestorOffsetX = 0.0f;
+        float ancestorOffsetY = 0.0f;
+        ancestor->calculateAnchorOffset(ancestorOffsetX, ancestorOffsetY);
+        absolute += ancestor->x_ + ancestorOffsetX;
+    }
+
+    return absolute;
 }
 
-void UIElement::addChild(std::shared_ptr<UIElement> child) {
-    children_.push_back(child);
+float UIElement::getAbsoluteY() const
+{
+    float offsetX = 0.0f;
+    float offsetY = 0.0f;
+    calculateAnchorOffset(offsetX, offsetY);
+
+    float absolute = y_ + offsetY;
+
+    for (const UIElement* ancestor = parent_; ancestor != nullptr; ancestor = ancestor->parent_)
+    {
+        float ancestorOffsetX = 0.0f;
+        float ancestorOffsetY = 0.0f;
+        ancestor->calculateAnchorOffset(ancestorOffsetX, ancestorOffsetY);
+        absolute += ancestor->y_ + ancestorOffsetY;
+    }
+
+    return absolute;
 }
 
-void UIElement::removeChild(std::shared_ptr<UIElement> child) {
-    auto it = std::find(children_.begin(), children_.end(), child);
-    if (it != children_.end()) {
+void UIElement::addChild(std::shared_ptr<UIElement> child)
+{
+    if (!child || child.get() == this)
+        return;
+
+    // Detach from any previous parent so a child is never in two trees.
+    if (child->parent_ && child->parent_ != this)
+        child->parent_->removeChild(child);
+
+    child->parent_ = this;
+    children_.push_back(std::move(child));
+}
+
+void UIElement::removeChild(const std::shared_ptr<UIElement>& child)
+{
+    if (!child)
+        return;
+
+    const auto it = std::find(children_.begin(), children_.end(), child);
+    if (it != children_.end())
+    {
+        (*it)->parent_ = nullptr;
         children_.erase(it);
     }
 }
 
-void UIElement::clearChildren() {
+void UIElement::clearChildren()
+{
+    for (auto& child : children_)
+    {
+        if (child)
+            child->parent_ = nullptr;
+    }
     children_.clear();
 }
 
-void UIElement::renderChildren(SpriteBatch& spriteBatch, Font& font) const {
-    for (const auto& child : children_) {
-        if (child->isVisible()) {
-            child->render(spriteBatch, font);
-        }
+bool UIElement::containsPoint(float x, float y) const
+{
+    const float left = getAbsoluteX();
+    const float top  = getAbsoluteY();
+
+    return x >= left && x <= left + width_ &&
+           y >= top  && y <= top + height_;
+}
+
+std::shared_ptr<UIElement> UIElement::hitTest(float x, float y)
+{
+    if (!visible_)
+        return nullptr;
+
+    // Children are drawn in order, so the last one is on top and must be
+    // tested first.
+    for (auto it = children_.rbegin(); it != children_.rend(); ++it)
+    {
+        if (!*it)
+            continue;
+
+        if (auto hit = (*it)->hitTest(x, y))
+            return hit;
+    }
+
+    if (wantsInput() && enabled_ && containsPoint(x, y))
+        return shared_from_this();
+
+    return nullptr;
+}
+
+void UIElement::collectFocusable(std::vector<std::shared_ptr<UIElement>>& out)
+{
+    if (!visible_)
+        return;
+
+    if (isFocusable() && enabled_)
+        out.push_back(shared_from_this());
+
+    for (auto& child : children_)
+    {
+        if (child)
+            child->collectFocusable(out);
     }
 }
 
-void UIElement::calculateRenderPosition(float& renderX, float& renderY) const {
-    renderX = x_;
-    renderY = y_;
+void UIElement::onMouseDown(float, float) {}
+void UIElement::onMouseUp(float, float) {}
+void UIElement::onMouseMove(float, float) {}
+void UIElement::onMouseEnter() {}
+void UIElement::onMouseLeave() {}
+void UIElement::onClick() {}
+void UIElement::onScroll(float) {}
+void UIElement::onFocusGained() {}
+void UIElement::onFocusLost() {}
+void UIElement::onTextInput(const std::string&) {}
+void UIElement::onKeyDown(int, bool, bool) {}
 
-    switch (anchor_) {
-        case AnchorPoint::TopLeft:
-            // No adjustment needed
-            break;
-        case AnchorPoint::TopCenter:
-            renderX -= width_ / 2.0f;
-            break;
-        case AnchorPoint::TopRight:
-            renderX -= width_;
-            break;
-        case AnchorPoint::MiddleLeft:
-            renderY -= height_ / 2.0f;
-            break;
-        case AnchorPoint::Center:
-            renderX -= width_ / 2.0f;
-            renderY -= height_ / 2.0f;
-            break;
-        case AnchorPoint::MiddleRight:
-            renderX -= width_;
-            renderY -= height_ / 2.0f;
-            break;
-        case AnchorPoint::BottomLeft:
-            renderY -= height_;
-            break;
-        case AnchorPoint::BottomCenter:
-            renderX -= width_ / 2.0f;
-            renderY -= height_;
-            break;
-        case AnchorPoint::BottomRight:
-            renderX -= width_;
-            renderY -= height_;
-            break;
+void UIElement::update(float deltaTime)
+{
+    for (auto& child : children_)
+    {
+        if (child && child->isVisible())
+            child->update(deltaTime);
+    }
+}
+
+void UIElement::render(UIRenderer& renderer, float inheritedOpacity) const
+{
+    if (!visible_)
+        return;
+
+    const float effective = inheritedOpacity * opacity_;
+    if (effective <= 0.0f)
+        return;
+
+    const float previous = renderer.GetGlobalOpacity();
+
+    renderer.SetGlobalOpacity(effective);
+    renderSelf(renderer);
+
+    beginChildren(renderer);
+    renderChildren(renderer, effective);
+    endChildren(renderer);
+
+    renderer.SetGlobalOpacity(previous);
+}
+
+void UIElement::beginChildren(UIRenderer&) const {}
+
+void UIElement::endChildren(UIRenderer&) const {}
+
+void UIElement::renderChildren(UIRenderer& renderer, float opacity) const
+{
+    for (const auto& child : children_)
+    {
+        if (child && child->isVisible())
+            child->render(renderer, opacity);
     }
 }

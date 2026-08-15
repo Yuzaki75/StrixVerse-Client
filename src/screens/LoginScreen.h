@@ -1,44 +1,50 @@
 #pragma once
 
+#include <memory>
+#include <string>
+
 #include "Screen.h"
-#include "../ui/UIPanel.h"
-#include "../ui/UILabel.h"
-#include "../ui/UITextBox.h"
-#include "../ui/UIButton.h"
+
+class UIButton;
+class UICheckBox;
+class UILabel;
+class UIPanel;
+class UITextBox;
 
 /**
- * Login screen for entering username and password.
+ * Login screen.
+ *
+ * Implements the split layout from the style guide: a branded left column with
+ * the live-service stats and the player-flow card, and a crystal panel on the
+ * right holding the form.
+ *
+ * Submitting starts an asynchronous AuthService request; the screen shows the
+ * pending state, then either advances to Connecting or reports the failure.
  */
 class LoginScreen : public Screen
 {
 public:
-    LoginScreen(Engine* engine);
+    explicit LoginScreen(Engine* engine);
     ~LoginScreen() override = default;
 
-    // Screen overrides
     void OnEnter() override;
-    void OnExit() override;
     void Update(float deltaTime) override;
-    void Render() const override;
+    void OnKeyDown(int key, bool ctrl, bool shift) override;
 
 private:
-    // UI elements
-    std::shared_ptr<UIPanel> m_Panel;
-    std::shared_ptr<UILabel> m_TitleLabel;
-    std::shared_ptr<UILabel> m_UsernameLabel;
-    std::shared_ptr<UITextBox> m_UsernameBox;
-    std::shared_ptr<UILabel> m_PasswordLabel;
-    std::shared_ptr<UITextBox> m_PasswordBox;
-    std::shared_ptr<UIButton> m_LoginButton;
-    std::shared_ptr<UIButton> m_RegisterButton;
-    std::shared_ptr<UILabel> m_StatusLabel;
+    void BuildBrandColumn(float columnWidth);
+    void BuildForm(float columnX, float columnWidth);
 
-    // UI state
-    std::string m_Username;
-    std::string m_Password;
-    std::string m_StatusMessage;
+    void Submit();
+    void SetStatus(const std::string& message, const Color& color);
+    void SetBusy(bool busy);
 
-    // Helper methods
-    void OnLoginButtonClicked();
-    void OnRegisterButtonClicked();
+    std::shared_ptr<UITextBox>  usernameBox_;
+    std::shared_ptr<UITextBox>  passwordBox_;
+    std::shared_ptr<UICheckBox> rememberBox_;
+    std::shared_ptr<UIButton>   loginButton_;
+    std::shared_ptr<UIButton>   registerButton_;
+    std::shared_ptr<UILabel>    statusLabel_;
+
+    bool submitting_ = false;
 };

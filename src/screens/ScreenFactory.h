@@ -10,6 +10,7 @@ class Engine;
 class SplashScreen;
 class LoginScreen;
 class RegisterScreen;
+class ConnectingScreen;
 class ContinueScreen;
 class WorldBrowserScreen;
 class LoadingScreen;

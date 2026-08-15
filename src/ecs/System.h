@@ -32,9 +32,15 @@ namespace StrixVerse
             System& operator=(System&&) = delete;
 
             // Initialize the system (called once when added to the manager).
+            //
+            // The base stores the managers, so an override MUST call
+            // System::init before doing anything else. It previously discarded
+            // both arguments, leaving m_pComponentManager null in every system
+            // that did not assign it by hand - harmless only while those
+            // systems had no entities to process.
             virtual void init(EntityManager* entityManager, ComponentManager* componentManager) {
-                (void)entityManager;
-                (void)componentManager;
+                m_pEntityManager = entityManager;
+                m_pComponentManager = componentManager;
             }
 
             // Update the system (called every frame).

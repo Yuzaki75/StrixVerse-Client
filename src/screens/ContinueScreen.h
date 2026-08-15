@@ -1,35 +1,52 @@
 #pragma once
 
+#include <memory>
+
 #include "Screen.h"
-#include "../ui/UIPanel.h"
-#include "../ui/UILabel.h"
+#include "../core/WorldManager.h"
+
+class UIButton;
+class UILabel;
+class UIPanel;
 
 /**
- * Continue screen: checks for a saved world and decides whether to auto-connect or go to world browser.
+ * Continue screen.
+ *
+ * Shows the world the player was last in - type, owner, last played, position
+ * and population - with Continue and Change World actions.
+ *
+ * The design's auto-join countdown is implemented as specified: it runs down
+ * and joins on its own, but any key or click cancels it, so the player is never
+ * forced through a timer-only transition.
  */
 class ContinueScreen : public Screen
 {
 public:
-    ContinueScreen(Engine* engine);
+    explicit ContinueScreen(Engine* engine);
     ~ContinueScreen() override = default;
 
-    // Screen overrides
     void OnEnter() override;
-    void OnExit() override;
     void Update(float deltaTime) override;
-    void Render() const override;
+
+    // The countdown must be cancellable even though buttons hold focus.
+    bool WantsRawInput() const override { return true; }
+
+    void OnKeyDown(int key, bool ctrl, bool shift) override;
+    void OnMouseDown(float x, float y) override;
 
 private:
-    // UI elements
-    std::shared_ptr<UIPanel> m_Panel;
-    std::shared_ptr<UILabel> m_MessageLabel;
-    std::shared_ptr<UILabel> m_StatusLabel;
+    void BuildCard(float centreX, float y, float width);
+    void BuildShards();
 
-    // State
-    float m_Timer;
-    bool m_CheckComplete;
-    bool m_HasSavedWorld; // false means go to world browser, true means auto-connect
+    void CancelAutoJoin();
+    void JoinLastWorld();
 
-    // Helper methods
-    void CheckForSavedWorld();
+    std::shared_ptr<UILabel> countdownLabel_;
+
+    LastWorldSession session_;
+    bool             hasSession_ = false;
+
+    float countdown_    = 0.0f;
+    bool  autoJoining_  = false;
+    bool  joining_      = false;
 };

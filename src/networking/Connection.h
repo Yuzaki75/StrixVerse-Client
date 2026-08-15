@@ -3,93 +3,109 @@
 
 #include <WinSock2.h>
 #include <WS2tcpip.h>
-#include <queue>
-#include <mutex>
-#include <condition_variable>
-#include <thread>
+
 #include <atomic>
-#include <memory>
-#include <string>
-#include <chrono>
+#include <condition_variable>
+#include <deque>
 #include <functional>
-#include "Packet.h"
-#include "PacketSerializer.h"
-#include "PacketSender.h"
+#include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
+
 #include "NetworkStatistics.h"
+#include "Packet.h"
+#include "PacketSender.h"
+#include "Protocol.h"
 
-class Connection : public PacketSender {
+// -----------------------------------------------------------------------------
+// Connection
+//
+// TCP transport for one server session.
+//
+// Frames are built and parsed exactly as the server does in
+// Server/src/network/Socket/TcpSession.cpp:
+//
+//     [ opcode : uint16 big-endian ][ length : uint32 big-endian ][ payload ]
+//
+// A background thread drains the socket into a reassembly buffer and pushes
+// completed packets onto a queue; the game thread consumes them through
+// processReceivedPackets(), so packet handlers never run on the socket thread.
+// -----------------------------------------------------------------------------
+class Connection : public PacketSender
+{
 public:
-    Connection();
-    virtual ~Connection();
-
-    // Initialize Winsock (should be called once per process)
-    static bool initialize();
-    // Cleanup Winsock
-    static void cleanup();
-
-    // Connect to the server
-    bool connect(const std::string& host, uint16_t port);
-    // Disconnect from the server
-    void disconnect();
-    // Check if connected
-    bool isConnected() const;
-    // GetConnectionState() const;
-
-    // Send a packet (thread-safe)
-    bool sendPacket(const std::shared_ptr<Packet>& packet) override;
-
-    // Process incoming packets (call this regularly to handle received packets)
-    void processReceivedPackets(std::function<void(const std::shared_ptr<Packet>&)> callback);
-
-    // Get statistics
-    const NetworkStatistics& getStatistics() const { return m_stats; }
-
-private:
-    enum class ConnectionState {
+    enum class State
+    {
         Disconnected,
         Connecting,
         Connected,
-        Disconnecting
+        Failed
     };
 
-    // Thread functions
+    Connection();
+    ~Connection() override;
+
+    Connection(const Connection&) = delete;
+    Connection& operator=(const Connection&) = delete;
+
+    // Winsock startup/teardown, reference counted.
+    static bool initialize();
+    static void cleanup();
+
+    // Blocking connect. Returns false and sets the failure reason on error.
+    bool connect(const std::string& host, uint16_t port);
+
+    void disconnect();
+
+    bool isConnected() const { return m_state.load() == State::Connected; }
+    State getState() const { return m_state.load(); }
+
+    // Why the last connect or session failed; empty when there was no failure.
+    std::string getLastError() const;
+
+    bool sendPacket(const std::shared_ptr<Packet>& packet) override;
+
+    // Drains the received queue on the calling thread.
+    void processReceivedPackets(const std::function<void(const std::shared_ptr<Packet>&)>& callback);
+
+    const NetworkStatistics& getStatistics() const { return m_stats; }
+
+private:
     void receiveThread();
-    void sendThread();
 
-    // Helper to send all queued packets
-    void flushSendQueue();
+    // Pulls every complete frame out of the reassembly buffer.
+    void parseFrames();
 
-    // Socket
-    SOCKET m_socket;
-    // Server address
-    sockaddr_in m_serverAddr;
-    // Connection state
-    std::atomic<ConnectionState> m_state;
-    // Threads
+    void setFailure(const std::string& reason);
+    void closeSocket();
+
+    SOCKET m_socket = INVALID_SOCKET;
+
+    std::atomic<State> m_state{State::Disconnected};
+    std::atomic<bool>  m_running{false};
+
     std::thread m_receiveThread;
-    std::thread m_sendThread;
-    // Flags to stop threads
-    std::atomic<bool> m_running;
 
-    // Queues
-    std::queue<std::shared_ptr<Packet>> m_sendQueue;
-    mutable std::mutex m_sendQueueMutex;
-    std::condition_variable m_sendQueueCond;
+    // Reassembly buffer: TCP gives no message boundaries, so a frame may
+    // arrive split across reads or several frames may arrive in one read.
+    std::vector<uint8_t> m_receiveBuffer;
+    std::size_t          m_readPosition = 0;
 
-    std::queue<std::shared_ptr<Packet>> m_receiveQueue;
-    mutable std::mutex m_receiveQueueMutex;
-    std::condition_variable m_receiveQueueCond;
+    std::deque<std::shared_ptr<Packet>> m_receiveQueue;
+    mutable std::mutex                  m_receiveQueueMutex;
 
-    // Buffer for receiving data
-    static constexpr size_t RECV_BUFFER_SIZE = 32768;
-    char m_recvBuffer[RECV_BUFFER_SIZE];
-    size_t m_recvBufferPos; // How many bytes are currently in the buffer
+    mutable std::mutex m_errorMutex;
+    std::string        m_lastError;
 
-    // Statistics
+    // Sends are serialised so two threads cannot interleave halves of a frame.
+    std::mutex m_sendMutex;
+
     NetworkStatistics m_stats;
 
-    // Winsock reference count
-    static int s_wsaRefCount;
+    static std::mutex s_wsaMutex;
+    static int        s_wsaRefCount;
 };
 
 #endif // CONNECTION_H

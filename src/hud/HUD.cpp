@@ -4,11 +4,17 @@
 #include "../core/Logger.h"
 #include "../core/ServiceLocator.h"
 #include "../graphics/Color.h"
-#include "../ui/UIManager.h"
-#include "../ui/UILabel.h"
-#include "../ui/UIImage.h"
-#include "../ui/UIPanel.h"
+#include "../graphics/Font.h"
+#include "../networking/Protocol.h"
 #include "../ui/UIButton.h"
+#include "../ui/UIFonts.h"
+#include "../ui/UIImage.h"
+#include "../ui/UILabel.h"
+#include "../ui/UIManager.h"
+#include "../ui/UIPanel.h"
+#include "../ui/UIScale.h"
+#include "../ui/UITextBox.h"
+#include "../ui/UITheme.h"
 
 HUD::HUD(Engine* engine)
     : m_Engine(engine)
@@ -29,7 +35,6 @@ HUD::HUD(Engine* engine)
     , m_GemLabel(nullptr)
     , m_GemIcon(nullptr)
     , m_ChatBackground(nullptr)
-    , m_ChatText(nullptr)
     , m_NotificationPanel(nullptr)
     , m_NotificationLabel(nullptr)
     , m_NotificationTimer(0.0f)
@@ -163,18 +168,30 @@ void HUD::AddChatMessage(const std::string& message)
         m_ChatMessages.erase(m_ChatMessages.begin());
     }
 
-    // Update the chat text display
-    if (m_ChatText)
+    // UILabel draws a single line, so the log is rendered as one label per
+    // line, newest at the bottom.
+    const size_t lineCount = m_ChatLines.size();
+    const size_t visible   = std::min(lineCount, m_ChatMessages.size());
+
+    for (size_t i = 0; i < lineCount; ++i)
     {
-        std::string combined;
-        for (const auto& msg : m_ChatMessages)
+        if (!m_ChatLines[i])
+            continue;
+
+        // Bottom-align the log: empty slots stay at the top.
+        const size_t slotFromBottom = lineCount - 1 - i;
+
+        if (slotFromBottom < visible)
         {
-            if (!combined.empty())
-                combined += "\n";
-            combined += msg;
+            const size_t index = m_ChatMessages.size() - 1 - slotFromBottom;
+            m_ChatLines[i]->setText(m_ChatMessages[index]);
         }
-        m_ChatText->setText(combined);
+        else
+        {
+            m_ChatLines[i]->setText("");
+        }
     }
+
 }
 
 void HUD::ShowNotification(const std::string& message, float duration)
@@ -192,162 +209,253 @@ void HUD::ShowNotification(const std::string& message, float duration)
     }
 }
 
+// The HUD is positioned in the same 1920x1080 design canvas as the screens, so
+// it scales with the rest of the UI instead of drifting with the window size.
+namespace
+{
+    constexpr float S(float previewPixels) { return UITheme::Scaled(previewPixels); }
+
+    Font* HudFont(Engine* engine, UIFonts::Typeface face, unsigned int size)
+    {
+        UIFonts* fonts = engine ? engine->GetUIFonts() : nullptr;
+        return fonts ? fonts->Get(face, size) : nullptr;
+    }
+
+    // Shared look for the HUD's stat pills.
+    void StyleStatPanel(const std::shared_ptr<UIPanel>& panel)
+    {
+        panel->setBackgroundColor(UITheme::Hex(0x0E121E, 0.62f));
+        panel->setBorder(UITheme::SubtleBorder, UITheme::BorderThin);
+        panel->setBorderRadius(UITheme::RadiusButton);
+    }
+}
+
 void HUD::CreateHealthSection()
 {
-    // Create a panel for health
     m_HealthPanel = std::make_shared<UIPanel>();
-    m_HealthPanel->setSize(200.0f, 30.0f);
-    m_HealthPanel->setPosition(20.0f, 20.0f); // Top-left corner
-    m_HealthPanel->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.5f}); // Semi-transparent black
+    m_HealthPanel->setSize(S(200.0f), S(30.0f));
+    m_HealthPanel->setPosition(S(20.0f), S(20.0f));
+    StyleStatPanel(m_HealthPanel);
     m_UIManager->addElement(m_HealthPanel);
 
-    // Health icon (placeholder - we'd use a texture in reality)
     m_HealthIcon = std::make_shared<UIImage>();
-    // In a real implementation, we'd set a texture here
-    m_HealthIcon->setSize(24.0f, 24.0f);
-    m_HealthIcon->setPosition(5.0f, 3.0f); // Relative to panel? We'll adjust later
-    m_HealthIcon->setColor({1.0f, 0.0f, 0.0f, 1.0f}); // Red
+    m_HealthIcon->setSize(S(18.0f), S(18.0f));
+    m_HealthIcon->setPosition(S(7.0f), S(6.0f));
+    m_HealthIcon->setColor(UITheme::Danger);
     m_HealthPanel->addChild(m_HealthIcon);
 
-    // Health label
     m_HealthLabel = std::make_shared<UILabel>();
     m_HealthLabel->setText("HP: 100/100");
-    m_HealthLabel->setTextColor({1.0f, 1.0f, 1.0f, 1.0f}); // White
-    m_HealthLabel->setFontSize(18.0f);
-    m_HealthLabel->setPosition(35.0f, 5.0f); // Adjust based on icon size
+    m_HealthLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Regular));
+    m_HealthLabel->setTextColor(UITheme::Text);
+    m_HealthLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
+    m_HealthLabel->setPosition(S(32.0f), 0.0f);
+    m_HealthLabel->setSize(S(160.0f), S(30.0f));
     m_HealthPanel->addChild(m_HealthLabel);
 }
 
 void HUD::CreateManaSection()
 {
-    // Similar to health but for mana
     m_ManaPanel = std::make_shared<UIPanel>();
-    m_ManaPanel->setSize(200.0f, 30.0f);
-    m_ManaPanel->setPosition(20.0f, 60.0f); // Below health
-    m_ManaPanel->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.5f});
+    m_ManaPanel->setSize(S(200.0f), S(30.0f));
+    m_ManaPanel->setPosition(S(20.0f), S(56.0f));
+    StyleStatPanel(m_ManaPanel);
     m_UIManager->addElement(m_ManaPanel);
 
     m_ManaIcon = std::make_shared<UIImage>();
-    m_ManaIcon->setSize(24.0f, 24.0f);
-    m_ManaIcon->setPosition(5.0f, 3.0f);
-    m_ManaIcon->setColor({0.0f, 0.0f, 1.0f, 1.0f}); // Blue
+    m_ManaIcon->setSize(S(18.0f), S(18.0f));
+    m_ManaIcon->setPosition(S(7.0f), S(6.0f));
+    m_ManaIcon->setColor(UITheme::Primary);
     m_ManaPanel->addChild(m_ManaIcon);
 
     m_ManaLabel = std::make_shared<UILabel>();
     m_ManaLabel->setText("MP: 50/50");
-    m_ManaLabel->setTextColor({1.0f, 1.0f, 1.0f, 1.0f});
-    m_ManaLabel->setFontSize(18.0f);
-    m_ManaLabel->setPosition(35.0f, 5.0f);
+    m_ManaLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Regular));
+    m_ManaLabel->setTextColor(UITheme::Text);
+    m_ManaLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
+    m_ManaLabel->setPosition(S(32.0f), 0.0f);
+    m_ManaLabel->setSize(S(160.0f), S(30.0f));
     m_ManaPanel->addChild(m_ManaLabel);
 }
 
 void HUD::CreateLevelSection()
 {
     m_LevelPanel = std::make_shared<UIPanel>();
-    m_LevelPanel->setSize(150.0f, 30.0f);
-    m_LevelPanel->setPosition(20.0f, 100.0f); // Below mana
-    m_LevelPanel->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.5f});
+    m_LevelPanel->setSize(S(150.0f), S(38.0f));
+    m_LevelPanel->setPosition(S(20.0f), S(92.0f));
+    StyleStatPanel(m_LevelPanel);
     m_UIManager->addElement(m_LevelPanel);
 
     m_LevelLabel = std::make_shared<UILabel>();
     m_LevelLabel->setText("LVL: 1");
-    m_LevelLabel->setTextColor({1.0f, 1.0f, 1.0f, 1.0f});
-    m_LevelLabel->setFontSize(18.0f);
-    m_LevelLabel->setPosition(5.0f, 5.0f);
+    m_LevelLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Display, UITheme::Display::Small));
+    m_LevelLabel->setTextColor(UITheme::Text);
+    m_LevelLabel->setPosition(S(9.0f), S(7.0f));
+    m_LevelLabel->setSize(S(132.0f), S(10.0f));
     m_LevelPanel->addChild(m_LevelLabel);
 
     m_ExperienceLabel = std::make_shared<UILabel>();
     m_ExperienceLabel->setText("EXP: 0/100");
-    m_ExperienceLabel->setTextColor({1.0f, 1.0f, 1.0f, 1.0f});
-    m_ExperienceLabel->setFontSize(16.0f);
-    m_ExperienceLabel->setPosition(5.0f, 20.0f); // Below level label
+    m_ExperienceLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Small));
+    m_ExperienceLabel->setTextColor(UITheme::Subtext);
+    m_ExperienceLabel->setPosition(S(9.0f), S(21.0f));
+    m_ExperienceLabel->setSize(S(132.0f), S(12.0f));
     m_LevelPanel->addChild(m_ExperienceLabel);
 }
 
 void HUD::CreateCurrencySection()
 {
-    // Coins
     m_CoinPanel = std::make_shared<UIPanel>();
-    m_CoinPanel->setSize(150.0f, 30.0f);
-    m_CoinPanel->setPosition(20.0f, 140.0f); // Below level
-    m_CoinPanel->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.5f});
+    m_CoinPanel->setSize(S(150.0f), S(30.0f));
+    m_CoinPanel->setPosition(S(20.0f), S(138.0f));
+    StyleStatPanel(m_CoinPanel);
     m_UIManager->addElement(m_CoinPanel);
 
     m_CoinIcon = std::make_shared<UIImage>();
-    m_CoinIcon->setSize(24.0f, 24.0f);
-    m_CoinIcon->setPosition(5.0f, 3.0f);
-    m_CoinIcon->setColor({1.0f, 0.84f, 0.0f, 1.0f}); // Gold
+    m_CoinIcon->setSize(S(18.0f), S(18.0f));
+    m_CoinIcon->setPosition(S(7.0f), S(6.0f));
+    m_CoinIcon->setColor(UITheme::Gold);
     m_CoinPanel->addChild(m_CoinIcon);
 
     m_CoinLabel = std::make_shared<UILabel>();
     m_CoinLabel->setText("0");
-    m_CoinLabel->setTextColor({1.0f, 1.0f, 1.0f, 1.0f});
-    m_CoinLabel->setFontSize(18.0f);
-    m_CoinLabel->setPosition(35.0f, 5.0f);
+    m_CoinLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Regular));
+    m_CoinLabel->setTextColor(UITheme::Gold);
+    m_CoinLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
+    m_CoinLabel->setPosition(S(32.0f), 0.0f);
+    m_CoinLabel->setSize(S(110.0f), S(30.0f));
     m_CoinPanel->addChild(m_CoinLabel);
 
-    // Gems
     m_GemPanel = std::make_shared<UIPanel>();
-    m_GemPanel->setSize(150.0f, 30.0f);
-    m_GemPanel->setPosition(20.0f, 180.0f); // Below coins
-    m_GemPanel->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.5f});
+    m_GemPanel->setSize(S(150.0f), S(30.0f));
+    m_GemPanel->setPosition(S(20.0f), S(174.0f));
+    StyleStatPanel(m_GemPanel);
     m_UIManager->addElement(m_GemPanel);
 
     m_GemIcon = std::make_shared<UIImage>();
-    m_GemIcon->setSize(24.0f, 24.0f);
-    m_GemIcon->setPosition(5.0f, 3.0f);
-    m_GemIcon->setColor({1.0f, 0.0f, 1.0f, 1.0f}); // Purple
+    m_GemIcon->setSize(S(18.0f), S(18.0f));
+    m_GemIcon->setPosition(S(7.0f), S(6.0f));
+    m_GemIcon->setColor(UITheme::Accent);
     m_GemPanel->addChild(m_GemIcon);
 
     m_GemLabel = std::make_shared<UILabel>();
     m_GemLabel->setText("0");
-    m_GemLabel->setTextColor({1.0f, 1.0f, 1.0f, 1.0f});
-    m_GemLabel->setFontSize(18.0f);
-    m_GemLabel->setPosition(35.0f, 5.0f);
+    m_GemLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Regular));
+    m_GemLabel->setTextColor(UITheme::Accent);
+    m_GemLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
+    m_GemLabel->setPosition(S(32.0f), 0.0f);
+    m_GemLabel->setSize(S(110.0f), S(30.0f));
     m_GemPanel->addChild(m_GemLabel);
 }
 
 void HUD::CreateChatSection()
 {
-    // Chat background (semi-transparent)
+    const float width       = S(300.0f);
+    const float height      = S(150.0f);
+    const float padding     = S(10.0f);
+    const float inputHeight = S(22.0f);
+    const float inputGap    = S(6.0f);
+
     m_ChatBackground = std::make_shared<UIPanel>();
-    m_ChatBackground->setSize(300.0f, 150.0f);
-    int winWidth = 800, winHeight = 600;
-    if (m_Engine && m_Engine->GetWindow())
-        m_Engine->GetWindow()->GetSize(winWidth, winHeight);
-    m_ChatBackground->setPosition(
-        static_cast<float>(winWidth) - 320.0f, // Right side, with padding
-        20.0f); // Top
-    m_ChatBackground->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.6f}); // Darker transparent
+    m_ChatBackground->setSize(width, height);
+    m_ChatBackground->setPosition(UIScale::kDesignWidth - width - S(20.0f), S(20.0f));
+    m_ChatBackground->setBackgroundColor(UITheme::Hex(0x0E121E, 0.66f));
+    m_ChatBackground->setBorder(UITheme::SubtleBorder, UITheme::BorderThin);
+    m_ChatBackground->setBorderRadius(UITheme::RadiusPanel);
     m_UIManager->addElement(m_ChatBackground);
 
-    m_ChatText = std::make_shared<UILabel>();
-    m_ChatText->setText("");
-    m_ChatText->setTextColor({1.0f, 1.0f, 1.0f, 1.0f}); // White
-    m_ChatText->setFontSize(16.0f);
-    m_ChatText->setPosition(10.0f, 10.0f); // Padding inside background
-    m_ChatBackground->addChild(m_ChatText);
+    Font* chatFont = HudFont(m_Engine, UIFonts::Typeface::Body, UITheme::Body::Caption);
+    const float lineHeight = chatFont ? chatFont->GetLineHeight() : S(14.0f);
+
+    // The input row sits along the bottom, so the log gets what is left.
+    const float logHeight = height - padding * 2.0f - inputHeight - inputGap;
+
+    // One label per visible line; AddChatMessage fills them bottom-up.
+    const size_t lines = logHeight > 0.0f
+                             ? static_cast<size_t>(logHeight / lineHeight)
+                             : 0;
+
+    m_ChatLines.clear();
+    m_ChatLines.reserve(lines);
+
+    for (size_t i = 0; i < lines; ++i)
+    {
+        auto line = std::make_shared<UILabel>();
+        line->setFont(chatFont);
+        line->setTextColor(UITheme::Subtext);
+        line->setPosition(padding, padding + lineHeight * static_cast<float>(i));
+        line->setSize(width - padding * 2.0f, lineHeight);
+        m_ChatBackground->addChild(line);
+
+        m_ChatLines.push_back(line);
+    }
+
+    m_ChatInput = std::make_shared<UITextBox>();
+    m_ChatInput->setFont(chatFont);
+    m_ChatInput->setPlaceholderText("Press Enter to chat");
+    m_ChatInput->setMaxLength(static_cast<int>(ProtocolLimits::MaxChatMessageLength));
+    m_ChatInput->setPadding(S(8.0f));
+    m_ChatInput->setSize(width - padding * 2.0f, inputHeight);
+    m_ChatInput->setPosition(padding, height - padding - inputHeight);
+    m_ChatInput->setOnEnterPressed(
+        [this]()
+        {
+            if (!m_ChatInput)
+                return;
+
+            const std::string text = m_ChatInput->getText();
+
+            // Clear before dispatching: the handler may add a line to the log,
+            // and the field should already be empty when it does.
+            m_ChatInput->setText("");
+
+            if (!text.empty() && m_OnChatSubmit)
+                m_OnChatSubmit(text);
+
+            if (m_UIManager)
+                m_UIManager->clearFocus();
+        });
+    m_ChatBackground->addChild(m_ChatInput);
+}
+
+void HUD::SetChatSubmitHandler(std::function<void(const std::string&)> handler)
+{
+    m_OnChatSubmit = std::move(handler);
+}
+
+void HUD::FocusChatInput()
+{
+    if (m_UIManager && m_ChatInput)
+        m_UIManager->setFocusedElement(m_ChatInput);
+}
+
+bool HUD::IsChatInputFocused() const
+{
+    return m_UIManager && m_ChatInput &&
+           m_UIManager->getFocusedElement() == m_ChatInput;
 }
 
 void HUD::CreateNotificationSection()
 {
-    // Notification panel (center top)
+    const float width  = S(400.0f);
+    const float height = S(50.0f);
+
     m_NotificationPanel = std::make_shared<UIPanel>();
-    m_NotificationPanel->setSize(400.0f, 50.0f);
-    int winWidth = 800, winHeight = 600;
-    if (m_Engine && m_Engine->GetWindow())
-        m_Engine->GetWindow()->GetSize(winWidth, winHeight);
-    m_NotificationPanel->setPosition(
-        static_cast<float>(winWidth) / 2.0f - 200.0f, // Centered
-        20.0f); // Top
-    m_NotificationPanel->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.7f}); // Semi-transparent dark
-    m_NotificationPanel->setVisible(false); // Start hidden
+    m_NotificationPanel->setSize(width, height);
+    m_NotificationPanel->setPosition((UIScale::kDesignWidth - width) * 0.5f, S(20.0f));
+    m_NotificationPanel->setBackgroundColor(UITheme::Hex(0x1E2230, 0.96f));
+    m_NotificationPanel->setBorder(UITheme::WithAlpha(UITheme::Accent, 0.35f), UITheme::BorderThin);
+    m_NotificationPanel->setBorderRadius(UITheme::RadiusPanel);
+    m_NotificationPanel->setVisible(false);
     m_UIManager->addElement(m_NotificationPanel);
 
     m_NotificationLabel = std::make_shared<UILabel>();
     m_NotificationLabel->setText("");
-    m_NotificationLabel->setTextColor({1.0f, 1.0f, 0.0f, 1.0f}); // Yellow for notices
-    m_NotificationLabel->setFontSize(20.0f);
-    m_NotificationLabel->setPosition(10.0f, 10.0f); // Padding
+    m_NotificationLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Body, UITheme::Body::Regular));
+    m_NotificationLabel->setTextColor(UITheme::Warning);
+    m_NotificationLabel->setAlignment(UILabel::Alignment::Center);
+    m_NotificationLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
+    m_NotificationLabel->setPosition(S(10.0f), 0.0f);
+    m_NotificationLabel->setSize(width - S(20.0f), height);
     m_NotificationPanel->addChild(m_NotificationLabel);
 }

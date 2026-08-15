@@ -32,6 +32,20 @@ public:
     // to be corrected (the corrected values are kept).
     bool Validate();
 
+    // --- Network --------------------------------------------------------
+    // Address of the StrixVerse server. Defaults match Server/config/server.json.
+    const std::string& GetServerHost() const;
+    int GetServerPort() const;
+
+    void SetServerHost(const std::string& host);
+    void SetServerPort(int port);
+
+    // When true the client never contacts the server and authentication is
+    // resolved locally. Off by default: an unreachable server is reported as a
+    // failure rather than silently faked.
+    bool IsOfflineMode() const;
+    void SetOfflineMode(bool offline);
+
     // --- Window ---------------------------------------------------------
     int GetWidth() const;
     int GetHeight() const;
@@ -48,6 +62,10 @@ public:
 
 private:
     std::string m_FilePath = "configs/client.json";
+
+    std::string m_ServerHost = "127.0.0.1";
+    int m_ServerPort = 17091;
+    bool m_Offline = false;
 
     int m_Width = 1280;
     int m_Height = 720;

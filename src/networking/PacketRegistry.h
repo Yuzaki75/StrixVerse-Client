@@ -2,26 +2,39 @@
 #define PACKET_REGISTRY_H
 
 #include <functional>
-#include <unordered_map>
 #include <memory>
-#include "Packet.h"
+#include <unordered_map>
 
-class PacketRegistry {
+#include "Packet.h"
+#include "Protocol.h"
+
+// -----------------------------------------------------------------------------
+// PacketRegistry
+//
+// Maps an opcode arriving on the wire to a factory for the matching packet
+// class. Mirrors the server's PacketRegistry so both ends agree on which
+// opcodes are legal; an unregistered opcode is dropped rather than guessed at.
+// -----------------------------------------------------------------------------
+class PacketRegistry
+{
 public:
     using CreatorFunc = std::function<std::shared_ptr<Packet>()>;
 
-    // Register a creator function for a packet type
-    static void registerPacket(PacketType type, CreatorFunc creator);
-    
-    // Create a packet of the given type using the registered creator
-    static std::shared_ptr<Packet> createPacket(PacketType type);
-    
-    // Clear all registrations (mainly for testing)
+    static void registerPacket(Opcode opcode, CreatorFunc creator);
+
+    // Returns nullptr when the opcode is not registered.
+    static std::shared_ptr<Packet> createPacket(Opcode opcode);
+
+    static bool isRegistered(Opcode opcode);
+
     static void clear();
 
+    // Registers every packet the client understands. Called once during
+    // NetworkManager::initialize().
+    static void registerAllPacketTypes();
+
 private:
-    PacketRegistry() = default;
-    static std::unordered_map<PacketType, CreatorFunc>& getMap();
+    static std::unordered_map<Opcode, CreatorFunc>& getMap();
 };
 
 #endif // PACKET_REGISTRY_H

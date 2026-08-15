@@ -1,48 +1,101 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "UIElement.h"
 #include "../graphics/Color.h"
+#include "../graphics/UIRenderer.h"
 
-/**
- * Label UI element for displaying text
- */
-class UILabel : public UIElement {
+class Font;
+
+// -----------------------------------------------------------------------------
+// UILabel
+//
+// Single-line text.
+//
+// Carries everything the design's typography needs: an explicit face (the three
+// typefaces are separate Font instances rasterised per size), a colour, letter
+// spacing - the Figma screens track headings heavily - and an optional glow that
+// reproduces the crystal text-shadow.
+//
+// Text is laid out inside the label's own box, so alignment works by giving the
+// label the width of its container rather than by guessing at a centre point.
+// -----------------------------------------------------------------------------
+class UILabel : public UIElement
+{
 public:
+    enum class Alignment
+    {
+        Left   = 0,
+        Center = 1,
+        Right  = 2
+    };
+
+    enum class VerticalAlignment
+    {
+        Top    = 0,
+        Middle = 1,
+        Bottom = 2
+    };
+
     UILabel();
     ~UILabel() override = default;
 
-    enum class Alignment {
-        Left = 0,
-        Center = 1,
-        Right = 2
-    };
-
-    // Text properties
     void setText(const std::string& text);
     const std::string& getText() const { return text_; }
 
-    void setFontSize(float size);
-    float getFontSize() const { return fontSize_; }
+    // Non-owning: fonts live in the AssetManager cache for the process
+    // lifetime, so a raw pointer is safe and avoids per-frame refcounting.
+    void setFont(Font* font) { font_ = font; }
+    Font* getFont() const { return font_; }
 
-    void setTextColor(const Color& color);
+    void setTextColor(const Color& color) { textColor_ = color; }
     const Color& getTextColor() const { return textColor_; }
 
-    void setHorizontalAlignment(int alignment); // 0=left, 1=center, 2=right
-    int getHorizontalAlignment() const { return hAlign_; }
+    void setLetterSpacing(float spacing) { letterSpacing_ = spacing; }
+    float getLetterSpacing() const { return letterSpacing_; }
 
-    void setVerticalAlignment(int alignment); // 0=top, 1=middle, 2=bottom
-    int getVerticalAlignment() const { return vAlign_; }
+    void setAlignment(Alignment alignment) { hAlign_ = alignment; }
+    void setVerticalAlignment(VerticalAlignment alignment) { vAlign_ = alignment; }
 
-    // Convenience setter that sets horizontal alignment from Alignment enum
-    void setAlignment(Alignment alignment) { hAlign_ = static_cast<int>(alignment); }
+    // Text shadow / crystal glow, as used by the splash and screen headings.
+    void setGlow(const Color& color, float radius);
 
-    // UIElement overrides
-    void renderSelf(SpriteBatch& spriteBatch, Font& font) const override;
+    // Hard offset shadow (the splash title's "4px 4px 0 #000").
+    void setShadow(const Color& color, float offsetX, float offsetY);
+
+    // Width of the current text, useful for laying out a row of labels.
+    float measureTextWidth() const;
+
+    // Resizes the label's box to exactly fit the current text.
+    void sizeToFit();
+
+    // Breaks a run into lines that each fit within maxWidth, splitting on
+    // spaces. Labels are single-line by design, so paragraphs are built as one
+    // label per returned line; this keeps layout explicit and measurable.
+    static std::vector<std::string> WrapText(const Font& font,
+                                             const std::string& text,
+                                             float maxWidth,
+                                             float letterSpacing = 0.0f);
+
+protected:
+    void renderSelf(UIRenderer& renderer) const override;
 
 private:
     std::string text_;
-    float fontSize_;      // Font size in points
-    Color textColor_;
-    int hAlign_;          // Horizontal alignment (0=left, 1=center, 2=right)
-    int vAlign_;          // Vertical alignment (0=top, 1=middle, 2=bottom)
+    Font*       font_ = nullptr;
+
+    Color textColor_{1.0f, 1.0f, 1.0f, 1.0f};
+    float letterSpacing_ = 0.0f;
+
+    Alignment         hAlign_ = Alignment::Left;
+    VerticalAlignment vAlign_ = VerticalAlignment::Top;
+
+    Color glowColor_{0.0f, 0.0f, 0.0f, 0.0f};
+    float glowRadius_ = 0.0f;
+
+    Color shadowColor_{0.0f, 0.0f, 0.0f, 0.0f};
+    float shadowOffsetX_ = 0.0f;
+    float shadowOffsetY_ = 0.0f;
 };

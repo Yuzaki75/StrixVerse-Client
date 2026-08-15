@@ -5,6 +5,13 @@ namespace StrixVerse
 {
     namespace ECS
     {
+        void MovementSystem::init(EntityManager *entityManager, ComponentManager *componentManager)
+        {
+            System::init(entityManager, componentManager);
+
+            setSignature<Transform, VelocityComponent>();
+        }
+
         void MovementSystem::update(const std::vector<Entity> &entities, float dt)
         {
             for (Entity entity : entities)

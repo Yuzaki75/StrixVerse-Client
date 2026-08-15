@@ -16,9 +16,6 @@
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\Game.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -55,12 +52,6 @@
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\core\world\World.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Animation.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Camera2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -70,16 +61,7 @@
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Font.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\FrameBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Mesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Renderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\RenderTarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Shader.cpp">
@@ -91,10 +73,7 @@
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\Vertex.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\OpenGL\GLContext.cpp">
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\graphics\UIRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\Connection.cpp">
@@ -103,82 +82,19 @@
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\NetworkManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\Packet.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketDispatcher.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketFactory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketHandler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketRegistry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketSender.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketSerializer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PacketWriter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\CharacterPacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\HandshakePacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\KeepAlive.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\KeepAlivePacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\LoginPacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\LoginResultPacket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\NetworkStatistics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PingManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PingPacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PongPacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PlayerMovePacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PlayerRemovePacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PlayerSpawnPacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\PlayerStatePacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\RegisterPacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Projects\StrixVerse\Client\src\networking\SessionPacket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\Entity.cpp">
@@ -214,6 +130,9 @@
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\Camera2DSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\CollisionSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIElement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -235,6 +154,30 @@
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UILabel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UICheckBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIIcon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIProgressBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIScrollPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UITiledImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIFonts.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIPatterns.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ui\UIScale.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\Screen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -251,6 +194,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\RegisterScreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\ConnectingScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\ContinueScreen.cpp">
@@ -283,9 +229,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\Engine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\Game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\Logger.h">
@@ -321,12 +264,6 @@
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\WorldManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Animation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Camera2D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -336,16 +273,7 @@
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\FrameBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Mesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Renderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\RenderTarget.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Shader.h">
@@ -357,13 +285,7 @@
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\Vertex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\OpenGL\GLBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\OpenGL\GLContext.h">
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\UIRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\Connection.h">
@@ -381,13 +303,7 @@
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketDispatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketFactory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketRegistry.h">
@@ -396,13 +312,13 @@
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketSender.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketSerializer.h">
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\Protocol.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PacketWriter.h">
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\ChatMessagePacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\CharacterPacket.h">
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\DisconnectPacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\HandshakePacket.h">
@@ -414,10 +330,13 @@
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\KeepAlivePacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\LoginFailedPacket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\LoginPacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\LoginResultPacket.h">
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\LoginSuccessPacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\NetworkStatistics.h">
@@ -441,13 +360,16 @@
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerSpawnPacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerStatePacket.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\RegisterPacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\SessionPacket.h">
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\WorldJoinPacket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\WorldLeavePacket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\WorldStatePacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\AnimationComponent.h">
@@ -460,6 +382,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\ColliderComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\CollisionSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\Component.h">
@@ -522,7 +447,16 @@
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIButton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UICheckBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIElement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIFonts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIIcon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIImage.h">
@@ -537,7 +471,28 @@
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIPatterns.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIProgressBar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIScale.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UIScrollPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UITextBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UITheme.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ui\UITiledImage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\ConnectingScreen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\ContinueScreen.h">

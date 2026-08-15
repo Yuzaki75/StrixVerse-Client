@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "../graphics/Texture.h"
 #include "../graphics/Shader.h"
+#include "../graphics/Font.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -14,8 +15,12 @@
 
 AssetManager::AssetManager()
 {
-    // Flip stb_image's loading to have the origin at the top-left (OpenGL convention).
-    stbi_set_flip_vertically_on_load(true);
+    // No vertical flip. stb_image already returns rows top-down, which is what
+    // every consumer here wants: the UI renderer draws in screen space with y
+    // and v both increasing downward, so texture row 0 must be the image's top
+    // row. Flipping (the usual choice for bottom-left GL texture space) drew
+    // every loaded image upside-down.
+    stbi_set_flip_vertically_on_load(false);
 }
 
 AssetManager::~AssetManager()
@@ -167,6 +172,87 @@ std::shared_ptr<Shader> AssetManager::GetShader(const std::string& vertexPath,
     return nullptr;
 }
 
+std::shared_ptr<Texture> AssetManager::CreateTexture(const std::string& key,
+                                                     unsigned int width,
+                                                     unsigned int height,
+                                                     const unsigned char* pixels,
+                                                     int channels)
+{
+    std::lock_guard<std::mutex> lock(m_Mutex);
+
+    auto it = m_Textures.find(key);
+    if (it != m_Textures.end())
+    {
+        return it->second.texture;
+    }
+
+    if (width == 0 || height == 0 || !pixels)
+    {
+        Logger::Error(std::format("Failed to create procedural texture: {}", key));
+        return nullptr;
+    }
+
+    auto texture = std::make_shared<Texture>();
+
+    // Texture::Create does not modify the pixel data; the const_cast is only
+    // needed because it takes a non-const pointer for the GL call.
+    if (!texture->Create(width, height, const_cast<unsigned char*>(pixels), channels,
+                         /*generateMipmaps*/ false, /*srgb*/ false))
+    {
+        Logger::Error(std::format("Failed to upload procedural texture: {}", key));
+        return nullptr;
+    }
+
+    m_Textures[key] = {texture};
+    return texture;
+}
+
+std::shared_ptr<Font> AssetManager::LoadFont(const std::string& filePath, unsigned int pixelSize)
+{
+    std::lock_guard<std::mutex> lock(m_Mutex);
+
+    const std::string key = FontKey(filePath, pixelSize);
+
+    auto it = m_Fonts.find(key);
+    if (it != m_Fonts.end())
+    {
+        return it->second.font;
+    }
+
+    auto font = std::make_shared<Font>();
+    if (!font->Load(filePath, pixelSize))
+    {
+        // Font::Load already logged the specific failure.
+        return nullptr;
+    }
+
+    m_Fonts[key] = {font};
+    return font;
+}
+
+std::shared_ptr<Font> AssetManager::GetFont(const std::string& filePath, unsigned int pixelSize) const
+{
+    std::lock_guard<std::mutex> lock(m_Mutex);
+
+    auto it = m_Fonts.find(FontKey(filePath, pixelSize));
+    if (it != m_Fonts.end())
+    {
+        return it->second.font;
+    }
+    return nullptr;
+}
+
+void AssetManager::UnloadFont(const std::string& filePath, unsigned int pixelSize)
+{
+    std::lock_guard<std::mutex> lock(m_Mutex);
+
+    auto it = m_Fonts.find(FontKey(filePath, pixelSize));
+    if (it != m_Fonts.end())
+    {
+        m_Fonts.erase(it);
+    }
+}
+
 void AssetManager::UnloadTexture(const std::string& filePath)
 {
     std::lock_guard<std::mutex> lock(m_Mutex);
@@ -221,6 +307,19 @@ size_t AssetManager::UnloadUnused()
                 ++it;
             }
         }
+        // Remove font atlases that are no longer shared outside.
+        for (auto it = m_Fonts.begin(); it != m_Fonts.end();)
+        {
+            if (it->second.font.use_count() == 1)
+            {
+                it = m_Fonts.erase(it);
+                ++count;
+            }
+            else
+            {
+                ++it;
+            }
+        }
     }
     return count;
 }
@@ -230,6 +329,7 @@ void AssetManager::UnloadAll()
     std::lock_guard<std::mutex> lock(m_Mutex);
     m_Textures.clear();
     m_Shaders.clear();
+    m_Fonts.clear();
 }
 
 std::string AssetManager::ShaderKey(const std::string& vertexPath,
@@ -237,4 +337,9 @@ std::string AssetManager::ShaderKey(const std::string& vertexPath,
                                     const std::string& geometryPath)
 {
     return vertexPath + "|" + fragmentPath + "|" + (geometryPath.empty() ? "" : geometryPath);
+}
+
+std::string AssetManager::FontKey(const std::string& filePath, unsigned int pixelSize)
+{
+    return std::format("{}#{}", filePath, pixelSize);
 }

@@ -1,48 +1,33 @@
-#ifndef HANDSHAKE_PACKET_H
-#define HANDSHAKE_PACKET_H
+#pragma once
 
 #include "Packet.h"
+
 #include <string>
 
-class HandshakePacket : public Packet {
+// First frame the client sends; identifies the build to the server.
+// Field order and types mirror Server/src/network/Packets/HandshakePacket.cpp exactly.
+class HandshakePacket final : public Packet
+{
 public:
-    HandshakePacket() = default;
-    HandshakePacket(uint32_t protocolVersion, const std::string& clientVersion, uint64_t randomToken)
-        : m_protocolVersion(protocolVersion), m_clientVersion(clientVersion), m_randomToken(randomToken) {}
+    std::string ClientVersion;
+    std::string ClientPlatform;
+    std::string ClientArchitecture;
 
-    PacketType getType() const override { return PacketType::Handshake; }
+    Opcode getOpcode() const override { return Opcode::Handshake; }
 
-    void serialize(PacketBuffer& buffer) const override {
-        buffer.write(m_protocolVersion);
-        buffer.writeString(m_clientVersion);
-        buffer.write(m_randomToken);
+    const char* getName() const override { return "HandshakePacket"; }
+
+    void serialize(PacketBuffer& buffer) const override
+    {
+        buffer.writeString(ClientVersion, ProtocolLimits::MaxStringLength);
+        buffer.writeString(ClientPlatform, ProtocolLimits::MaxStringLength);
+        buffer.writeString(ClientArchitecture, ProtocolLimits::MaxStringLength);
     }
 
-    void deserialize(PacketBuffer& buffer) override {
-        m_protocolVersion = buffer.read<uint32_t>();
-        m_clientVersion = buffer.readString();
-        m_randomToken = buffer.read<uint64_t>();
+    void deserialize(PacketBuffer& buffer) override
+    {
+        ClientVersion = buffer.readString(ProtocolLimits::MaxStringLength);
+        ClientPlatform = buffer.readString(ProtocolLimits::MaxStringLength);
+        ClientArchitecture = buffer.readString(ProtocolLimits::MaxStringLength);
     }
-
-    // Getters
-    uint32_t getProtocolVersion() const { return m_protocolVersion; }
-    const std::string& getClientVersion() const { return m_clientVersion; }
-    uint64_t getRandomToken() const { return m_randomToken; }
-
-    // Setters
-    void setProtocolVersion(uint32_t v) { m_protocolVersion = v; }
-    void setClientVersion(const std::string& v) { m_clientVersion = v; }
-    void setRandomToken(uint64_t v) { m_randomToken = v; }
-
-protected:
-    std::shared_ptr<Packet> createInstance() const override {
-        return std::make_shared<HandshakePacket>();
-    }
-
-private:
-    uint32_t m_protocolVersion;
-    std::string m_clientVersion;
-    uint64_t m_randomToken;
 };
-
-#endif // HANDSHAKE_PACKET_H

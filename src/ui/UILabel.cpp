@@ -1,124 +1,141 @@
 #include "UILabel.h"
-#include "../graphics/SpriteBatch.h"
+
 #include "../graphics/Font.h"
-#include "../core/ServiceLocator.h"
-#include "../core/AssetManager.h"
-#include "../graphics/Shader.h"
-#include "../core/Logger.h"
 
-UILabel::UILabel()
-    : fontSize_(16.0f) // Default font size
-      ,
-      textColor_(1.0f, 1.0f, 1.0f, 1.0f) // White text
-      ,
-      hAlign_(0) // Left aligned
-      ,
-      vAlign_(0) // Top aligned
-{
-    // Labels typically size themselves to their text
-    // But we'll allow explicit sizing as well
-}
+UILabel::UILabel() = default;
 
-void UILabel::setText(const std::string &text)
+void UILabel::setText(const std::string& text)
 {
     text_ = text;
-    // Optionally auto-size to fit text
-    // setSize(font.MeasureText(text_).x, font.MeasureText(text_).y);
 }
 
-void UILabel::setFontSize(float size)
+void UILabel::setGlow(const Color& color, float radius)
 {
-    fontSize_ = size;
+    glowColor_  = color;
+    glowRadius_ = radius;
 }
 
-void UILabel::setTextColor(const Color &color)
+void UILabel::setShadow(const Color& color, float offsetX, float offsetY)
 {
-    textColor_ = color;
+    shadowColor_   = color;
+    shadowOffsetX_ = offsetX;
+    shadowOffsetY_ = offsetY;
 }
 
-void UILabel::setHorizontalAlignment(int alignment)
+float UILabel::measureTextWidth() const
 {
-    hAlign_ = alignment;
+    if (!font_ || text_.empty())
+        return 0.0f;
+
+    return font_->MeasureWidth(text_, letterSpacing_);
 }
 
-void UILabel::setVerticalAlignment(int alignment)
+void UILabel::sizeToFit()
 {
-    vAlign_ = alignment;
-}
-
-void UILabel::renderSelf(SpriteBatch &spriteBatch, Font &font) const
-{
-    if (text_.empty())
-    {
+    if (!font_)
         return;
+
+    setSize(measureTextWidth(), font_->GetLineHeight());
+}
+
+std::vector<std::string> UILabel::WrapText(const Font& font,
+                                           const std::string& text,
+                                           float maxWidth,
+                                           float letterSpacing)
+{
+    std::vector<std::string> lines;
+
+    if (text.empty() || maxWidth <= 0.0f || !font.IsLoaded())
+    {
+        if (!text.empty())
+            lines.push_back(text);
+        return lines;
     }
 
-    // Calculate text position based on alignment
-    float textWidth = font.MeasureText(text_, 1.0f).x;
-    float textHeight = font.MeasureText(text_, 1.0f).y;
+    std::string current;
+    size_t index = 0;
 
-    float textX = getX();
-    float textY = getY();
+    while (index <= text.size())
+    {
+        const size_t space = text.find(' ', index);
+        const std::string word = text.substr(index, space == std::string::npos
+                                                        ? std::string::npos
+                                                        : space - index);
 
-    // Apply horizontal alignment
+        const std::string candidate = current.empty() ? word : current + " " + word;
+
+        if (!current.empty() && font.MeasureWidth(candidate, letterSpacing) > maxWidth)
+        {
+            lines.push_back(current);
+            current = word;
+        }
+        else
+        {
+            current = candidate;
+        }
+
+        if (space == std::string::npos)
+            break;
+
+        index = space + 1;
+    }
+
+    if (!current.empty())
+        lines.push_back(current);
+
+    return lines;
+}
+
+void UILabel::renderSelf(UIRenderer& renderer) const
+{
+    if (text_.empty() || !font_ || !font_->IsLoaded())
+        return;
+
+    const float textWidth  = font_->MeasureWidth(text_, letterSpacing_);
+    const float lineHeight = font_->GetLineHeight();
+
+    float x = getAbsoluteX();
+    float y = getAbsoluteY();
+
     switch (hAlign_)
     {
-    case 1: // Center
-        textX = getX() + (getWidth() - textWidth) / 2.0f;
+    case Alignment::Center:
+        x += (width_ - textWidth) * 0.5f;
         break;
-    case 2: // Right
-        textX = getX() + getWidth() - textWidth;
+    case Alignment::Right:
+        x += width_ - textWidth;
         break;
-    default: // Left (0)
-        textX = getX();
+    case Alignment::Left:
         break;
     }
 
-    // Apply vertical alignment
     switch (vAlign_)
     {
-    case 1: // Middle
-        textY = getY() + (getHeight() - textHeight) / 2.0f;
+    case VerticalAlignment::Middle:
+        y += (height_ - lineHeight) * 0.5f;
         break;
-    case 2: // Bottom
-        textY = getY() + getHeight() - textHeight;
+    case VerticalAlignment::Bottom:
+        y += height_ - lineHeight;
         break;
-    default: // Top (0)
-        textY = getY();
+    case VerticalAlignment::Top:
         break;
     }
 
-    // Calculate render position based on anchor
-    float renderX, renderY;
-    calculateRenderPosition(renderX, renderY);
-
-    // Adjust text position by the render offset
-    textX += renderX - getX();
-    textY += renderY - getY();
-
-    // Get shader from AssetManager for font rendering
-    auto assetManager = ServiceLocator::Get<AssetManager>();
-    if (!assetManager)
+    // Hard offset shadow first, so it sits behind both glow and fill.
+    if (shadowColor_.a > 0.0f && (shadowOffsetX_ != 0.0f || shadowOffsetY_ != 0.0f))
     {
-        Logger::Error("UILabel: AssetManager not available");
-        return;
+        renderer.DrawText(*font_, text_,
+                          x + shadowOffsetX_, y + shadowOffsetY_,
+                          shadowColor_, letterSpacing_);
     }
 
-    // Get a default shader for text rendering
-    // In a real implementation, we might have a specific shader for fonts
-    // For now, we'll try to get a default shader or create a simple one
-    std::shared_ptr<Shader> shader = assetManager->GetShader("default.vert", "default.frag");
-    if (!shader)
+    if (glowRadius_ > 0.0f && glowColor_.a > 0.0f)
     {
-        // If we can't get a shader, try to load a basic one
-        shader = assetManager->LoadShader("shaders/default.vert", "shaders/default.frag");
-        if (!shader)
-        {
-            Logger::Error("UILabel: Failed to get or create shader for text rendering");
-            return;
-        }
+        renderer.DrawTextGlow(*font_, text_, x, y,
+                              textColor_, glowColor_, glowRadius_, letterSpacing_);
     }
-
-    // Draw the text
-    font.DrawText(*shader, text_, textX, textY, 1.0f);
+    else
+    {
+        renderer.DrawText(*font_, text_, x, y, textColor_, letterSpacing_);
+    }
 }

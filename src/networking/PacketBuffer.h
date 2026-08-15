@@ -78,11 +78,15 @@ public:
         return value;
     }
 
-    // Write a string with length prefix (uint32_t)
-    void writeString(const std::string& str) {
-        uint32_t length = static_cast<uint32_t>(str.size());
-        if (length > MAX_STRING_LENGTH) {
-            throw std::length_error("String too long for packet (max " + std::to_string(MAX_STRING_LENGTH) + " bytes)");
+    // Write a string as a uint32_t length prefix followed by the raw bytes.
+    //
+    // maxLength is the per-field ceiling the server enforces on its side (see
+    // ProtocolLimits); passing the matching limit means an oversized value is
+    // caught here rather than getting the session dropped by the peer.
+    void writeString(const std::string& str, size_t maxLength = MAX_STRING_LENGTH) {
+        const uint32_t length = static_cast<uint32_t>(str.size());
+        if (str.size() > maxLength) {
+            throw std::length_error("String too long for packet (max " + std::to_string(maxLength) + " bytes)");
         }
         write(length);
         if (length > 0) {
@@ -90,11 +94,14 @@ public:
         }
     }
 
-    // Read a string with length prefix (uint32_t)
-    std::string readString() {
-        uint32_t length = read<uint32_t>();
-        if (length > MAX_STRING_LENGTH) {
-            throw std::runtime_error("String length too long (max " + std::to_string(MAX_STRING_LENGTH) + " bytes)");
+    // Read a length-prefixed string. The declared length is validated against
+    // maxLength *before* it is used to size anything, then against the bytes
+    // actually present, which is what the server does.
+    std::string readString(size_t maxLength = MAX_STRING_LENGTH) {
+        const uint32_t length = read<uint32_t>();
+        if (length > maxLength) {
+            throw std::runtime_error("String length " + std::to_string(length) +
+                                     " exceeds limit " + std::to_string(maxLength));
         }
         if (m_readPos + length > m_buffer.size()) {
             throw std::out_of_range("Not enough bytes in buffer to read string");
@@ -103,6 +110,27 @@ public:
         m_readPos += length;
         return result;
     }
+
+    // Discards bytes already consumed and rebases the read cursor, so a
+    // long-lived receive buffer does not grow without bound.
+    void compact() {
+        if (m_readPos == 0) {
+            return;
+        }
+        m_buffer.erase(m_buffer.begin(), m_buffer.begin() + static_cast<ptrdiff_t>(m_readPos));
+        m_readPos = 0;
+    }
+
+    // Advances the read cursor without copying.
+    void skip(size_t size) {
+        if (m_readPos + size > m_buffer.size()) {
+            throw std::out_of_range("Not enough bytes in buffer to skip");
+        }
+        m_readPos += size;
+    }
+
+    // Bytes consumed so far.
+    size_t tellRead() const { return m_readPos; }
 
 private:
     std::vector<char> m_buffer;

@@ -1,157 +1,332 @@
 #include "WorldManager.h"
-#include "../core/Logger.h"
-#include "../core/ServiceLocator.h"
 
+#include "../core/Logger.h"
+
+#include <algorithm>
+#include <chrono>
+#include <format>
 #include <fstream>
-#include <sstream>
+
+namespace
+{
+    // Reads "key=value" from one save-file line. Returns false for anything
+    // that is not in that shape.
+    bool ParseKeyValue(const std::string& line, std::string& outKey, std::string& outValue)
+    {
+        const size_t separator = line.find('=');
+        if (separator == std::string::npos)
+            return false;
+
+        const auto trim = [](std::string text)
+        {
+            const size_t first = text.find_first_not_of(" \t\r\n");
+            if (first == std::string::npos)
+                return std::string();
+
+            const size_t last = text.find_last_not_of(" \t\r\n");
+            return text.substr(first, last - first + 1);
+        };
+
+        outKey   = trim(line.substr(0, separator));
+        outValue = trim(line.substr(separator + 1));
+
+        return !outKey.empty();
+    }
+
+    std::int64_t UnixNow()
+    {
+        return std::chrono::duration_cast<std::chrono::seconds>(
+                   std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    }
+}
+
+std::string FormatRelativeTime(std::int64_t unixSeconds)
+{
+    if (unixSeconds <= 0)
+        return "Unknown";
+
+    const std::int64_t elapsed = UnixNow() - unixSeconds;
+
+    // A timestamp from the future means a clock change, not a real duration.
+    if (elapsed < 0)
+        return "Unknown";
+
+    if (elapsed < 60)
+        return "just now";
+
+    const auto plural = [](std::int64_t count, const char* unit)
+    {
+        return std::format("{} {}{} ago", count, unit, count == 1 ? "" : "s");
+    };
+
+    if (elapsed < 60 * 60)
+        return plural(elapsed / 60, "minute");
+
+    if (elapsed < 24 * 60 * 60)
+        return plural(elapsed / (60 * 60), "hour");
+
+    return plural(elapsed / (24 * 60 * 60), "day");
+}
 
 WorldManager::WorldManager()
 {
-    // Set the save file path to a "saves" directory in the working directory
+    // Save alongside the executable so a debug and a release run do not fight
+    // over the same file.
     m_SaveFilePath = std::filesystem::current_path() / "saves" / "world_save.txt";
 
-    // Ensure the saves directory exists
     EnsureSaveDirectoryExists();
+
+    // The catalogue starts empty on purpose. The client shows the worlds a
+    // server tells it about and nothing else.
+}
+
+void WorldManager::SetAvailableWorlds(std::vector<WorldInfo> worlds)
+{
+    m_Worlds = std::move(worlds);
+
+    LOG_INFO(std::format("WorldManager: world list updated ({} worlds)", m_Worlds.size()));
+}
+
+void WorldManager::ClearAvailableWorlds()
+{
+    m_Worlds.clear();
+}
+
+const WorldInfo* WorldManager::FindWorld(const std::string& name) const
+{
+    const auto it = std::find_if(m_Worlds.begin(), m_Worlds.end(),
+                                 [&name](const WorldInfo& world) { return world.name == name; });
+
+    return it != m_Worlds.end() ? &(*it) : nullptr;
+}
+
+bool WorldManager::GetLastWorld(const std::string& username, LastWorldSession& outSession) const
+{
+    if (username.empty() || !std::filesystem::exists(m_SaveFilePath))
+        return false;
+
+    std::ifstream inFile(m_SaveFilePath);
+    if (!inFile.is_open())
+        return false;
+
+    std::string  worldName;
+    std::string  savedUser;
+    std::int64_t lastPlayed = 0;
+
+    std::string line;
+    while (std::getline(inFile, line))
+    {
+        std::string key;
+        std::string value;
+
+        if (!ParseKeyValue(line, key, value))
+            continue;
+
+        if (key == "worldName")
+        {
+            worldName = value;
+        }
+        else if (key == "username")
+        {
+            savedUser = value;
+        }
+        else if (key == "lastPlayed")
+        {
+            // A save written before timestamps existed simply has no such line,
+            // and a malformed one is treated the same way: unknown.
+            try
+            {
+                lastPlayed = std::stoll(value);
+            }
+            catch (const std::exception&)
+            {
+                lastPlayed = 0;
+            }
+        }
+    }
+
+    if (worldName.empty())
+        return false;
+
+    // A save with no username predates per-account sessions, and one written
+    // by another account is not ours to resume. Either way this account has no
+    // world to continue into, so it starts at World Selection.
+    if (savedUser != username)
+    {
+        LOG_INFO(std::format("WorldManager: saved session belongs to '{}', not '{}'; ignoring it",
+                             savedUser.empty() ? std::string("(unknown)") : savedUser, username));
+        return false;
+    }
+
+    outSession = LastWorldSession{};
+    outSession.lastPlayedUnix = lastPlayed;
+
+    // The saved name is all that is known for certain. If a server has since
+    // described this world, take its details; otherwise the remaining fields
+    // stay empty and the Continue screen shows them as unknown.
+    if (const WorldInfo* world = FindWorld(worldName))
+        outSession.world = *world;
+    else
+        outSession.world.name = worldName;
+
+    return true;
+}
+
+void WorldManager::SetLastWorld(const std::string& worldName, const std::string& username)
+{
+    SaveWorld(worldName, username);
+}
+
+void WorldManager::ClearLastWorld()
+{
+    DeleteSavedWorld();
 }
 
 bool WorldManager::EnsureSaveDirectoryExists() const
 {
-    std::filesystem::path dirPath = m_SaveFilePath.parent_path();
-    if (!std::filesystem::exists(dirPath))
+    const std::filesystem::path directory = m_SaveFilePath.parent_path();
+
+    if (std::filesystem::exists(directory))
+        return true;
+
+    std::error_code error;
+    std::filesystem::create_directories(directory, error);
+
+    if (error)
     {
-        try
-        {
-            std::filesystem::create_directories(dirPath);
-            LOG_INFO("WorldManager: Created save directory at {}", dirPath.string());
-        }
-        catch (const std::filesystem::filesystem_error &e)
-        {
-            LOG_ERROR("WorldManager: Failed to create save directory: {}", e.what());
-            return false;
-        }
+        LOG_ERROR(std::format("WorldManager: failed to create save directory '{}': {}",
+                              directory.string(), error.message()));
+        return false;
     }
+
+    LOG_INFO(std::format("WorldManager: created save directory at {}", directory.string()));
     return true;
 }
 
-bool WorldManager::SaveWorld(const std::string &worldName)
+bool WorldManager::SaveWorld(const std::string& worldName, const std::string& username)
 {
-    try
+    if (!EnsureSaveDirectoryExists())
+        return false;
+
+    std::ofstream outFile(m_SaveFilePath, std::ios::trunc);
+    if (!outFile.is_open())
     {
-        // Ensure save directory exists
-        if (!EnsureSaveDirectoryExists())
-        {
-            return false;
-        }
-
-        // Save the world name to file (in a real implementation, we'd serialize the entire world)
-        std::ofstream outFile(m_SaveFilePath);
-        if (!outFile.is_open())
-        {
-            LOG_ERROR("WorldManager: Failed to open save file for writing: {}", m_SaveFilePath.string());
-            return false;
-        }
-
-        outFile << "worldName=" << worldName << std::endl;
-        outFile.close();
-
-        LOG_INFO("WorldManager: Saved world '{}' to {}", worldName, m_SaveFilePath.string());
-
-        // In a full implementation, we would serialize the entire world data here
-        // For now, we're just saving the world name as a placeholder
-        return true;
-    }
-    catch (const std::exception &e)
-    {
-        LOG_ERROR("WorldManager: Exception while saving world: {}", e.what());
+        LOG_ERROR(std::format("WorldManager: failed to open save file for writing: {}",
+                              m_SaveFilePath.string()));
         return false;
     }
+
+    // Only the session identity is stored. A world's contents belong to the
+    // server, so there is nothing else here to serialise; the timestamp is what
+    // lets "Last Played" report a real elapsed time, and the username is what
+    // keeps one account's session from being offered to another.
+    outFile << "worldName=" << worldName << "\n";
+    outFile << "username=" << username << "\n";
+    outFile << "lastPlayed=" << UnixNow() << "\n";
+
+    if (!outFile)
+    {
+        LOG_ERROR(std::format("WorldManager: failed while writing save file: {}",
+                              m_SaveFilePath.string()));
+        return false;
+    }
+
+    LOG_INFO(std::format("WorldManager: saved world '{}' to {}",
+                         worldName, m_SaveFilePath.string()));
+    return true;
 }
 
-bool WorldManager::LoadWorld(std::string &outWorldName, StrixVerse::World::World &world)
+bool WorldManager::LoadWorld(std::string& outWorldName, StrixVerse::World::World& world)
 {
-    try
+    (void)world;   // World deserialisation is not implemented yet.
+
+    if (!std::filesystem::exists(m_SaveFilePath))
     {
-        // Check if save file exists
-        if (!std::filesystem::exists(m_SaveFilePath))
-        {
-            LOG_INFO("WorldManager: No save file found at {}", m_SaveFilePath.string());
-            return false;
-        }
-
-        // Read from file
-        std::ifstream inFile(m_SaveFilePath);
-        if (!inFile.is_open())
-        {
-            LOG_ERROR("WorldManager: Failed to open save file for reading: {}", m_SaveFilePath.string());
-            return false;
-        }
-
-        // Read line and parse
-        std::string line;
-        if (std::getline(inFile, line))
-        {
-            inFile.close();
-
-            // Parse format: worldName=value
-            std::size_t pos = line.find('=');
-            if (pos != std::string::npos && pos < line.length() - 1)
-            {
-                std::string key = line.substr(0, pos);
-                std::string value = line.substr(pos + 1);
-
-                // Trim whitespace
-                key.erase(0, key.find_first_not_of(" \t\n\r"));
-                key.erase(key.find_last_not_of(" \t\n\r") + 1);
-                value.erase(0, value.find_first_not_of(" \t\n\r"));
-                value.erase(value.find_last_not_of(" \t\n\r") + 1);
-
-                if (key == "worldName")
-                {
-                    outWorldName = value;
-                    LOG_INFO("WorldManager: Loaded world '{}' from {}", outWorldName, m_SaveFilePath.string());
-
-                    // In a full implementation, we would deserialize the world data here
-                    // For now, we just return the world name
-                    return true;
-                }
-            }
-        }
-
-        inFile.close();
-        LOG_ERROR("WorldManager: Invalid save file format at {}", m_SaveFilePath.string());
+        LOG_INFO(std::format("WorldManager: no save file found at {}", m_SaveFilePath.string()));
         return false;
     }
-    catch (const std::exception &e)
+
+    std::ifstream inFile(m_SaveFilePath);
+    if (!inFile.is_open())
     {
-        LOG_ERROR("WorldManager: Exception while loading world: {}", e.what());
+        LOG_ERROR(std::format("WorldManager: failed to open save file for reading: {}",
+                              m_SaveFilePath.string()));
         return false;
     }
+
+    std::string line;
+    if (!std::getline(inFile, line))
+    {
+        LOG_ERROR(std::format("WorldManager: save file is empty: {}", m_SaveFilePath.string()));
+        return false;
+    }
+
+    const size_t separator = line.find('=');
+    if (separator == std::string::npos || separator + 1 >= line.size())
+    {
+        LOG_ERROR(std::format("WorldManager: invalid save file format at {}",
+                              m_SaveFilePath.string()));
+        return false;
+    }
+
+    std::string key   = line.substr(0, separator);
+    std::string value = line.substr(separator + 1);
+
+    const auto trim = [](std::string& text)
+    {
+        const size_t first = text.find_first_not_of(" \t\r\n");
+        if (first == std::string::npos)
+        {
+            text.clear();
+            return;
+        }
+        const size_t last = text.find_last_not_of(" \t\r\n");
+        text = text.substr(first, last - first + 1);
+    };
+
+    trim(key);
+    trim(value);
+
+    if (key != "worldName" || value.empty())
+    {
+        LOG_ERROR(std::format("WorldManager: invalid save file format at {}",
+                              m_SaveFilePath.string()));
+        return false;
+    }
+
+    outWorldName = value;
+
+    LOG_INFO(std::format("WorldManager: loaded world '{}' from {}",
+                         outWorldName, m_SaveFilePath.string()));
+    return true;
 }
 
-bool WorldManager::HasSavedWorld() const
+bool WorldManager::HasSavedWorldFor(const std::string& username) const
 {
-    return std::filesystem::exists(m_SaveFilePath);
+    LastWorldSession session;
+    return GetLastWorld(username, session);
 }
 
 bool WorldManager::DeleteSavedWorld()
 {
-    try
+    std::error_code error;
+
+    if (!std::filesystem::exists(m_SaveFilePath))
     {
-        if (std::filesystem::exists(m_SaveFilePath))
-        {
-            std::filesystem::remove(m_SaveFilePath);
-            LOG_INFO("WorldManager: Deleted save file at {}", m_SaveFilePath.string());
-            return true;
-        }
-        else
-        {
-            LOG_INFO("WorldManager: No save file to delete at {}", m_SaveFilePath.string());
-            return true; // Nothing to delete is still a success
-        }
+        LOG_INFO(std::format("WorldManager: no save file to delete at {}",
+                             m_SaveFilePath.string()));
+        return true;
     }
-    catch (const std::exception &e)
+
+    std::filesystem::remove(m_SaveFilePath, error);
+
+    if (error)
     {
-        LOG_ERROR("WorldManager: Exception while deleting save file: {}", e.what());
+        LOG_ERROR(std::format("WorldManager: failed to delete save file: {}", error.message()));
         return false;
     }
+
+    LOG_INFO(std::format("WorldManager: deleted save file at {}", m_SaveFilePath.string()));
+    return true;
 }

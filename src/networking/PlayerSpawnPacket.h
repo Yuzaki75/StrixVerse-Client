@@ -1,56 +1,39 @@
-#ifndef PLAYER_SPAWN_PACKET_H
-#define PLAYER_SPAWN_PACKET_H
+#pragma once
 
 #include "Packet.h"
 
-class PlayerSpawnPacket : public Packet {
+#include <string>
+
+// Another player entered view.
+// Field order and types mirror Server/src/network/Packets/PlayerSpawnPacket.cpp exactly.
+class PlayerSpawnPacket final : public Packet
+{
 public:
-    PlayerSpawnPacket() = default;
-    PlayerSpawnPacket(uint32_t entityId, uint32_t playerId, float x, float y, uint16_t spriteId)
-        : m_entityId(entityId), m_playerId(playerId), m_x(x), m_y(y), m_spriteId(spriteId) {}
+    uint64_t EntityID = 0;
+    std::string Username;
+    float X = 0.0f;
+    float Y = 0.0f;
+    float Direction = 0.0f;
 
-    PacketType getType() const override { return PacketType::PlayerSpawn; }
+    Opcode getOpcode() const override { return Opcode::PlayerSpawn; }
 
-    void serialize(PacketBuffer& buffer) const override {
-        buffer.write(m_entityId);
-        buffer.write(m_playerId);
-        buffer.write(m_x);
-        buffer.write(m_y);
-        buffer.write(m_spriteId);
+    const char* getName() const override { return "PlayerSpawnPacket"; }
+
+    void serialize(PacketBuffer& buffer) const override
+    {
+        buffer.write(EntityID);
+        buffer.writeString(Username, ProtocolLimits::MaxUsernameLength);
+        buffer.write(X);
+        buffer.write(Y);
+        buffer.write(Direction);
     }
 
-    void deserialize(PacketBuffer& buffer) override {
-        m_entityId = buffer.read<uint32_t>();
-        m_playerId = buffer.read<uint32_t>();
-        m_x = buffer.read<float>();
-        m_y = buffer.read<float>();
-        m_spriteId = buffer.read<uint16_t>();
+    void deserialize(PacketBuffer& buffer) override
+    {
+        EntityID = buffer.read<uint64_t>();
+        Username = buffer.readString(ProtocolLimits::MaxUsernameLength);
+        X = buffer.read<float>();
+        Y = buffer.read<float>();
+        Direction = buffer.read<float>();
     }
-
-    // Getters
-    uint32_t getEntityId() const { return m_entityId; }
-    uint32_t getPlayerId() const { return m_playerId; }
-    float getX() const { return m_x; }
-    float getY() const { return m_y; }
-    uint16_t getSpriteId() const { return m_spriteId; }
-
-    // Setters
-    void setEntityId(uint32_t id) { m_entityId = id; }
-    void setPlayerId(uint32_t id) { m_playerId = id; }
-    void setPosition(float x, float y) { m_x = x; m_y = y; }
-    void setSpriteId(uint16_t id) { m_spriteId = id; }
-
-protected:
-    std::shared_ptr<Packet> createInstance() const override {
-        return std::make_shared<PlayerSpawnPacket>();
-    }
-
-private:
-    uint32_t m_entityId;
-    uint32_t m_playerId;
-    float m_x;
-    float m_y;
-    uint16_t m_spriteId;
 };
-
-#endif // PLAYER_SPAWN_PACKET_H

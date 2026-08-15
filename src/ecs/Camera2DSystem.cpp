@@ -22,6 +22,10 @@ namespace StrixVerse
 
         void Camera2DSystem::update(const std::vector<Entity> &entities, float deltaTime)
         {
+            // Camera follow is snapped rather than smoothed, so the timestep is
+            // unused for now.
+            (void)deltaTime;
+
             // Get the engine to access the main camera
             auto engine = ServiceLocator::Get<Engine>();
             if (!engine)

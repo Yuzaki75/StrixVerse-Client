@@ -1,46 +1,44 @@
-#ifndef PLAYER_MOVE_PACKET_H
-#define PLAYER_MOVE_PACKET_H
+#pragma once
 
 #include "Packet.h"
 
-class PlayerMovePacket : public Packet {
+
+// Movement update for a player.
+// Field order and types mirror Server/src/network/Packets/PlayerMovePacket.cpp exactly.
+class PlayerMovePacket final : public Packet
+{
 public:
-    PlayerMovePacket() = default;
-    PlayerMovePacket(uint32_t entityId, float x, float y)
-        : m_entityId(entityId), m_x(x), m_y(y) {}
+    uint64_t PlayerID = 0;
+    float X = 0.0f;
+    float Y = 0.0f;
+    float Z = 0.0f;
+    float VelocityX = 0.0f;
+    float VelocityY = 0.0f;
+    float VelocityZ = 0.0f;
 
-    PacketType getType() const override { return PacketType::PlayerMove; }
+    Opcode getOpcode() const override { return Opcode::PlayerMove; }
 
-    void serialize(PacketBuffer& buffer) const override {
-        buffer.write(m_entityId);
-        buffer.write(m_x);
-        buffer.write(m_y);
+    const char* getName() const override { return "PlayerMovePacket"; }
+
+    void serialize(PacketBuffer& buffer) const override
+    {
+        buffer.write(PlayerID);
+        buffer.write(X);
+        buffer.write(Y);
+        buffer.write(Z);
+        buffer.write(VelocityX);
+        buffer.write(VelocityY);
+        buffer.write(VelocityZ);
     }
 
-    void deserialize(PacketBuffer& buffer) override {
-        m_entityId = buffer.read<uint32_t>();
-        m_x = buffer.read<float>();
-        m_y = buffer.read<float>();
+    void deserialize(PacketBuffer& buffer) override
+    {
+        PlayerID = buffer.read<uint64_t>();
+        X = buffer.read<float>();
+        Y = buffer.read<float>();
+        Z = buffer.read<float>();
+        VelocityX = buffer.read<float>();
+        VelocityY = buffer.read<float>();
+        VelocityZ = buffer.read<float>();
     }
-
-    // Getters
-    uint32_t getEntityId() const { return m_entityId; }
-    float getX() const { return m_x; }
-    float getY() const { return m_y; }
-
-    // Setters
-    void setEntityId(uint32_t id) { m_entityId = id; }
-    void setPosition(float x, float y) { m_x = x; m_y = y; }
-
-protected:
-    std::shared_ptr<Packet> createInstance() const override {
-        return std::make_shared<PlayerMovePacket>();
-    }
-
-private:
-    uint32_t m_entityId;
-    float m_x;
-    float m_y;
 };
-
-#endif // PLAYER_MOVE_PACKET_H

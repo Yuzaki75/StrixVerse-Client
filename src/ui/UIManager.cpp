@@ -1,191 +1,292 @@
 #include "UIManager.h"
-#include "../graphics/SpriteBatch.h"
-#include "../graphics/Font.h"
-#include "../core/ServiceLocator.h"
-#include "../core/Logger.h"
 
-UIManager::UIManager()
-    : hoveredElement_(nullptr)
-    , pressedElement_(nullptr)
-    , focusedElement_(nullptr) {}
+#include "../graphics/UIRenderer.h"
+
+#include <algorithm>
+
+UIManager::UIManager() = default;
 
 UIManager::~UIManager() = default;
 
-void UIManager::addElement(std::shared_ptr<UIElement> element) {
-    elements_.push_back(element);
+void UIManager::addElement(std::shared_ptr<UIElement> element)
+{
+    if (!element)
+        return;
+
+    elements_.push_back(std::move(element));
 }
 
-void UIManager::removeElement(std::shared_ptr<UIElement> element) {
-    auto it = std::find(elements_.begin(), elements_.end(), element);
-    if (it != elements_.end()) {
-        elements_.erase(it);
+void UIManager::removeElement(const std::shared_ptr<UIElement>& element)
+{
+    if (!element)
+        return;
 
-        // Clear references if they point to the removed element
-        if (hoveredElement_ == element) hoveredElement_ = nullptr;
-        if (pressedElement_ == element) pressedElement_ = nullptr;
-        if (focusedElement_ == element) focusedElement_ = nullptr;
-    }
-}
+    const auto it = std::find(elements_.begin(), elements_.end(), element);
+    if (it == elements_.end())
+        return;
 
-void UIManager::bringToFront(std::shared_ptr<UIElement> element) {
-    auto it = std::find(elements_.begin(), elements_.end(), element);
-    if (it != elements_.end()) {
-        elements_.erase(it);
-        elements_.push_back(element); // Move to end (drawn last = on top)
-    }
-}
+    elements_.erase(it);
 
-void UIManager::sendToBack(std::shared_ptr<UIElement> element) {
-    auto it = std::find(elements_.begin(), elements_.end(), element);
-    if (it != elements_.end()) {
-        elements_.erase(it);
-        elements_.insert(elements_.begin(), element); // Move to beginning (drawn first = in back)
-    }
-}
-
-void UIManager::clearAllElements() {
-    elements_.clear();
-    hoveredElement_ = nullptr;
-    pressedElement_ = nullptr;
-    focusedElement_ = nullptr;
-}
-
-std::shared_ptr<UIElement> UIManager::getElementAt(float x, float y) const {
-    // Check from front to back (last to first) to find topmost element
-    for (auto it = elements_.rbegin(); it != elements_.rend(); ++it) {
-        if ((*it)->isVisible() && (*it)->containsPoint(x, y)) {
-            return *it;
+    // Interaction state must never outlive the element it points at. The
+    // removed element may be an ancestor of the hovered/pressed/focused one,
+    // so check the whole chain.
+    auto isRemovedOrDescendant = [&element](const std::shared_ptr<UIElement>& candidate)
+    {
+        for (const UIElement* node = candidate.get(); node != nullptr; node = node->getParent())
+        {
+            if (node == element.get())
+                return true;
         }
+        return false;
+    };
+
+    if (hoveredElement_ && isRemovedOrDescendant(hoveredElement_))
+        hoveredElement_.reset();
+
+    if (pressedElement_ && isRemovedOrDescendant(pressedElement_))
+        pressedElement_.reset();
+
+    if (focusedElement_ && isRemovedOrDescendant(focusedElement_))
+    {
+        focusedElement_->onFocusLost();
+        focusedElement_.reset();
     }
+}
+
+void UIManager::bringToFront(const std::shared_ptr<UIElement>& element)
+{
+    const auto it = std::find(elements_.begin(), elements_.end(), element);
+    if (it != elements_.end())
+    {
+        auto moved = *it;
+        elements_.erase(it);
+        elements_.push_back(std::move(moved));
+    }
+}
+
+void UIManager::sendToBack(const std::shared_ptr<UIElement>& element)
+{
+    const auto it = std::find(elements_.begin(), elements_.end(), element);
+    if (it != elements_.end())
+    {
+        auto moved = *it;
+        elements_.erase(it);
+        elements_.insert(elements_.begin(), std::move(moved));
+    }
+}
+
+void UIManager::clearAllElements()
+{
+    if (focusedElement_)
+        focusedElement_->onFocusLost();
+
+    elements_.clear();
+    hoveredElement_.reset();
+    pressedElement_.reset();
+    focusedElement_.reset();
+}
+
+std::shared_ptr<UIElement> UIManager::getElementAt(float x, float y)
+{
+    // Front to back: the last element added is drawn on top.
+    for (auto it = elements_.rbegin(); it != elements_.rend(); ++it)
+    {
+        if (!*it || !(*it)->isVisible())
+            continue;
+
+        if (auto hit = (*it)->hitTest(x, y))
+            return hit;
+    }
+
     return nullptr;
 }
 
-void UIManager::updateHoverState(float x, float y) {
+void UIManager::updateHoverState(float x, float y)
+{
     auto element = getElementAt(x, y);
-    if (element != hoveredElement_) {
-        // Mouse left the previously hovered element
-        if (hoveredElement_) {
-            hoveredElement_->onMouseLeave();
-        }
 
-        // Mouse entered the new element
-        if (element) {
-            element->onMouseEnter();
-        }
+    if (element == hoveredElement_)
+        return;
 
-        hoveredElement_ = element;
-    }
-}
-
-void UIManager::updatePressState(float x, float y) {
-    auto element = getElementAt(x, y);
-    if (element != pressedElement_) {
-        // Mouse button released on different element or released entirely
-        if (pressedElement_) {
-            pressedElement_->onMouseUp(x, y);
-            // Check if it's still the same element for click
-            if (element == pressedElement_) {
-                // This was a click
-                element->onClick();
-            }
-        }
-
-        // Mouse button pressed on new element
-        if (element) {
-            element->onMouseDown(x, y);
-        }
-
-        pressedElement_ = element;
-    }
-}
-
-void UIManager::clearHoverState() {
-    if (hoveredElement_) {
+    if (hoveredElement_)
         hoveredElement_->onMouseLeave();
-        hoveredElement_ = nullptr;
-    }
+
+    hoveredElement_ = std::move(element);
+
+    if (hoveredElement_)
+        hoveredElement_->onMouseEnter();
 }
 
-void UIManager::clearPressState() {
-    if (pressedElement_) {
-        pressedElement_->onMouseUp(0, 0); // Coordinates don't matter for release
-        pressedElement_ = nullptr;
-    }
-}
+void UIManager::handleMouseMove(float x, float y)
+{
+    lastMouseX_ = x;
+    lastMouseY_ = y;
 
-void UIManager::handleMouseMove(float x, float y) {
     updateHoverState(x, y);
-    // Update press state if mouse button is held down
-    // This would need to track mouse button state - simplified here
+
+    // A held button keeps receiving movement so it can track drag-out.
+    if (pressedElement_)
+        pressedElement_->onMouseMove(x, y);
+    else if (hoveredElement_)
+        hoveredElement_->onMouseMove(x, y);
 }
 
-void UIManager::handleMouseDown(float x, float y) {
-    updatePressState(x, y);
-    // Set focus to clicked element
+void UIManager::handleMouseDown(float x, float y)
+{
+    lastMouseX_ = x;
+    lastMouseY_ = y;
+
+    updateHoverState(x, y);
+
     auto element = getElementAt(x, y);
-    if (element) {
+
+    pressedElement_ = element;
+
+    if (element)
+        element->onMouseDown(x, y);
+
+    // Clicking a focusable control focuses it; clicking anywhere else - a
+    // panel, the background - drops focus, which is what lets a text box
+    // release the caret.
+    if (element && element->isFocusable())
         setFocusedElement(element);
+    else
+        clearFocus();
+}
+
+void UIManager::handleMouseUp(float x, float y)
+{
+    lastMouseX_ = x;
+    lastMouseY_ = y;
+
+    auto released = getElementAt(x, y);
+
+    if (pressedElement_)
+    {
+        pressedElement_->onMouseUp(x, y);
+
+        // A click is a press and a release over the same element.
+        if (released == pressedElement_ && pressedElement_->isEnabled())
+            pressedElement_->onClick();
+    }
+
+    pressedElement_.reset();
+
+    updateHoverState(x, y);
+}
+
+void UIManager::handleScroll(float x, float y, float delta)
+{
+    // Walk up from the element under the cursor until something consumes it,
+    // so a row inside a scroll panel still scrolls the panel.
+    auto element = getElementAt(x, y);
+
+    for (UIElement* node = element.get(); node != nullptr; node = node->getParent())
+    {
+        node->onScroll(delta);
     }
 }
 
-void UIManager::handleMouseUp(float x, float y) {
-    updatePressState(x, y);
-    clearPressState();
+void UIManager::handleTextInput(const std::string& utf8)
+{
+    if (focusedElement_)
+        focusedElement_->onTextInput(utf8);
 }
 
-void UIManager::handleKeyPressed(char key) {
-    if (focusedElement_) {
-        // For simplicity, we're passing all key presses to the focused element
-        // In a real implementation, we'd distinguish between printable chars and special keys
-        focusedElement_->onKeyPressed(key);
-    }
-}
-
-void UIManager::handleSpecialKeyPressed(int key) {
-    if (focusedElement_) {
-        focusedElement_->onSpecialKeyPressed(key);
-    }
-}
-
-void UIManager::update(float deltaTime) {
-    // Update all elements
-    for (auto& element : elements_) {
-        if (element->isVisible()) {
-            element->update(deltaTime);
-        }
-    }
-}
-
-void UIManager::render() {
-    // Get services
-    auto spriteBatch = ServiceLocator::Get<SpriteBatch>();
-    auto font = ServiceLocator::Get<Font>();
-
-    if (!spriteBatch || !font) {
+void UIManager::handleKeyDown(int key, bool ctrl, bool shift)
+{
+    // Tab moves focus regardless of what holds it.
+    if (key == UIKey::Tab)
+    {
+        focusNext(shift);
         return;
     }
 
-    // Render all elements in order (back to front)
-    for (auto& element : elements_) {
-        if (element->isVisible()) {
-            element->render(*spriteBatch, *font);
-        }
+    // Escape leaves the focused field. The screen's own Escape handling only
+    // runs once nothing has focus, so the first press abandons what is being
+    // typed and the second backs out of the screen.
+    if (key == UIKey::Escape && focusedElement_)
+    {
+        clearFocus();
+        return;
+    }
+
+    if (focusedElement_)
+        focusedElement_->onKeyDown(key, ctrl, shift);
+}
+
+void UIManager::update(float deltaTime)
+{
+    // Iterate over a copy: a callback fired during update may add or remove
+    // elements (for example a screen swapping its content).
+    const auto snapshot = elements_;
+
+    for (const auto& element : snapshot)
+    {
+        if (element && element->isVisible())
+            element->update(deltaTime);
     }
 }
 
-void UIManager::setFocusedElement(std::shared_ptr<UIElement> element) {
-    if (focusedElement_ != element) {
-        // Remove focus from previous element
-        if (focusedElement_) {
-            focusedElement_->onFocusLost();
-        }
+void UIManager::render(UIRenderer& renderer)
+{
+    for (const auto& element : elements_)
+    {
+        if (element && element->isVisible())
+            element->render(renderer, 1.0f);
+    }
+}
 
-        // Set focus to new element
-        focusedElement_ = element;
+void UIManager::setFocusedElement(const std::shared_ptr<UIElement>& element)
+{
+    if (focusedElement_ == element)
+        return;
 
-        // Give focus to new element
-        if (focusedElement_) {
-            focusedElement_->onFocusGained();
+    if (focusedElement_)
+        focusedElement_->onFocusLost();
+
+    focusedElement_ = element;
+
+    if (focusedElement_)
+        focusedElement_->onFocusGained();
+}
+
+void UIManager::clearFocus()
+{
+    setFocusedElement(nullptr);
+}
+
+void UIManager::focusNext(bool backwards)
+{
+    std::vector<std::shared_ptr<UIElement>> focusable;
+
+    for (const auto& element : elements_)
+    {
+        if (element)
+            element->collectFocusable(focusable);
+    }
+
+    if (focusable.empty())
+        return;
+
+    size_t next = backwards ? focusable.size() - 1 : 0;
+
+    if (focusedElement_)
+    {
+        const auto it = std::find(focusable.begin(), focusable.end(), focusedElement_);
+        if (it != focusable.end())
+        {
+            const size_t current = static_cast<size_t>(std::distance(focusable.begin(), it));
+            next = backwards
+                       ? (current + focusable.size() - 1) % focusable.size()
+                       : (current + 1) % focusable.size();
         }
     }
+
+    setFocusedElement(focusable[next]);
+}
+
+bool UIManager::isTextInputActive() const
+{
+    return focusedElement_ != nullptr && focusedElement_->isFocusable();
 }

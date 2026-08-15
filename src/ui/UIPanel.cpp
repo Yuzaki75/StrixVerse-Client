@@ -1,101 +1,90 @@
 #include "UIPanel.h"
-#include "../graphics/SpriteBatch.h"
-#include "../graphics/Font.h"
-#include "../core/ServiceLocator.h"
-#include "../core/AssetManager.h"
-#include "../core/Logger.h"
+
+#include "UITheme.h"
+#include "../graphics/Texture.h"
 
 UIPanel::UIPanel()
-    : backgroundColor_(0.0f, 0.0f, 0.0f, 0.5f), // Semi-transparent black by default
-      borderColor_(1.0f, 1.0f, 1.0f, 1.0f),     // White border
-      borderWidth_(1.0f),
-      borderRadius_(0.0f),
-      backgroundImage_(0)
 {
+    style_ = UIQuadStyle::Solid(UITheme::Panel, UITheme::RadiusPanel);
+    style_.WithBorder(UITheme::PanelBorder, UITheme::BorderThin);
 }
 
-void UIPanel::setBackgroundColor(const Color &color)
+void UIPanel::setBackgroundColor(const Color& color)
 {
-    backgroundColor_ = color;
+    style_.fillTop    = color;
+    style_.fillBottom = color;
 }
 
 void UIPanel::setBackgroundColor(float r, float g, float b, float a)
 {
-    backgroundColor_ = Color(r, g, b, a);
+    setBackgroundColor(Color(r, g, b, a));
 }
 
-void UIPanel::setBorderWidth(float width)
+void UIPanel::setBackgroundGradient(const Color& top, const Color& bottom)
 {
-    borderWidth_ = width;
+    style_.fillTop    = top;
+    style_.fillBottom = bottom;
 }
 
-void UIPanel::setBorderColor(const Color &color)
+void UIPanel::setBorderColor(const Color& color)
 {
-    borderColor_ = color;
+    style_.border = color;
 }
 
 void UIPanel::setBorderColor(float r, float g, float b, float a)
 {
-    borderColor_ = Color(r, g, b, a);
+    style_.border = Color(r, g, b, a);
+}
+
+void UIPanel::setBorderWidth(float width)
+{
+    style_.borderWidth = width;
+}
+
+void UIPanel::setBorder(const Color& color, float width)
+{
+    style_.border      = color;
+    style_.borderWidth = width;
 }
 
 void UIPanel::setBorderRadius(float radius)
 {
-    borderRadius_ = radius;
+    style_.radius = radius;
 }
 
-void UIPanel::setBackgroundImage(unsigned int textureID)
+void UIPanel::setGlow(const Color& color, float size)
 {
-    backgroundImage_ = textureID;
+    style_.glow     = color;
+    style_.glowSize = size;
 }
 
-void UIPanel::renderSelf(SpriteBatch &spriteBatch, Font &font) const
+void UIPanel::setBackgroundImage(std::shared_ptr<Texture> texture)
 {
-    // Calculate render position based on anchor
-    float renderX, renderY;
-    calculateRenderPosition(renderX, renderY);
+    backgroundImage_ = std::move(texture);
+}
 
-    // Get AssetManager for textures and shaders
-    auto assetManager = ServiceLocator::Get<AssetManager>();
-    if (!assetManager)
-    {
-        Logger::Error("UIPanel: AssetManager not available");
-        return;
-    }
+void UIPanel::renderSelf(UIRenderer& renderer) const
+{
+    const float x = getAbsoluteX();
+    const float y = getAbsoluteY();
 
-    // Get a white texture for drawing rectangles
-    std::shared_ptr<Texture> whiteTexture = assetManager->GetTexture("textures/white.png");
-    if (!whiteTexture)
-    {
-        whiteTexture = assetManager->LoadTexture("textures/white.png");
-    }
-    if (!whiteTexture)
-    {
-        Logger::Error("UIPanel: Failed to get or load white texture");
-        return;
-    }
+    renderer.DrawRect(x, y, width_, height_, style_);
 
-    // Draw background color
-    spriteBatch.Draw(*whiteTexture, renderX, renderY, getWidth(), getHeight(),
-                     backgroundColor_.r, backgroundColor_.g, backgroundColor_.b, backgroundColor_.a);
-
-    // Draw border if width > 0
-    if (borderWidth_ > 0.0f)
+    if (backgroundImage_)
     {
-        // Draw border by drawing four rectangles (top, bottom, left, right)
-        // Top border
-        spriteBatch.Draw(*whiteTexture, renderX, renderY, getWidth(), borderWidth_,
-                         borderColor_.r, borderColor_.g, borderColor_.b, borderColor_.a);
-        // Bottom border
-        spriteBatch.Draw(*whiteTexture, renderX, renderY + getHeight() - borderWidth_, getWidth(), borderWidth_,
-                         borderColor_.r, borderColor_.g, borderColor_.b, borderColor_.a);
-        // Left border
-        spriteBatch.Draw(*whiteTexture, renderX, renderY, borderWidth_, getHeight(),
-                         borderColor_.r, borderColor_.g, borderColor_.b, borderColor_.a);
-        // Right border
-        spriteBatch.Draw(*whiteTexture, renderX + getWidth() - borderWidth_, renderY, borderWidth_, getHeight(),
-                         borderColor_.r, borderColor_.g, borderColor_.b, borderColor_.a);
+        renderer.DrawTexture(*backgroundImage_, x, y, width_, height_,
+                             imageTint_, style_.radius);
     }
-    // Note: Border radius is not implemented in this simple version
-    // A more advanced implementation would use a shader or more complex geometry
+}
+
+void UIPanel::beginChildren(UIRenderer& renderer) const
+{
+    if (clipsChildren_)
+        renderer.PushClip(getAbsoluteX(), getAbsoluteY(), width_, height_);
+}
+
+void UIPanel::endChildren(UIRenderer& renderer) const
+{
+    if (clipsChildren_)
+        renderer.PopClip();
 }

@@ -15,6 +15,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(MSVC)
     add_compile_options(/W4)
+
+    # <windows.h> arrives through the Winsock networking layer. Without these
+    # its min/max macros break every std::min / std::max call site.
+    add_compile_definitions(
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+    )
 else()
     add_compile_options(-Wall -Wextra)
 endif()
@@ -47,7 +54,6 @@ set(SOURCES
     src/core/Application.cpp
     src/core/Config.cpp
     src/core/Engine.cpp
-    src/core/Game.cpp
     src/core/Logger.cpp
     src/core/ThreadPool.cpp
     src/core/Timer.cpp
@@ -66,21 +72,15 @@ set(SOURCES
     # Graphics
     # --------------------------------------------------
 
-    src/graphics/Animation.cpp
-    src/graphics/Camera.cpp
     src/graphics/Camera2D.cpp
     src/graphics/Color.cpp
     src/graphics/Font.cpp
-    src/graphics/FrameBuffer.cpp
-    src/graphics/Mesh.cpp
     src/graphics/Renderer.cpp
-    src/graphics/RenderTarget.cpp
     src/graphics/Shader.cpp
     src/graphics/SpriteBatch.cpp
     src/graphics/Texture.cpp
-    src/graphics/Vertex.cpp
+    src/graphics/UIRenderer.cpp
 
-    src/graphics/OpenGL/GLContext.cpp
 
     # --------------------------------------------------
     # Networking
@@ -89,33 +89,12 @@ set(SOURCES
     src/networking/Connection.cpp
     src/networking/NetworkManager.cpp
 
-    src/networking/Packet.cpp
-    src/networking/PacketBuffer.cpp
     src/networking/PacketDispatcher.cpp
-    src/networking/PacketFactory.cpp
-    src/networking/PacketHandler.cpp
-    src/networking/PacketReader.cpp
     src/networking/PacketRegistry.cpp
-    src/networking/PacketSender.cpp
-    src/networking/PacketSerializer.cpp
-    src/networking/PacketWriter.cpp
 
-    src/networking/CharacterPacket.cpp
-    src/networking/HandshakePacket.cpp
     src/networking/KeepAlive.cpp
-    src/networking/KeepAlivePacket.cpp
-    src/networking/LoginPacket.cpp
-    src/networking/LoginResultPacket.cpp
     src/networking/NetworkStatistics.cpp
     src/networking/PingManager.cpp
-    src/networking/PingPacket.cpp
-    src/networking/PongPacket.cpp
-    src/networking/PlayerMovePacket.cpp
-    src/networking/PlayerRemovePacket.cpp
-    src/networking/PlayerSpawnPacket.cpp
-    src/networking/PlayerStatePacket.cpp
-    src/networking/RegisterPacket.cpp
-    src/networking/SessionPacket.cpp
 
     # --------------------------------------------------
     # ECS
@@ -133,6 +112,7 @@ set(SOURCES
     src/ecs/RenderSystem.cpp
     src/ecs/TileRendererSystem.cpp
     src/ecs/Camera2DSystem.cpp
+    src/ecs/CollisionSystem.cpp
 
     # --------------------------------------------------
     # UI
@@ -145,6 +125,14 @@ set(SOURCES
     src/ui/UITextBox.cpp
     src/ui/UIImage.cpp
     src/ui/UILabel.cpp
+    src/ui/UICheckBox.cpp
+    src/ui/UIIcon.cpp
+    src/ui/UIProgressBar.cpp
+    src/ui/UIScrollPanel.cpp
+    src/ui/UITiledImage.cpp
+    src/ui/UIFonts.cpp
+    src/ui/UIPatterns.cpp
+    src/ui/UIScale.cpp
 
     # --------------------------------------------------
     # Screens
@@ -157,6 +145,7 @@ set(SOURCES
     src/screens/LoadingScreen.cpp
     src/screens/LoginScreen.cpp
     src/screens/RegisterScreen.cpp
+    src/screens/ConnectingScreen.cpp
     src/screens/ContinueScreen.cpp
     src/screens/WorldBrowserScreen.cpp
     src/screens/SettingsScreen.cpp
@@ -184,7 +173,6 @@ set(HEADERS
     src/core/AuthService.h
     src/core/Config.h
     src/core/Engine.h
-    src/core/Game.h
     src/core/Logger.h
     src/core/Scheduler.h
     src/core/ServiceLocator.h
@@ -203,22 +191,15 @@ set(HEADERS
     # Graphics
     # --------------------------------------------------
 
-    src/graphics/Animation.h
-    src/graphics/Camera.h
     src/graphics/Camera2D.h
     src/graphics/Color.h
     src/graphics/Font.h
-    src/graphics/FrameBuffer.h
-    src/graphics/Mesh.h
     src/graphics/Renderer.h
-    src/graphics/RenderTarget.h
     src/graphics/Shader.h
     src/graphics/SpriteBatch.h
     src/graphics/Texture.h
-    src/graphics/Vertex.h
+    src/graphics/UIRenderer.h
 
-    src/graphics/OpenGL/GLBuffer.h
-    src/graphics/OpenGL/GLContext.h
 
     # --------------------------------------------------
     # Networking
@@ -230,20 +211,20 @@ set(HEADERS
     src/networking/Packet.h
     src/networking/PacketBuffer.h
     src/networking/PacketDispatcher.h
-    src/networking/PacketFactory.h
     src/networking/PacketHandler.h
-    src/networking/PacketReader.h
     src/networking/PacketRegistry.h
     src/networking/PacketSender.h
-    src/networking/PacketSerializer.h
-    src/networking/PacketWriter.h
 
-    src/networking/CharacterPacket.h
+    src/networking/Protocol.h
+
+    src/networking/ChatMessagePacket.h
+    src/networking/DisconnectPacket.h
     src/networking/HandshakePacket.h
     src/networking/KeepAlive.h
     src/networking/KeepAlivePacket.h
+    src/networking/LoginFailedPacket.h
     src/networking/LoginPacket.h
-    src/networking/LoginResultPacket.h
+    src/networking/LoginSuccessPacket.h
     src/networking/NetworkStatistics.h
     src/networking/PingManager.h
     src/networking/PingPacket.h
@@ -251,9 +232,10 @@ set(HEADERS
     src/networking/PlayerMovePacket.h
     src/networking/PlayerRemovePacket.h
     src/networking/PlayerSpawnPacket.h
-    src/networking/PlayerStatePacket.h
     src/networking/RegisterPacket.h
-    src/networking/SessionPacket.h
+    src/networking/WorldJoinPacket.h
+    src/networking/WorldLeavePacket.h
+    src/networking/WorldStatePacket.h
 
     # --------------------------------------------------
     # ECS
@@ -263,6 +245,7 @@ set(HEADERS
     src/ecs/Camera2DComponent.h
     src/ecs/Camera2DSystem.h
     src/ecs/ColliderComponent.h
+    src/ecs/CollisionSystem.h
     src/ecs/Component.h
     src/ecs/ComponentManager.h
     src/ecs/Entity.h
@@ -288,17 +271,27 @@ set(HEADERS
     # --------------------------------------------------
 
     src/ui/UIButton.h
+    src/ui/UICheckBox.h
     src/ui/UIElement.h
+    src/ui/UIFonts.h
+    src/ui/UIIcon.h
     src/ui/UIImage.h
     src/ui/UILabel.h
     src/ui/UIManager.h
     src/ui/UIPanel.h
+    src/ui/UIPatterns.h
+    src/ui/UIProgressBar.h
+    src/ui/UIScale.h
+    src/ui/UIScrollPanel.h
     src/ui/UITextBox.h
+    src/ui/UITheme.h
+    src/ui/UITiledImage.h
 
     # --------------------------------------------------
     # Screens
     # --------------------------------------------------
 
+    src/screens/ConnectingScreen.h
     src/screens/ContinueScreen.h
     src/screens/GameScreen.h
     src/screens/LoadingScreen.h
@@ -384,8 +377,10 @@ endif()
 # Output Directories
 # --------------------------------------------------
 
+# Executables go to bin/, never into the build tree - build/ holds generated
+# project files only, so it stays disposable.
 set_target_properties(StrixVerseClient PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/build"
+    RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${PROJECT_SOURCE_DIR}/bin/Debug"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${PROJECT_SOURCE_DIR}/bin/Release"
 )
@@ -394,42 +389,33 @@ set_target_properties(StrixVerseClient PROPERTIES
 # Runtime Directories
 # --------------------------------------------------
 
-add_custom_command(TARGET StrixVerseClient POST_BUILD
+# The client resolves "shaders/..." and "assets/..." relative to its working
+# directory, so both trees are mirrored next to every executable. Copying whole
+# directories keeps this correct as shaders and assets are added, instead of
+# needing one command per file.
 
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/assets"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/cache"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/configs"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/logs"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/screenshots"
-
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/bin/Debug/shaders"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/bin/Release/shaders"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/build/shaders"
-
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PROJECT_SOURCE_DIR}/shaders/default.vert"
-        "${PROJECT_SOURCE_DIR}/bin/Debug/shaders/default.vert"
-
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PROJECT_SOURCE_DIR}/shaders/default.frag"
-        "${PROJECT_SOURCE_DIR}/bin/Debug/shaders/default.frag"
-
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PROJECT_SOURCE_DIR}/shaders/default.vert"
-        "${PROJECT_SOURCE_DIR}/bin/Release/shaders/default.vert"
-
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PROJECT_SOURCE_DIR}/shaders/default.frag"
-        "${PROJECT_SOURCE_DIR}/bin/Release/shaders/default.frag"
-
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PROJECT_SOURCE_DIR}/shaders/default.vert"
-        "${PROJECT_SOURCE_DIR}/build/shaders/default.vert"
-
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PROJECT_SOURCE_DIR}/shaders/default.frag"
-        "${PROJECT_SOURCE_DIR}/build/shaders/default.frag"
+# Only the two directories the executable is actually produced in. The build
+# tree was on this list, which copied the whole asset set into it on every
+# build even though nothing ever ran from there. The client creates its own
+# logs/ and saves/ at startup, so no directory needs preparing here.
+set(STRIX_RUNTIME_DIRS
+    "${PROJECT_SOURCE_DIR}/bin/Debug"
+    "${PROJECT_SOURCE_DIR}/bin/Release"
 )
+
+foreach(RUNTIME_DIR IN LISTS STRIX_RUNTIME_DIRS)
+    add_custom_command(TARGET StrixVerseClient POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${PROJECT_SOURCE_DIR}/shaders"
+            "${RUNTIME_DIR}/shaders"
+
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${PROJECT_SOURCE_DIR}/assets"
+            "${RUNTIME_DIR}/assets"
+
+        COMMENT "Deploying shaders and assets to ${RUNTIME_DIR}"
+    )
+endforeach()
 
 # --------------------------------------------------
 # Visual Studio Source Groups

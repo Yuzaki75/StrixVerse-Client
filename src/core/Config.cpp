@@ -51,6 +51,24 @@ namespace
         return !outToken.empty();
     }
 
+    // Reads a quoted string value. The token grabbed by FindValueToken still
+    // has its surrounding quotes, so they are stripped here.
+    bool ParseString(const std::string& json, const std::string& key, std::string& out)
+    {
+        std::string token;
+        if (!FindValueToken(json, key, token))
+            return false;
+
+        if (token.size() >= 2 && token.front() == '"' && token.back() == '"')
+            token = token.substr(1, token.size() - 2);
+
+        if (token.empty())
+            return false;
+
+        out = token;
+        return true;
+    }
+
     bool ParseInt(const std::string& json, const std::string& key, int& out)
     {
         std::string token;
@@ -111,6 +129,10 @@ bool Config::Load()
     ParseInt(json, "height", m_Height);
     ParseBool(json, "fullscreen", m_Fullscreen);
     ParseBool(json, "vsync", m_VSync);
+
+    ParseInt(json, "port", m_ServerPort);
+    ParseString(json, "host", m_ServerHost);
+    ParseBool(json, "offline", m_Offline);
 
     Validate();
 
@@ -179,5 +201,25 @@ void Config::SetWidth(int width) { m_Width = width; Validate(); }
 void Config::SetHeight(int height) { m_Height = height; Validate(); }
 void Config::SetFullscreen(bool fullscreen) { m_Fullscreen = fullscreen; }
 void Config::SetVSync(bool vsync) { m_VSync = vsync; }
+
+const std::string& Config::GetServerHost() const { return m_ServerHost; }
+int Config::GetServerPort() const { return m_ServerPort; }
+
+void Config::SetServerHost(const std::string& host)
+{
+    if (!host.empty())
+        m_ServerHost = host;
+}
+
+bool Config::IsOfflineMode() const { return m_Offline; }
+
+void Config::SetOfflineMode(bool offline) { m_Offline = offline; }
+
+void Config::SetServerPort(int port)
+{
+    // Port 0 is "any" and privileged ports are not what a game server uses.
+    if (port > 0 && port <= 65535)
+        m_ServerPort = port;
+}
 
 const std::string& Config::GetFilePath() const { return m_FilePath; }

@@ -1,4 +1,6 @@
 #include "World.h"
+
+#include <format>
 #include "../Logger.h"
 #include <algorithm>
 #include <fstream>
@@ -208,11 +210,11 @@ namespace StrixVerse
                         }
 
                         // Write each tile's type in the chunk
-                        for (uint32_t cx = 0; cx < Chunk::GetWidth(); ++cx)
+                        for (uint32_t cx = 0; cx < static_cast<uint32_t>(Chunk::GetWidth()); ++cx)
                         {
-                            for (uint32_t cy = 0; cy < Chunk::GetHeight(); ++cy)
+                            for (uint32_t cy = 0; cy < static_cast<uint32_t>(Chunk::GetHeight()); ++cy)
                             {
-                                for (uint32_t cz = 0; cz < Chunk::GetDepth(); ++cz)
+                                for (uint32_t cz = 0; cz < static_cast<uint32_t>(Chunk::GetDepth()); ++cz)
                                 {
                                     auto tile = chunk->GetTile(cx, cy, cz);
                                     if (!tile)
@@ -227,7 +229,7 @@ namespace StrixVerse
 
                                     if (!outFile.good())
                                     {
-                                        LOG_ERROR("World: Failed to write tile data to file: {}", filePath.string());
+                                        LOG_ERROR(std::format("World: Failed to write tile data to file: {}", filePath.string()));
                                         outFile.close();
                                         return false;
                                     }
@@ -241,7 +243,7 @@ namespace StrixVerse
             outFile.close();
             if (!outFile.good())
             {
-                LOG_ERROR("World: Failed to flush file data: {}", filePath.string());
+                LOG_ERROR(std::format("World: Failed to flush file data: {}", filePath.string()));
                 return false;
             }
 
@@ -261,7 +263,7 @@ namespace StrixVerse
             std::ifstream inFile(filePath, std::ios::binary);
             if (!inFile.is_open())
             {
-                LOG_ERROR("World: Failed to open file for reading: {}", filePath.string());
+                LOG_ERROR(std::format("World: Failed to open file for reading: {}", filePath.string()));
                 return false;
             }
 
@@ -275,7 +277,7 @@ namespace StrixVerse
 
             if (!inFile.good())
             {
-                LOG_ERROR("World: Failed to read header from file: {}", filePath.string());
+                LOG_ERROR(std::format("World: Failed to read header from file: {}", filePath.string()));
                 inFile.close();
                 return false;
             }
@@ -283,14 +285,14 @@ namespace StrixVerse
             // Validate magic and version
             if (magic != 0x574F524C)
             { // "WORL"
-                LOG_ERROR("World: Invalid magic number in file: {}", filePath.string());
+                LOG_ERROR(std::format("World: Invalid magic number in file: {}", filePath.string()));
                 inFile.close();
                 return false;
             }
 
             if (version != 1)
             {
-                LOG_ERROR("World: Unsupported version {} in file: {}", version, filePath.string());
+                LOG_ERROR(std::format("World: Unsupported version {} in file: {}", version, filePath.string()));
                 inFile.close();
                 return false;
             }
@@ -324,11 +326,11 @@ namespace StrixVerse
                         auto chunk = m_Chunks[x][y][z];
 
                         // Read each tile's type in the chunk
-                        for (uint32_t cx = 0; cx < Chunk::GetWidth(); ++cx)
+                        for (uint32_t cx = 0; cx < static_cast<uint32_t>(Chunk::GetWidth()); ++cx)
                         {
-                            for (uint32_t cy = 0; cy < Chunk::GetHeight(); ++cy)
+                            for (uint32_t cy = 0; cy < static_cast<uint32_t>(Chunk::GetHeight()); ++cy)
                             {
-                                for (uint32_t cz = 0; cz < Chunk::GetDepth(); ++cz)
+                                for (uint32_t cz = 0; cz < static_cast<uint32_t>(Chunk::GetDepth()); ++cz)
                                 {
                                     uint8_t type;
                                     inFile.read(reinterpret_cast<char *>(&type), sizeof(type));

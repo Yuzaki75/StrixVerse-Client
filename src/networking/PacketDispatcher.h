@@ -2,24 +2,27 @@
 #define PACKET_DISPATCHER_H
 
 #include <memory>
-#include <vector>
 #include <unordered_map>
+#include <vector>
+
 #include "Packet.h"
 #include "PacketHandler.h"
+#include "Protocol.h"
 
-class PacketDispatcher {
+// Routes a received packet to every handler registered for its opcode.
+class PacketDispatcher
+{
 public:
-    // Add a handler for a specific packet type
-    void addHandler(PacketType type, std::shared_ptr<PacketHandler> handler);
+    void addHandler(Opcode opcode, std::shared_ptr<PacketHandler> handler);
 
-    // Remove a handler for a specific packet type
-    void removeHandler(PacketType type, std::shared_ptr<PacketHandler> handler);
+    void removeHandler(Opcode opcode, const std::shared_ptr<PacketHandler>& handler);
 
-    // Dispatch a packet to all registered handlers for its type
+    void clear();
+
     void dispatch(const std::shared_ptr<Packet>& packet);
 
 private:
-    std::unordered_map<PacketType, std::vector<std::shared_ptr<PacketHandler>>> m_handlers;
+    std::unordered_map<Opcode, std::vector<std::shared_ptr<PacketHandler>>> m_handlers;
 };
 
 #endif // PACKET_DISPATCHER_H

@@ -2,57 +2,111 @@
 
 #include <memory>
 #include <optional>
-#include "../ui/UIElement.h"
+#include <string>
+
 #include "ScreenIDs.h"
+#include "../graphics/Color.h"
 
-// Forward declarations to break circular dependency
+class AssetManager;
 class Engine;
+class Font;
+class Texture;
+class UIFonts;
 class UIManager;
+class UIPanel;
+class UIScale;
 
-/**
- * Base class for all game screens (menus, gameplay screens, etc.).
- */
-class Screen {
+// -----------------------------------------------------------------------------
+// Screen
+//
+// Base class for every full-screen state (splash, login, gameplay...).
+//
+// A screen builds its UI in OnEnter() under a single root panel that spans the
+// visible canvas, and the base class tears that root down in OnExit(), which is
+// what stops elements - and focus - leaking between screens.
+//
+// Navigation is a request: RequestScreenChange() records the target and the
+// Engine performs the fade and the swap through ScreenFactory.
+// -----------------------------------------------------------------------------
+class Screen
+{
 public:
     explicit Screen(Engine* engine);
-    virtual ~Screen() = default;
+    virtual ~Screen();
 
-    // Called when the screen becomes active
+    Screen(const Screen&) = delete;
+    Screen& operator=(const Screen&) = delete;
+
+    // Called when the screen becomes active.
     virtual void OnEnter() {}
 
-    // Called when the screen is about to be deactivated
-    virtual void OnExit() {}
+    // Called before the screen is destroyed. Overrides must call the base so
+    // the root panel is removed.
+    virtual void OnExit();
 
-    // Update the screen logic
     virtual void Update(float deltaTime);
 
-    // Render the screen
-    virtual void Render() const;
+    // Extra drawing beneath the UI (the world, for gameplay screens).
+    virtual void RenderGame() const {}
 
-    // Handle input events (if needed)
-    virtual void HandleInput() {}
+    // --- Input -----------------------------------------------------------
+    // Delivered after the UI has had its chance, so a screen-level "press any
+    // key" never steals a keystroke from a focused text box.
+    virtual void OnKeyDown(int key, bool ctrl, bool shift);
+    virtual void OnMouseDown(float x, float y);
 
-    // Request to switch to another screen by ID
+    // True while the screen wants raw key/mouse notifications even when a UI
+    // element is focused. Only the splash screen needs this.
+    virtual bool WantsRawInput() const { return false; }
+
+    // --- Navigation -------------------------------------------------------
     void RequestScreenChange(ScreenID nextScreen);
 
-    // Check if there is a pending screen change
     bool HasPendingChange() const { return pendingChange_.has_value(); }
     ScreenID GetPendingChange() const { return *pendingChange_; }
     void ClearPendingChange() { pendingChange_.reset(); }
 
 protected:
-    // Helper methods to get ECS managers
     Engine* getEngine() const { return engine_; }
     UIManager* getUIManager() const { return uiManager_; }
 
-    // Virtual methods for game logic and rendering (to be overridden by derived classes)
-    virtual void UpdateGameLogic() {}
-    virtual void RenderGame() const {}
+    // --- Helpers for building screens -------------------------------------
+    // Creates a transparent root panel covering the whole visible canvas and
+    // registers it with the UIManager. Screens add their content to it.
+    std::shared_ptr<UIPanel> CreateRoot();
+    void DestroyRoot();
 
-    // Non-owning pointer to the engine
-    Engine* engine_ = nullptr;
-    // Non-owning pointer to the UIManager (from the engine)
+    const std::shared_ptr<UIPanel>& Root() const { return root_; }
+
+    // Adds the full-bleed gradient background, optionally overlaid with the
+    // design's ".sv-pixel-grid" dot lattice. Returns the background panel so
+    // callers can size content against it.
+    std::shared_ptr<UIPanel> AddBackdrop(const Color& top,
+                                         const Color& bottom,
+                                         bool pixelGrid);
+
+    // Top-left of the 1920x1080 design area inside the root panel. On a window
+    // that is not 16:9 the root extends past the design area, so screen content
+    // is positioned relative to this origin.
+    float DesignOriginX() const;
+    float DesignOriginY() const;
+
+    UIFonts* Fonts() const;
+    AssetManager* Assets() const;
+    const UIScale* Scale() const;
+
+    // Convenience wrappers around UIFonts, returning nullptr when a face is
+    // unavailable (callers pass the result straight to setFont()).
+    Font* DisplayFont(unsigned int pixelSize) const;
+    Font* BodyFont(unsigned int pixelSize) const;
+    Font* DataFont(unsigned int pixelSize) const;
+
+    std::shared_ptr<Texture> LoadTexture(const std::string& path) const;
+
+    Engine*    engine_    = nullptr;
     UIManager* uiManager_ = nullptr;
+
+    std::shared_ptr<UIPanel> root_;
 
 private:
     std::optional<ScreenID> pendingChange_;

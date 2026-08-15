@@ -1,6 +1,8 @@
 #include "PingManager.h"
 #include "PingPacket.h"
 
+#include <memory>
+
 PingManager::PingManager(PacketSender* sender, float sendIntervalSeconds, size_t maxHistory)
     : m_sender(sender), m_sendIntervalSeconds(sendIntervalSeconds), m_timeSinceLastPing(0.0f),
       m_maxHistory(maxHistory), m_awaitingPong(false)
@@ -18,6 +20,10 @@ void PingManager::update(float deltaTime)
 
 void PingManager::onPongReceived(uint64_t timestamp)
 {
+    // Round-trip time is measured locally; the echoed timestamp is not needed
+    // until clock synchronisation is implemented.
+    (void)timestamp;
+
     if (m_awaitingPong) {
         auto now = std::chrono::steady_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_pingSendTime);
@@ -34,10 +40,10 @@ void PingManager::sendPing()
 {
     if (m_sender) {
         auto ping = std::make_shared<PingPacket>();
-        uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now().time_since_epoch()
-        ).count();
-        ping->setTimestamp(timestamp);
+        ping->Timestamp = static_cast<uint64_t>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count());
+
         m_pingSendTime = std::chrono::steady_clock::now();
         m_awaitingPong = true;
         m_sender->sendPacket(ping);

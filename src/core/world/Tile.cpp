@@ -1,15 +1,16 @@
 #include "Tile.h"
-#include "../Logger.h"
 
 namespace StrixVerse
 {
     namespace World
     {
+        // Tiles are created and destroyed in their tens of thousands during
+        // world generation, so they deliberately do no logging: a per-tile log
+        // line stalls the client for seconds while the file is written.
 
         Tile::Tile()
             : m_Type(Type::Grass), m_Walkable(true), m_TextureName("grass")
         {
-            LOG_DEBUG("Tile: Created default grass tile");
         }
 
         Tile::Tile(Type type)
@@ -43,13 +44,9 @@ namespace StrixVerse
                 m_TextureName = "grass";
                 break;
             }
-            LOG_DEBUG("Tile: Created tile of type {}", static_cast<int>(type));
         }
 
-        Tile::~Tile()
-        {
-            LOG_DEBUG("Tile: Destroyed tile");
-        }
+        Tile::~Tile() = default;
 
     } // namespace World
 } // namespace StrixVerse

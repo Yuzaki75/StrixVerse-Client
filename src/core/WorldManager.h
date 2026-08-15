@@ -1,36 +1,125 @@
 #pragma once
 
-#include <string>
+#include <cstdint>
 #include <filesystem>
-#include <fstream>
-#include <sstream>
+#include <string>
+#include <vector>
+
 #include "world/World.h"
 
+/**
+ * Description of a joinable world, as shown by the World Selection screen.
+ *
+ * Every field beyond the name is optional: the client only knows a world's
+ * type, owner or population once a server tells it. Empty strings and a
+ * maxPlayers of zero mean "not known", and the screens render those as a dash
+ * rather than inventing a value.
+ */
+struct WorldInfo
+{
+    std::string name;
+    std::string owner;
+    std::string type;          // Survival, Adventure, Creative, Trading, Event
+    std::string description;
+
+    int  players    = 0;
+    int  maxPlayers = 0;
+    bool favourite  = false;
+    bool recent     = false;
+
+    bool HasPopulation() const { return maxPlayers > 0; }
+    bool IsFull() const { return maxPlayers > 0 && players >= maxPlayers; }
+};
+
+/**
+ * The player's most recent session, as shown by the Continue screen.
+ *
+ * Only the world name and the timestamp are ever recovered from disk. The
+ * remaining fields stay unset until the server describes the world, so nothing
+ * on the Continue card is fabricated.
+ */
+struct LastWorldSession
+{
+    WorldInfo world;
+
+    // Seconds since the Unix epoch. Zero when the save file carried no
+    // timestamp, which is what makes "Last Played" read as unknown.
+    std::int64_t lastPlayedUnix = 0;
+
+    // The player's position in the world is only known once the world reports
+    // it, which needs the chunk/player packets the client does not send yet.
+    bool hasPosition = false;
+    int  positionX   = 0;
+    int  positionY   = 0;
+};
+
+/**
+ * Renders a Unix timestamp as "just now", "12 minutes ago", "2 hours ago" or
+ * "3 days ago". Returns "Unknown" for a zero or future timestamp.
+ */
+std::string FormatRelativeTime(std::int64_t unixSeconds);
+
+/**
+ * WorldManager
+ *
+ * Owns world persistence and the list of worlds the client can join.
+ *
+ * The list starts empty and stays empty until something fills it. There is no
+ * built-in catalogue: the client never claims a world exists that it has not
+ * been told about. SetAvailableWorlds is the seam the server's world-list
+ * packet plugs into.
+ */
 class WorldManager
 {
 public:
     WorldManager();
     ~WorldManager() = default;
 
-    // Save the current world data
-    bool SaveWorld(const std::string& worldName);
-
-    // Load the last saved world
+    // --- Persistence ------------------------------------------------------
+    // The saved session belongs to one account. The username is stored with it
+    // and checked on read, so a new or different account never inherits
+    // somebody else's last world - it goes to World Selection instead.
+    bool SaveWorld(const std::string& worldName, const std::string& username);
     bool LoadWorld(std::string& outWorldName, StrixVerse::World::World& world);
 
-    // Check if a saved world exists
-    bool HasSavedWorld() const;
+    // True only when a session is saved for this specific account.
+    bool HasSavedWorldFor(const std::string& username) const;
 
-    // Delete the saved world
     bool DeleteSavedWorld();
 
+    // --- World catalogue --------------------------------------------------
+    // Worlds available to join. Empty until a server supplies a list.
+    const std::vector<WorldInfo>& GetAvailableWorlds() const { return m_Worlds; }
+
+    // Replaces the catalogue wholesale. Called when a world list arrives.
+    void SetAvailableWorlds(std::vector<WorldInfo> worlds);
+
+    // Drops the catalogue, e.g. on disconnect, so a stale list is never shown
+    // as if it were current.
+    void ClearAvailableWorlds();
+
+    // Looks a world up by name; returns nullptr when it is not in the list.
+    const WorldInfo* FindWorld(const std::string& name) const;
+
+    // Details of the last world this account was in. Returns false when there
+    // is no saved session for `username`, which is what sends the player to
+    // World Selection.
+    bool GetLastWorld(const std::string& username, LastWorldSession& outSession) const;
+
+    // Records the world the player has just joined, so Continue can offer it
+    // next time.
+    void SetLastWorld(const std::string& worldName, const std::string& username);
+
+    // Forgets the saved session. Called when the player deliberately leaves a
+    // world, so the next login starts at World Selection rather than offering
+    // to continue into a world they chose to leave.
+    void ClearLastWorld();
+
 private:
-    // World instance that holds the actual world data
-    StrixVerse::World::World m_World;
-
-    // Path to the save file
-    std::filesystem::path m_SaveFilePath;
-
-    // Create the save directory if it doesn't exist
     bool EnsureSaveDirectoryExists() const;
+
+    StrixVerse::World::World m_World;
+    std::filesystem::path    m_SaveFilePath;
+
+    std::vector<WorldInfo> m_Worlds;
 };

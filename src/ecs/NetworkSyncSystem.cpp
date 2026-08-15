@@ -7,8 +7,18 @@ namespace StrixVerse
 {
     namespace ECS
     {
+        void NetworkSyncSystem::init(EntityManager *entityManager, ComponentManager *componentManager)
+        {
+            System::init(entityManager, componentManager);
+
+            setSignature<NetworkComponent, Transform>();
+        }
+
         void NetworkSyncSystem::update(const std::vector<Entity> &entities, float dt)
         {
+            // Interpolation is not implemented yet, so the timestep is unused.
+            (void)dt;
+
             for (Entity entity : entities)
             {
                 // Check if the entity has both NetworkComponent and TransformComponent.

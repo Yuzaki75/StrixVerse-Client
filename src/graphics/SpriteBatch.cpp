@@ -1,20 +1,31 @@
 #include "SpriteBatch.h"
 
+#include "Shader.h"
+#include "../core/AssetManager.h"
+#include "../core/Logger.h"
+#include "../core/ServiceLocator.h"
+
 #include <glad/glad.h>
+
 #include <algorithm>
-#include <iostream>
+
+namespace
+{
+    constexpr size_t kVerticesPerSprite = 6;
+}
 
 SpriteBatch::SpriteBatch(int maxSprites)
-    : m_MaxSprites(maxSprites), m_SpriteCount(0)
+    : m_MaxSprites(std::max(1, maxSprites))
 {
     InitRenderData();
 }
 
 SpriteBatch::~SpriteBatch()
 {
-    if (m_VBO)
+    if (m_VBO != 0)
         glDeleteBuffers(1, &m_VBO);
-    if (m_VAO)
+
+    if (m_VAO != 0)
         glDeleteVertexArrays(1, &m_VAO);
 }
 
@@ -26,123 +37,158 @@ void SpriteBatch::InitRenderData()
     glBindVertexArray(m_VAO);
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
 
-    // We'll allocate buffer for max vertices (maxSprites * 6 vertices)
-    // Each vertex: 2 pos + 2 tex + 4 color = 8 floats
-    int maxVertices = m_MaxSprites * 6;
-    glBufferData(GL_ARRAY_BUFFER, maxVertices * 8 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+    m_VBOCapacityBytes = static_cast<size_t>(m_MaxSprites) * kVerticesPerSprite * sizeof(Vertex);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(m_VBOCapacityBytes), nullptr, GL_STREAM_DRAW);
 
-    // Position attribute
+    constexpr GLsizei stride = static_cast<GLsizei>(sizeof(Vertex));
+
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    // TexCoord attribute
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(2 * sizeof(float)));
-    // Color attribute
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4 * sizeof(float)));
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void*>(offsetof(Vertex, x)));
 
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void*>(offsetof(Vertex, u)));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void*>(offsetof(Vertex, r)));
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    m_Vertices.reserve(static_cast<size_t>(m_MaxSprites) * kVerticesPerSprite);
+}
+
+bool SpriteBatch::EnsureShader()
+{
+    if (m_Shader)
+        return true;
+
+    if (m_ShaderLoadFailed)
+        return false;
+
+    auto assets = ServiceLocator::Get<AssetManager>();
+    if (!assets)
+        return false;
+
+    m_Shader = assets->LoadShader("shaders/default.vert", "shaders/default.frag");
+    if (!m_Shader)
+    {
+        // Only complain once; the frame loop would otherwise spam the log.
+        m_ShaderLoadFailed = true;
+        Logger::Error("SpriteBatch: failed to load shaders/default.vert + shaders/default.frag.");
+        return false;
+    }
+
+    return true;
 }
 
 void SpriteBatch::Begin()
 {
-    m_SpriteCount = 0;
-    m_Sprites.clear();
-    m_Sprites.reserve(m_MaxSprites);
+    m_Vertices.clear();
+    m_Batches.clear();
+    m_DrawCallCount = 0;
 }
 
-void SpriteBatch::Draw(Texture& texture, float x, float y, float width, float height,
+void SpriteBatch::Draw(const Texture& texture, float x, float y, float width, float height,
                        float r, float g, float b, float a)
 {
-    if (m_SpriteCount >= m_MaxSprites)
+    if (width <= 0.0f || height <= 0.0f || a <= 0.0f)
+        return;
+
+    const size_t spriteCount = m_Vertices.size() / kVerticesPerSprite;
+    if (spriteCount >= static_cast<size_t>(m_MaxSprites))
     {
-        std::cerr << "SpriteBatch: Exceeded maximum sprite count (" << m_MaxSprites << ")" << std::endl;
+        if (!m_CapacityWarned)
+        {
+            m_CapacityWarned = true;
+            Logger::Warning("SpriteBatch: sprite capacity reached; further sprites this frame are dropped.");
+        }
         return;
     }
 
-    Sprite sprite;
-    sprite.texture = &texture;
-    sprite.x = x;
-    sprite.y = y;
-    sprite.width = width;
-    sprite.height = height;
-    sprite.r = r;
-    sprite.g = g;
-    sprite.b = b;
-    sprite.a = a;
+    const unsigned int textureID = texture.GetRendererID();
 
-    m_Sprites.push_back(sprite);
-    m_SpriteCount++;
+    // Start a new run whenever the texture changes; insertion order is kept so
+    // the caller's layer sorting survives.
+    if (m_Batches.empty() || m_Batches.back().textureID != textureID)
+    {
+        Batch batch;
+        batch.textureID   = textureID;
+        batch.firstVertex = m_Vertices.size();
+        batch.vertexCount = 0;
+        m_Batches.push_back(batch);
+    }
+
+    const float x1 = x + width;
+    const float y1 = y + height;
+
+    m_Vertices.push_back({x,  y,  0.0f, 0.0f, r, g, b, a});
+    m_Vertices.push_back({x1, y,  1.0f, 0.0f, r, g, b, a});
+    m_Vertices.push_back({x,  y1, 0.0f, 1.0f, r, g, b, a});
+
+    m_Vertices.push_back({x1, y,  1.0f, 0.0f, r, g, b, a});
+    m_Vertices.push_back({x1, y1, 1.0f, 1.0f, r, g, b, a});
+    m_Vertices.push_back({x,  y1, 0.0f, 1.0f, r, g, b, a});
+
+    m_Batches.back().vertexCount += kVerticesPerSprite;
 }
 
 void SpriteBatch::End()
 {
-    // Nothing to do here - Flush() will handle the actual rendering
+    Flush();
+    m_CapacityWarned = false;
 }
 
 void SpriteBatch::Flush()
 {
-    if (m_SpriteCount == 0)
+    if (m_Vertices.empty())
         return;
 
-    std::vector<Vertex> vertices;
-    vertices.reserve(m_SpriteCount * 6);
-
-    // Group sprites by texture to minimize texture switches
-    std::sort(m_Sprites.begin(), m_Sprites.end(), [](const Sprite& a, const Sprite& b) {
-        return a.texture < b.texture;
-    });
-
-    Texture* currentTexture = nullptr;
-    for (const Sprite& sprite : m_Sprites)
+    if (!EnsureShader())
     {
-        if (sprite.texture != currentTexture)
-        {
-            currentTexture = sprite.texture;
-            if (currentTexture)
-                currentTexture->Bind();
-        }
-
-        // Calculate texture coordinates (assuming texture coordinates are 0-1)
-        float tx = 0.0f;
-        float ty = 0.0f;
-        float tw = 1.0f;
-        float th = 1.0f;
-
-        // Create 6 vertices for two triangles (a quad)
-        // Triangle 1
-        vertices.push_back({sprite.x,           sprite.y,           tx, ty, sprite.r, sprite.g, sprite.b, sprite.a}); // Top-left
-        vertices.push_back({sprite.x + sprite.width, sprite.y,           tx + tw, ty, sprite.r, sprite.g, sprite.b, sprite.a}); // Top-right
-        vertices.push_back({sprite.x,           sprite.y + sprite.height, tx, ty + th, sprite.r, sprite.g, sprite.b, sprite.a}); // Bottom-left
-
-        // Triangle 2
-        vertices.push_back({sprite.x + sprite.width, sprite.y,           tx + tw, ty, sprite.r, sprite.g, sprite.b, sprite.a}); // Top-right
-        vertices.push_back({sprite.x + sprite.width, sprite.y + sprite.height, tx + tw, ty + th, sprite.r, sprite.g, sprite.b, sprite.a}); // Bottom-right
-        vertices.push_back({sprite.x,           sprite.y + sprite.height, tx, ty + th, sprite.r, sprite.g, sprite.b, sprite.a}); // Bottom-left
+        m_Vertices.clear();
+        m_Batches.clear();
+        return;
     }
 
-    // Upload vertex buffer
-    glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-    void* ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(Vertex), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-    if (ptr)
-    {
-        memcpy(ptr, vertices.data(), vertices.size() * sizeof(Vertex));
-        glUnmapBuffer(GL_ARRAY_BUFFER);
-    }
-    else
-    {
-        // Fallback if mapping fails
-        glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(Vertex), vertices.data());
-    }
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Draw
+    m_Shader->Bind();
+    m_Shader->SetMat4("uProjection", m_Projection);
+    m_Shader->SetInt("uTexture", 0);
+
     glBindVertexArray(m_VAO);
-    glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size()));
-    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
 
-    // Unbind VBO
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    const size_t requiredBytes = m_Vertices.size() * sizeof(Vertex);
+    if (requiredBytes > m_VBOCapacityBytes)
+        m_VBOCapacityBytes = requiredBytes * 2;
 
-    // Unbind texture
+    // Orphan then refill: avoids stalling on the previous frame's draw.
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(m_VBOCapacityBytes), nullptr, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, static_cast<GLsizeiptr>(requiredBytes), m_Vertices.data());
+
+    glActiveTexture(GL_TEXTURE0);
+
+    for (const Batch& batch : m_Batches)
+    {
+        if (batch.vertexCount == 0)
+            continue;
+
+        glBindTexture(GL_TEXTURE_2D, batch.textureID);
+
+        glDrawArrays(GL_TRIANGLES,
+                     static_cast<GLint>(batch.firstVertex),
+                     static_cast<GLsizei>(batch.vertexCount));
+
+        ++m_DrawCallCount;
+    }
+
     glBindTexture(GL_TEXTURE_2D, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    m_Shader->Unbind();
+
+    m_Vertices.clear();
+    m_Batches.clear();
 }

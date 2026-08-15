@@ -1,120 +1,179 @@
 #include "SettingsScreen.h"
-#include "../core/Logger.h"
+
 #include "../core/Engine.h"
-#include "../graphics/Color.h"
-#include "../core/Window.h"
+#include "../core/Logger.h"
+#include "../networking/NetworkManager.h"
+#include "../ui/UIButton.h"
+#include "../ui/UIIcon.h"
+#include "../ui/UILabel.h"
+#include "../ui/UIPanel.h"
+#include "../ui/UIScale.h"
+#include "../ui/UITheme.h"
+
+#include <array>
+
+namespace
+{
+    constexpr float S(float previewPixels) { return UITheme::Scaled(previewPixels); }
+
+    constexpr std::array<const char*, 6> kCategories = {
+        "GENERAL", "GRAPHICS", "AUDIO", "CONTROLS", "ACCOUNT", "ACCESSIBILITY",
+    };
+}
 
 SettingsScreen::SettingsScreen(Engine* engine)
     : Screen(engine)
-    , m_Panel(nullptr)
-    , m_TitleLabel(nullptr)
-    , m_BackButton(nullptr)
-    , m_GraphicsLabel(nullptr)
-    , m_AudioLabel(nullptr)
-    , m_ControlsLabel(nullptr)
 {
 }
 
 void SettingsScreen::OnEnter()
 {
-    if (!engine_)
-    {
-        LOG_ERROR("SettingsScreen: Engine is null");
-        return;
-    }
-
     if (!uiManager_)
     {
         LOG_ERROR("SettingsScreen: UIManager not available");
         return;
     }
 
-    // Create a panel to hold the settings UI
-    m_Panel = std::make_shared<UIPanel>();
-    int width, height;
-    engine_->GetWindow()->GetSize(width, height);
-    m_Panel->setSize(static_cast<float>(width), static_cast<float>(height));
-    m_Panel->setPosition(0.0f, 0.0f);
-    m_Panel->setBackgroundColor({0.0f, 0.0f, 0.0f, 0.8f}); // Semi-transparent dark
-    uiManager_->addElement(m_Panel);
+    CreateRoot();
 
-    float panelX = m_Panel->getPosition().x;
-    float panelY = m_Panel->getPosition().y;
-    float windowWidth = static_cast<float>(width);
-    float windowHeight = static_cast<float>(height);
+    AddBackdrop(UITheme::ScreenBackground, UITheme::ScreenBackground, false);
 
-    // Title label
-    m_TitleLabel = std::make_shared<UILabel>();
-    m_TitleLabel->setText("Settings");
-    m_TitleLabel->setTextColor({1.0f, 1.0f, 1.0f, 1.0f}); // White
-    m_TitleLabel->setFontSize(48.0f);
-    m_TitleLabel->setPosition(panelX + windowWidth / 2.0f, panelY + 80.0f);
-    m_TitleLabel->setAlignment(UILabel::Alignment::Center);
-    m_Panel->addChild(m_TitleLabel);
+    const float originX = DesignOriginX();
+    const float originY = DesignOriginY();
 
-    // Back button
-    m_BackButton = std::make_shared<UIButton>();
-    m_BackButton->setSize(120.0f, 50.0f);
-    m_BackButton->setPosition(panelX + 50.0f, panelY + 50.0f);
-    m_BackButton->setText("Back");
-    m_BackButton->setBackgroundColor({0.6f, 0.0f, 0.0f, 1.0f}); // Red
-    m_BackButton->setTextColor({1.0f, 1.0f, 1.0f, 1.0f});
-    m_BackButton->setOnClickCallback([this]() { this->OnBackButtonClicked(); });
-    m_Panel->addChild(m_BackButton);
+    const float sidebarWidth = S(160.0f);
 
-    // Settings categories (placeholders)
-    m_GraphicsLabel = std::make_shared<UILabel>();
-    m_GraphicsLabel->setText("Graphics Settings");
-    m_GraphicsLabel->setTextColor({0.8f, 0.8f, 1.0f, 1.0f}); // Light blue
-    m_GraphicsLabel->setFontSize(24.0f);
-    m_GraphicsLabel->setPosition(panelX + windowWidth / 2.0f, panelY + 180.0f);
-    m_GraphicsLabel->setAlignment(UILabel::Alignment::Center);
-    m_Panel->addChild(m_GraphicsLabel);
+    auto sidebar = std::make_shared<UIPanel>();
+    sidebar->setBackgroundColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
+    sidebar->setBorder(Color(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
+    sidebar->setBorderRadius(0.0f);
+    sidebar->setPosition(originX, originY);
+    sidebar->setSize(sidebarWidth, UIScale::kDesignHeight);
+    root_->addChild(sidebar);
 
-    m_AudioLabel = std::make_shared<UILabel>();
-    m_AudioLabel->setText("Audio Settings");
-    m_AudioLabel->setTextColor({0.8f, 0.8f, 1.0f, 1.0f});
-    m_AudioLabel->setFontSize(24.0f);
-    m_AudioLabel->setPosition(panelX + windowWidth / 2.0f, panelY + 240.0f);
-    m_AudioLabel->setAlignment(UILabel::Alignment::Center);
-    m_Panel->addChild(m_AudioLabel);
+    auto rule = std::make_shared<UIPanel>();
+    rule->setBackgroundColor(UITheme::WithAlpha(UITheme::Border, 0.20f));
+    rule->setBorder(Color(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
+    rule->setBorderRadius(0.0f);
+    rule->setPosition(sidebarWidth - UITheme::BorderThin, 0.0f);
+    rule->setSize(UITheme::BorderThin, UIScale::kDesignHeight);
+    sidebar->addChild(rule);
 
-    m_ControlsLabel = std::make_shared<UILabel>();
-    m_ControlsLabel->setText("Controls Settings");
-    m_ControlsLabel->setTextColor({0.8f, 0.8f, 1.0f, 1.0f});
-    m_ControlsLabel->setFontSize(24.0f);
-    m_ControlsLabel->setPosition(panelX + windowWidth / 2.0f, panelY + 300.0f);
-    m_ControlsLabel->setAlignment(UILabel::Alignment::Center);
-    m_Panel->addChild(m_ControlsLabel);
-}
+    titleLabel_ = std::make_shared<UILabel>();
+    titleLabel_->setText("SETTINGS");
+    titleLabel_->setFont(DisplayFont(UITheme::Display::Label));
+    titleLabel_->setTextColor(UITheme::Muted);
+    titleLabel_->setPosition(S(16.0f), S(16.0f));
+    titleLabel_->setSize(sidebarWidth - S(32.0f), S(12.0f));
+    sidebar->addChild(titleLabel_);
 
-void SettingsScreen::OnExit()
-{
-    if (uiManager_ && m_Panel)
+    float categoryY = S(40.0f);
+
+    for (size_t i = 0; i < kCategories.size(); ++i)
     {
-        uiManager_->removeElement(m_Panel);
-        m_Panel.reset();
-        m_TitleLabel.reset();
-        m_BackButton.reset();
-        m_GraphicsLabel.reset();
-        m_AudioLabel.reset();
-        m_ControlsLabel.reset();
+        const bool active = i == 0;
+
+        auto entry = std::make_shared<UILabel>();
+        entry->setText(kCategories[i]);
+        entry->setFont(BodyFont(UITheme::Body::Regular));
+        entry->setTextColor(active ? UITheme::Accent : UITheme::Subtext);
+        entry->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
+        entry->setPosition(S(16.0f), categoryY);
+        entry->setSize(sidebarWidth - S(32.0f), S(20.0f));
+        sidebar->addChild(entry);
+
+        if (active)
+        {
+            auto marker = std::make_shared<UIPanel>();
+            marker->setBackgroundColor(UITheme::Primary);
+            marker->setBorder(Color(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
+            marker->setBorderRadius(0.0f);
+            marker->setPosition(0.0f, categoryY);
+            marker->setSize(UITheme::BorderThick, S(20.0f));
+            sidebar->addChild(marker);
+        }
+
+        categoryY += S(22.0f);
     }
+
+    // Content area.
+    auto heading = std::make_shared<UILabel>();
+    heading->setText("GENERAL");
+    heading->setFont(DisplayFont(UITheme::Display::Label));
+    heading->setTextColor(UITheme::Accent);
+    heading->setPosition(originX + sidebarWidth + S(20.0f), originY + S(20.0f));
+    heading->setSize(S(300.0f), S(12.0f));
+    root_->addChild(heading);
+
+    auto note = std::make_shared<UILabel>();
+    note->setText("Settings are not part of the delivered design set yet.");
+    note->setFont(BodyFont(UITheme::Body::Regular));
+    note->setTextColor(UITheme::Muted);
+    note->setPosition(originX + sidebarWidth + S(20.0f), originY + S(44.0f));
+    note->setSize(S(400.0f), S(20.0f));
+    root_->addChild(note);
+
+    const float buttonHeight = S(26.0f);
+
+    backButton_ = std::make_shared<UIButton>();
+    backButton_->setText("BACK");
+    backButton_->setFont(DisplayFont(UITheme::Display::Small));
+    backButton_->setVariant(UIButton::Variant::Purple);
+    backButton_->setPosition(originX + UIScale::kDesignWidth - S(120.0f),
+                             originY + UIScale::kDesignHeight - S(50.0f));
+    backButton_->setSize(S(100.0f), buttonHeight);
+    backButton_->setOnClick([this]() { OnBackButtonClicked(); });
+    root_->addChild(backButton_);
+
+    auto backIcon = std::make_shared<UIIcon>(UIIcon::Shape::ArrowLeft);
+    backIcon->setColor(UITheme::Text);
+    backIcon->setPosition(S(8.0f), (buttonHeight - S(10.0f)) * 0.5f);
+    backIcon->setSize(S(10.0f), S(10.0f));
+    backButton_->addChild(backIcon);
+    backButton_->setLabelInset(S(18.0f), 0.0f);
+
+    // Leaving is destructive to the session, so it is styled as such and kept
+    // clear of Back.
+    leaveButton_ = std::make_shared<UIButton>();
+    leaveButton_->setText("LEAVE WORLD");
+    leaveButton_->setFont(DisplayFont(UITheme::Display::Small));
+    leaveButton_->setVariant(UIButton::Variant::Danger);
+    leaveButton_->setPosition(originX + UIScale::kDesignWidth - S(120.0f) - S(140.0f),
+                              originY + UIScale::kDesignHeight - S(50.0f));
+    leaveButton_->setSize(S(130.0f), buttonHeight);
+    leaveButton_->setOnClick([this]() { OnLeaveWorldClicked(); });
+    root_->addChild(leaveButton_);
 }
 
-void SettingsScreen::Update(float deltaTime)
+void SettingsScreen::OnLeaveWorldClicked()
 {
-    // No periodic updates needed for settings screen
+    if (engine_)
+    {
+        // Tell the server first: it despawns us for everyone else, and the
+        // session stays open so we can pick another world.
+        engine_->getNetworkManager().sendWorldLeave();
+
+        // Forget the world. Leaving is a decision to stop playing there, so
+        // there is nothing for Continue to offer next time.
+        if (WorldManager* worlds = engine_->GetWorldManager())
+            worlds->ClearLastWorld();
+
+        engine_->SetSelectedWorldName(std::string());
+    }
+
+    LOG_INFO("SettingsScreen: left the world; returning to world selection");
+
+    RequestScreenChange(ScreenID::WorldBrowser);
 }
 
-void SettingsScreen::Render() const
+void SettingsScreen::OnKeyDown(int key, bool, bool)
 {
-    // UI is rendered by UIManager
+    if (key == UIKey::Escape)
+        OnBackButtonClicked();
 }
 
 void SettingsScreen::OnBackButtonClicked()
 {
-    RequestScreenChange(ScreenID::WorldBrowser); // Go back to world browser for now
-    // In a real implementation, we might want to go back to the previous screen
-    // which would require a screen stack or tracking previous screen
+    // Settings is entered from gameplay, so that is where Back returns to.
+    RequestScreenChange(ScreenID::Game);
 }

@@ -1,18 +1,12 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 #include <string>
-#include <optional>
 
 #include "../graphics/Camera2D.h"
-#include "../graphics/Font.h"
 #include "../graphics/SpriteBatch.h"
+#include "../graphics/UIRenderer.h"
 
-class Window;
-class Game;
-class AssetManager;
-class ServiceLocator;
 #include "networking/NetworkManager.h"
 
 // ECS Includes
@@ -22,25 +16,31 @@ class ServiceLocator;
 
 // UI Includes
 #include "ui/UIManager.h"
-#include "ui/UIPanel.h"
+#include "ui/UIFonts.h"
+#include "ui/UIScale.h"
 
 // Screen Includes
 #include "screens/Screen.h"
-#include "core/AuthService.h"
-
-// World System
-#include "core/WorldManager.h"
-
 #include "screens/ScreenIDs.h"
 #include "screens/ScreenFactory.h"
+
+#include "core/AuthService.h"
+#include "core/WorldManager.h"
+
+class Window;
+class AssetManager;
+class Config;
 
 // -----------------------------------------------------------------------------
 // Engine
 //
-// Purpose:
-//   Owns the main loop and the frame structure (events -> fixed updates ->
-//   update -> render) and drives the Game layer. It borrows the Window
-//   (non-owning pointer, the Application owns it) and owns the Game.
+// Owns the main loop and the frame structure (events -> update -> render) and
+// drives the Screen layer. It borrows the Window (non-owning; the Application
+// owns it) and owns everything else it creates.
+//
+// Screen changes are requested by the active screen and performed here: the
+// Engine fades out, tears the old screen down, builds the next one through
+// ScreenFactory, and fades back in.
 // -----------------------------------------------------------------------------
 class Engine
 {
@@ -48,10 +48,10 @@ public:
     Engine();
     ~Engine();
 
-    Engine(const Engine &) = delete;
-    Engine &operator=(const Engine &) = delete;
+    Engine(const Engine&) = delete;
+    Engine& operator=(const Engine&) = delete;
 
-    bool Initialize(Window *window);
+    bool Initialize(Window* window, Config* config);
 
     void Run();
 
@@ -71,89 +71,112 @@ public:
     EngineState GetState() const;
     bool IsRunning() const;
 
-    // Get reference to the network manager (for game to use)
-    NetworkManager &getNetworkManager() { return m_NetworkManager; }
-    const NetworkManager &getNetworkManager() const { return m_NetworkManager; }
+    // Opens the server session using the configured host and port. Safe to
+    // call repeatedly; returns true when a session is already established.
+    bool ConnectToServer();
+
+    // True when the client is configured to run without a server.
+    bool IsOfflineMode() const;
+
+    NetworkManager& getNetworkManager() { return m_NetworkManager; }
+    const NetworkManager& getNetworkManager() const { return m_NetworkManager; }
 
     // ECS Manager accessors
-    StrixVerse::ECS::EntityManager &GetEntityManager() { return *m_pEntityManager; }
-    const StrixVerse::ECS::EntityManager &GetEntityManager() const { return *m_pEntityManager; }
-    StrixVerse::ECS::ComponentManager &GetComponentManager() { return *m_pComponentManager; }
-    const StrixVerse::ECS::ComponentManager &GetComponentManager() const { return *m_pComponentManager; }
-    StrixVerse::ECS::SystemManager &GetSystemManager() { return *m_pSystemManager; }
-    const StrixVerse::ECS::SystemManager &GetSystemManager() const { return *m_pSystemManager; }
+    StrixVerse::ECS::EntityManager& GetEntityManager() { return *m_pEntityManager; }
+    const StrixVerse::ECS::EntityManager& GetEntityManager() const { return *m_pEntityManager; }
+    StrixVerse::ECS::ComponentManager& GetComponentManager() { return *m_pComponentManager; }
+    const StrixVerse::ECS::ComponentManager& GetComponentManager() const { return *m_pComponentManager; }
+    StrixVerse::ECS::SystemManager& GetSystemManager() { return *m_pSystemManager; }
+    const StrixVerse::ECS::SystemManager& GetSystemManager() const { return *m_pSystemManager; }
 
-    // AuthService access
-    AuthService *GetAuthService() { return m_AuthService.get(); }
-    const AuthService *GetAuthService() const { return m_AuthService.get(); }
+    AuthService* GetAuthService() { return m_AuthService.get(); }
+    const AuthService* GetAuthService() const { return m_AuthService.get(); }
 
-    // WorldManager access
-    WorldManager *GetWorldManager() { return m_WorldManager.get(); }
-    const WorldManager *GetWorldManager() const { return m_WorldManager.get(); }
+    WorldManager* GetWorldManager() { return m_WorldManager.get(); }
+    const WorldManager* GetWorldManager() const { return m_WorldManager.get(); }
 
-    // Camera access
-    Camera2D &GetCamera() { return m_Camera; }
-    const Camera2D &GetCamera() const { return m_Camera; }
+    Camera2D& GetCamera() { return m_Camera; }
+    const Camera2D& GetCamera() const { return m_Camera; }
 
-    // Window access
-    Window *GetWindow() { return m_Window; }
-    const Window *GetWindow() const { return m_Window; }
+    Window* GetWindow() { return m_Window; }
+    const Window* GetWindow() const { return m_Window; }
 
-    // UIManager access
-    UIManager *GetUIManager() { return m_UIManager.get(); }
-    const UIManager *GetUIManager() const { return m_UIManager.get(); }
+    UIManager* GetUIManager() { return m_UIManager.get(); }
+    const UIManager* GetUIManager() const { return m_UIManager.get(); }
 
-    // Selected world management (for world selection flow)
-    void SetSelectedWorldName(const std::string &name) { m_SelectedWorldName = name; }
-    const std::string &GetSelectedWorldName() const { return m_SelectedWorldName; }
+    AssetManager* GetAssetManager() { return m_AssetManager.get(); }
+    const AssetManager* GetAssetManager() const { return m_AssetManager.get(); }
+
+    UIFonts* GetUIFonts() { return m_UIFonts.get(); }
+    const UIFonts* GetUIFonts() const { return m_UIFonts.get(); }
+
+    UIRenderer* GetUIRenderer() { return m_UIRenderer.get(); }
+
+    // Mapping from the 1920x1080 design canvas to the current window.
+    const UIScale& GetUIScale() const { return m_UIScale; }
+
+    // --- Session state shared between screens -----------------------------
+    void SetSelectedWorldName(const std::string& name) { m_SelectedWorldName = name; }
+    const std::string& GetSelectedWorldName() const { return m_SelectedWorldName; }
+
+    void SetSignedInUser(const std::string& username) { m_SignedInUser = username; }
+    const std::string& GetSignedInUser() const { return m_SignedInUser; }
+
+    // Requests a screen change from outside the active screen (used by the
+    // Engine itself and by any system that needs to force a state).
+    void RequestScreenChange(ScreenID id);
 
 private:
     void ProcessEvents();
-    void Update();
+    void Update(float deltaTime);
     void Render();
 
+    void UpdateTransition(float deltaTime);
+    void SwitchScreen(ScreenID id);
+    void HandleResize();
+
 private:
-    Window *m_Window = nullptr;
-    std::unique_ptr<Game> m_Game;
+    Window* m_Window = nullptr;
+    Config* m_Config = nullptr;
+
     std::shared_ptr<AssetManager> m_AssetManager;
-    std::shared_ptr<StrixVerse::ECS::EntityManager> m_pEntityManager;
+
+    std::shared_ptr<StrixVerse::ECS::EntityManager>    m_pEntityManager;
     std::shared_ptr<StrixVerse::ECS::ComponentManager> m_pComponentManager;
-    std::shared_ptr<StrixVerse::ECS::SystemManager> m_pSystemManager;
+    std::shared_ptr<StrixVerse::ECS::SystemManager>    m_pSystemManager;
+
     std::shared_ptr<SpriteBatch> m_SpriteBatch;
-    std::shared_ptr<Font> m_Font;
-    EngineState m_State = EngineState::Uninitialized;
+    std::shared_ptr<UIRenderer>  m_UIRenderer;
+    std::shared_ptr<UIFonts>     m_UIFonts;
+    std::shared_ptr<UIManager>   m_UIManager;
+
+    UIScale m_UIScale;
+
+    EngineState    m_State = EngineState::Uninitialized;
     NetworkManager m_NetworkManager;
 
-    // UI Manager
-    std::shared_ptr<UIManager> m_UIManager;
-    // Fade overlay for transitions
-    std::shared_ptr<UIPanel> m_FadeOverlay;
-
-    // Screen management
+    // --- Screen management -------------------------------------------------
     std::unique_ptr<Screen> m_CurrentScreen;
-    std::unique_ptr<Screen> m_PendingScreen; // screen to transition to
-    void SetCurrentScreen(std::unique_ptr<Screen> screen);
 
-    // Transition state
     enum class TransitionState
     {
         None,
         FadingOut,
         FadingIn
     };
-    TransitionState m_TransitionState = TransitionState::None;
-    float m_TransitionTimer = 0.0f;
-    float m_TransitionDuration = 0.5f; // seconds
 
-    // AuthService for handling authentication
-    std::unique_ptr<AuthService> m_AuthService;
+    TransitionState m_TransitionState  = TransitionState::None;
+    float           m_TransitionTimer  = 0.0f;
+    float           m_TransitionLength = 0.28f;   // Seconds per half.
+    float           m_FadeAlpha        = 0.0f;
+    ScreenID        m_NextScreen       = ScreenID::Splash;
+    bool            m_HasNextScreen    = false;
 
-    // WorldManager for handling world saves/loads
+    std::unique_ptr<AuthService>  m_AuthService;
     std::unique_ptr<WorldManager> m_WorldManager;
 
-    // Selected world name (set by WorldBrowserScreen, used by LoadingScreen and GameScreen)
     std::string m_SelectedWorldName;
+    std::string m_SignedInUser;
 
-    // Main camera
     Camera2D m_Camera;
 };

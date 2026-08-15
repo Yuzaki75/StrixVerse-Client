@@ -1,58 +1,61 @@
 #include "UIImage.h"
-#include "../graphics/SpriteBatch.h"
-#include "../graphics/Font.h"
-#include "../core/AssetManager.h"
+
 #include "../graphics/Texture.h"
-#include "../core/ServiceLocator.h"
-#include "../core/Logger.h"
+#include "../graphics/UIRenderer.h"
 
-UIImage::UIImage()
-    : textureID_(0), color_(1.0f, 1.0f, 1.0f, 1.0f) // White (no tint) by default
+#include <algorithm>
+
+UIImage::UIImage() = default;
+
+void UIImage::setTexture(std::shared_ptr<Texture> texture)
 {
-    // Images typically size themselves to their texture
-    // But we'll allow explicit sizing as well
+    texture_ = std::move(texture);
 }
 
-void UIImage::setTexture(unsigned int textureID)
+void UIImage::renderSelf(UIRenderer& renderer) const
 {
-    textureID_ = textureID;
-    // Optionally auto-size to fit texture dimensions
-    // In a real implementation, we'd get the texture size from AssetManager
-}
-
-void UIImage::setColor(const Color &color)
-{
-    color_ = color;
-}
-
-void UIImage::renderSelf(SpriteBatch &spriteBatch, Font &font) const
-{
-    if (textureID_ == 0)
-    {
-        // No texture set, maybe draw a placeholder or nothing
+    if (!texture_ || texture_->GetRendererID() == 0 || color_.a <= 0.0f)
         return;
+
+    const float boxX = getAbsoluteX();
+    const float boxY = getAbsoluteY();
+
+    float drawX = boxX;
+    float drawY = boxY;
+    float drawW = width_;
+    float drawH = height_;
+
+    if (scaleMode_ != ScaleMode::Stretch)
+    {
+        const float sourceW = static_cast<float>(texture_->GetWidth());
+        const float sourceH = static_cast<float>(texture_->GetHeight());
+
+        if (sourceW > 0.0f && sourceH > 0.0f && width_ > 0.0f && height_ > 0.0f)
+        {
+            const float scaleX = width_ / sourceW;
+            const float scaleY = height_ / sourceH;
+
+            // Fit contains the image; Fill covers the box.
+            const float scale = scaleMode_ == ScaleMode::Fit
+                                    ? std::min(scaleX, scaleY)
+                                    : std::max(scaleX, scaleY);
+
+            drawW = sourceW * scale;
+            drawH = sourceH * scale;
+            drawX = boxX + (width_ - drawW) * 0.5f;
+            drawY = boxY + (height_ - drawH) * 0.5f;
+        }
     }
 
-    // Get the actual Texture object from AssetManager using textureID_
-    auto assetManager = ServiceLocator::Get<AssetManager>();
-    if (!assetManager)
-    {
-        Logger::Error("UIImage: AssetManager not available");
-        return;
-    }
+    // Fill mode deliberately overflows, so clip it back to the element box.
+    const bool needsClip = scaleMode_ == ScaleMode::Fill &&
+                           (drawW > width_ || drawH > height_);
 
-    std::shared_ptr<Texture> texture = std::shared_ptr<Texture>(assetManager->GetTextureByRendererID(textureID_), [](Texture *) {});
-    if (!texture)
-    {
-        // Texture not found, skip drawing
-        return;
-    }
+    if (needsClip)
+        renderer.PushClip(boxX, boxY, width_, height_);
 
-    // Calculate render position based on anchor
-    float renderX, renderY;
-    calculateRenderPosition(renderX, renderY);
+    renderer.DrawTexture(*texture_, drawX, drawY, drawW, drawH, color_, radius_);
 
-    // Draw the texture with tint color
-    spriteBatch.Draw(*texture, renderX, renderY, getWidth(), getHeight(),
-                     color_.r, color_.g, color_.b, color_.a);
+    if (needsClip)
+        renderer.PopClip();
 }

@@ -1,380 +1,480 @@
 #include "Connection.h"
 
-#include <iostream>
-#include <sstream>
+#include "PacketRegistry.h"
+#include "../core/Logger.h"
 
-// Static members
-int Connection::s_wsaRefCount = 0;
+#include <chrono>
+#include <cstring>
+#include <format>
 
-// Static members
-bool Connection::initialize()
+#pragma comment(lib, "Ws2_32.lib")
+
+std::mutex Connection::s_wsaMutex;
+int        Connection::s_wsaRefCount = 0;
+
+namespace
 {
-    if (s_wsaRefCount == 0)
+    // How long recv() blocks before returning so the thread can notice a
+    // shutdown request.
+    constexpr DWORD kReceiveTimeoutMs = 200;
+
+    constexpr int kConnectTimeoutMs = 5000;
+
+    std::string DescribeSocketError(int error)
     {
-        WSADATA wsaData;
-        int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-        if (result != 0)
+        switch (error)
         {
-            std::cerr << "WSAStartup failed: " << result << std::endl;
-            return false;
+        case WSAECONNREFUSED: return "connection refused";
+        case WSAETIMEDOUT:    return "connection timed out";
+        case WSAEHOSTUNREACH: return "host unreachable";
+        case WSAENETUNREACH:  return "network unreachable";
+        case WSAECONNRESET:   return "connection reset by peer";
+        case WSAECONNABORTED: return "connection aborted";
+        default:              return "socket error " + std::to_string(error);
         }
     }
-    s_wsaRefCount++;
+}
+
+Connection::Connection() = default;
+
+Connection::~Connection()
+{
+    disconnect();
+}
+
+bool Connection::initialize()
+{
+    std::lock_guard<std::mutex> lock(s_wsaMutex);
+
+    if (s_wsaRefCount > 0)
+    {
+        ++s_wsaRefCount;
+        return true;
+    }
+
+    WSADATA wsaData{};
+    const int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (result != 0)
+    {
+        Logger::Error(std::format("Connection: WSAStartup failed ({}).", result));
+        return false;
+    }
+
+    s_wsaRefCount = 1;
     return true;
 }
 
 void Connection::cleanup()
 {
-    if (s_wsaRefCount > 0)
-    {
-        s_wsaRefCount--;
-        if (s_wsaRefCount == 0)
-        {
-            WSACleanup();
-        }
-    }
-}
+    std::lock_guard<std::mutex> lock(s_wsaMutex);
 
-Connection::Connection()
-    : m_socket(INVALID_SOCKET), m_state(ConnectionState::Disconnected), m_running(false), m_recvBufferPos(0)
-{
-}
-
-Connection::~Connection()
-{
-    disconnect();
-    if (m_receiveThread.joinable())
-        m_receiveThread.join();
-    if (m_sendThread.joinable())
-        m_sendThread.join();
-}
-
-bool Connection::connect(const std::string& host, uint16_t port)
-{
-    if (m_state.load() != ConnectionState::Disconnected)
-        return false;
-
-    // Ensure Winsock is initialized using reference counting
-    if (!Connection::initialize())
-        return false;
-
-    m_state.store(ConnectionState::Connecting);
-
-    // Create socket
-    m_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (m_socket == INVALID_SOCKET)
-    {
-        std::cerr << "socket() failed: " << WSAGetLastError() << std::endl;
-        m_state.store(ConnectionState::Disconnected);
-        Connection::cleanup(); // Cleanup on failure
-        return false;
-    }
-
-    // Set timeouts so recv/send can check m_running
-    int timeout = 500; // 0.5 second
-    setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
-    setsockopt(m_socket, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
-
-    // Resolve host
-    addrinfo hints = {};
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    addrinfo* result = nullptr;
-    int res = getaddrinfo(host.c_str(), std::to_string(port).c_str(), &hints, &result);
-    if (res != 0)
-    {
-        std::cerr << "getaddrinfo failed: " << res << std::endl;
-        closesocket(m_socket);
-        m_socket = INVALID_SOCKET;
-        m_state.store(ConnectionState::Disconnected);
-        Connection::cleanup(); // Cleanup on failure
-        return false;
-    }
-
-    // Use the first result
-    m_serverAddr = *reinterpret_cast<sockaddr_in*>(result->ai_addr);
-    freeaddrinfo(result);
-
-    // Connect (blocking)
-    if (::connect(m_socket, reinterpret_cast<sockaddr*>(&m_serverAddr), sizeof(m_serverAddr)) == SOCKET_ERROR)
-    {
-        int error = WSAGetLastError();
-        if (error != WSAEWOULDBLOCK)
-        {
-            std::cerr << "connect() failed: " << error << std::endl;
-            closesocket(m_socket);
-            m_socket = INVALID_SOCKET;
-            m_state.store(ConnectionState::Disconnected);
-            Connection::cleanup(); // Cleanup on failure
-            return false;
-        }
-        // For non-blocking we would need to wait; but we treat as connected anyway.
-    }
-
-    m_state.store(ConnectionState::Connected);
-
-    // Start threads
-    m_running = true;
-    m_receiveThread = std::thread(&Connection::receiveThread, this);
-    m_sendThread = std::thread(&Connection::sendThread, this);
-
-    return true;
-}
-
-void Connection::disconnect()
-{
-    if (m_state.exchange(ConnectionState::Disconnecting) == ConnectionState::Disconnected)
+    if (s_wsaRefCount == 0)
         return;
 
-    m_running = false;
+    if (--s_wsaRefCount == 0)
+        WSACleanup();
+}
 
-    // Shutdown socket to cause blocking calls to return
+std::string Connection::getLastError() const
+{
+    std::lock_guard<std::mutex> lock(m_errorMutex);
+    return m_lastError;
+}
+
+void Connection::setFailure(const std::string& reason)
+{
+    {
+        std::lock_guard<std::mutex> lock(m_errorMutex);
+        m_lastError = reason;
+    }
+
+    m_state.store(State::Failed);
+}
+
+void Connection::closeSocket()
+{
     if (m_socket != INVALID_SOCKET)
     {
         shutdown(m_socket, SD_BOTH);
         closesocket(m_socket);
         m_socket = INVALID_SOCKET;
     }
+}
 
-    // Wake up any waiting threads
+bool Connection::connect(const std::string& host, uint16_t port)
+{
+    if (m_state.load() == State::Connected)
+        return true;
+
+    disconnect();
+
     {
-        std::lock_guard<std::mutex> lock(m_sendQueueMutex);
-        m_sendQueueCond.notify_all();
+        std::lock_guard<std::mutex> lock(m_errorMutex);
+        m_lastError.clear();
     }
+
+    m_state.store(State::Connecting);
+
+    // Resolve the host so a name works as well as a literal address.
+    addrinfo hints{};
+    hints.ai_family   = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    addrinfo* resolved = nullptr;
+    const std::string service = std::to_string(port);
+
+    if (getaddrinfo(host.c_str(), service.c_str(), &hints, &resolved) != 0 || !resolved)
+    {
+        setFailure(std::format("could not resolve '{}'", host));
+        Logger::Error(std::format("Connection: {}", getLastError()));
+        return false;
+    }
+
+    m_socket = socket(resolved->ai_family, resolved->ai_socktype, resolved->ai_protocol);
+    if (m_socket == INVALID_SOCKET)
+    {
+        setFailure(DescribeSocketError(WSAGetLastError()));
+        freeaddrinfo(resolved);
+        return false;
+    }
+
+    // Connect with a timeout: a non-blocking connect plus select, so a dead
+    // host does not stall the caller for the OS default of ~20 seconds.
+    u_long nonBlocking = 1;
+    ioctlsocket(m_socket, FIONBIO, &nonBlocking);
+
+    bool connected = false;
+
+    if (::connect(m_socket, resolved->ai_addr, static_cast<int>(resolved->ai_addrlen)) == 0)
+    {
+        connected = true;
+    }
+    else if (WSAGetLastError() == WSAEWOULDBLOCK)
+    {
+        fd_set writeSet;
+        FD_ZERO(&writeSet);
+        FD_SET(m_socket, &writeSet);
+
+        timeval timeout{};
+        timeout.tv_sec  = kConnectTimeoutMs / 1000;
+        timeout.tv_usec = (kConnectTimeoutMs % 1000) * 1000;
+
+        const int ready = select(0, nullptr, &writeSet, nullptr, &timeout);
+        if (ready > 0)
+        {
+            int soError = 0;
+            int length  = sizeof(soError);
+            getsockopt(m_socket, SOL_SOCKET, SO_ERROR,
+                       reinterpret_cast<char*>(&soError), &length);
+
+            if (soError == 0)
+                connected = true;
+            else
+                setFailure(DescribeSocketError(soError));
+        }
+        else
+        {
+            setFailure("connection timed out");
+        }
+    }
+    else
+    {
+        setFailure(DescribeSocketError(WSAGetLastError()));
+    }
+
+    freeaddrinfo(resolved);
+
+    if (!connected)
+    {
+        closeSocket();
+        Logger::Error(std::format("Connection: failed to connect to {}:{} - {}",
+                                  host, port, getLastError()));
+        return false;
+    }
+
+    nonBlocking = 0;
+    ioctlsocket(m_socket, FIONBIO, &nonBlocking);
+
+    // A read timeout lets the receive thread poll m_running.
+    DWORD timeoutMs = kReceiveTimeoutMs;
+    setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO,
+               reinterpret_cast<const char*>(&timeoutMs), sizeof(timeoutMs));
+
+    // Latency matters more than packing for this traffic.
+    BOOL noDelay = TRUE;
+    setsockopt(m_socket, IPPROTO_TCP, TCP_NODELAY,
+               reinterpret_cast<const char*>(&noDelay), sizeof(noDelay));
+
+    m_receiveBuffer.clear();
+    m_readPosition = 0;
+
     {
         std::lock_guard<std::mutex> lock(m_receiveQueueMutex);
-        m_receiveQueueCond.notify_all();
+        m_receiveQueue.clear();
     }
+
+    m_state.store(State::Connected);
+    m_running.store(true);
+    m_receiveThread = std::thread(&Connection::receiveThread, this);
+
+    Logger::Info(std::format("Connection: connected to {}:{}", host, port));
+    return true;
+}
+
+void Connection::disconnect()
+{
+    const bool wasRunning = m_running.exchange(false);
+
+    // Closing the socket unblocks a recv() that is mid-timeout.
+    closeSocket();
 
     if (m_receiveThread.joinable())
         m_receiveThread.join();
-    if (m_sendThread.joinable())
-        m_sendThread.join();
 
-    m_state.store(ConnectionState::Disconnected);
-
-    // Clear queues
-    std::queue<std::shared_ptr<Packet>> empty;
-    {
-        std::lock_guard<std::mutex> lock(m_sendQueueMutex);
-        m_sendQueue.swap(empty);
-    }
     {
         std::lock_guard<std::mutex> lock(m_receiveQueueMutex);
-        m_receiveQueue.swap(empty);
+        m_receiveQueue.clear();
     }
 
-    // Cleanup Winsock reference count
-    Connection::cleanup();
-}
+    m_receiveBuffer.clear();
+    m_readPosition = 0;
 
-bool Connection::isConnected() const
-{
-    return m_state.load() == ConnectionState::Connected;
+    // A failure reason set by the receive thread must survive teardown so the
+    // UI can show why the session ended.
+    if (m_state.load() != State::Failed)
+        m_state.store(State::Disconnected);
+
+    if (wasRunning)
+        Logger::Info("Connection: disconnected.");
 }
 
 bool Connection::sendPacket(const std::shared_ptr<Packet>& packet)
 {
-    if (!isConnected())
+    if (!packet || !isConnected())
         return false;
 
-    {
-        std::lock_guard<std::mutex> lock(m_sendQueueMutex);
-        m_sendQueue.push(packet);
-    }
-    m_sendQueueCond.notify_one();
-    return true;
-}
+    PacketBuffer payload;
 
-void Connection::processReceivedPackets(std::function<void(const std::shared_ptr<Packet>&)> callback)
-{
-    std::vector<std::shared_ptr<Packet>> packets;
+    try
     {
-        std::lock_guard<std::mutex> lock(m_receiveQueueMutex);
-        while (!m_receiveQueue.empty())
+        packet->serialize(payload);
+    }
+    catch (const std::exception& error)
+    {
+        Logger::Error(std::format("Connection: failed to serialize {}: {}",
+                                  packet->getName(), error.what()));
+        return false;
+    }
+
+    if (payload.size() > ProtocolLimits::MaxPayloadSize)
+    {
+        Logger::Error(std::format("Connection: {} payload of {} bytes exceeds the {} byte limit.",
+                                  packet->getName(), payload.size(),
+                                  ProtocolLimits::MaxPayloadSize));
+        return false;
+    }
+
+    // Header is network byte order; payload is native, matching the server.
+    const uint16_t opcodeNet = htons(static_cast<uint16_t>(packet->getOpcode()));
+    const uint32_t lengthNet = htonl(static_cast<uint32_t>(payload.size()));
+
+    std::vector<char> frame;
+    frame.reserve(ProtocolLimits::HeaderSize + payload.size());
+
+    const char* opcodeBytes = reinterpret_cast<const char*>(&opcodeNet);
+    const char* lengthBytes = reinterpret_cast<const char*>(&lengthNet);
+
+    frame.insert(frame.end(), opcodeBytes, opcodeBytes + sizeof(opcodeNet));
+    frame.insert(frame.end(), lengthBytes, lengthBytes + sizeof(lengthNet));
+    frame.insert(frame.end(), payload.data(), payload.data() + payload.size());
+
+    std::lock_guard<std::mutex> lock(m_sendMutex);
+
+    std::size_t sent = 0;
+    while (sent < frame.size())
+    {
+        const int result = send(m_socket,
+                                frame.data() + sent,
+                                static_cast<int>(frame.size() - sent),
+                                0);
+
+        if (result == SOCKET_ERROR)
         {
-            packets.push_back(m_receiveQueue.front());
-            m_receiveQueue.pop();
+            const int error = WSAGetLastError();
+            setFailure(DescribeSocketError(error));
+            Logger::Error(std::format("Connection: send failed - {}", getLastError()));
+            return false;
         }
+
+        sent += static_cast<std::size_t>(result);
     }
-    for (auto& pkt : packets)
-    {
-        callback(pkt);
-    }
+
+    m_stats.bytesSent(static_cast<uint32_t>(frame.size()));
+    m_stats.packetsSent();
+
+    return true;
 }
 
 void Connection::receiveThread()
 {
+    std::vector<char> chunk(8192);
+
     while (m_running.load())
     {
-        if (m_socket == INVALID_SOCKET)
+        const int received = recv(m_socket, chunk.data(), static_cast<int>(chunk.size()), 0);
+
+        if (received > 0)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            m_stats.bytesReceived(static_cast<uint32_t>(received));
+
+            m_receiveBuffer.insert(m_receiveBuffer.end(),
+                                   reinterpret_cast<uint8_t*>(chunk.data()),
+                                   reinterpret_cast<uint8_t*>(chunk.data()) + received);
+
+            if (m_receiveBuffer.size() > ProtocolLimits::MaxReceiveBufferSize)
+            {
+                setFailure("server sent more unparsed data than the receive buffer allows");
+                Logger::Error("Connection: receive buffer overflow; dropping the session.");
+                m_running.store(false);
+                break;
+            }
+
+            parseFrames();
             continue;
         }
 
-        // First, try to process any complete packets already in the buffer
-        bool progress = true;
-        while (progress && m_running.load())
+        if (received == 0)
         {
-            progress = false;
-            // We need at least one byte to attempt to read a packet (packet ID)
-            if (m_recvBufferPos < sizeof(uint8_t))
-                break;
-
-            // Copy buffer data into a PacketBuffer for deserialization
-            std::vector<char> packetData(m_recvBuffer, m_recvBuffer + m_recvBufferPos);
-            PacketBuffer pb;
-            pb.write(packetData.data(), packetData.size());
-            pb.resetReadPos();
-
-            std::shared_ptr<Packet> pkt;
-            try
+            // Orderly shutdown by the peer.
+            if (m_running.load())
             {
-                if (PacketSerializer::deserialize(pb, pkt))
-                {
-                    // Determine consumed bytes
-                    size_t consumed = packetData.size() - pb.remaining();
-                    if (consumed > 0)
-                    {
-                        progress = true;
-                        // Shift remaining bytes to front
-                        if (consumed < m_recvBufferPos)
-                        {
-                            memmove(m_recvBuffer, m_recvBuffer + consumed, m_recvBufferPos - consumed);
-                        }
-                        m_recvBufferPos -= consumed;
-                        m_stats.packetsReceived();
-
-                        // Enqueue packet for consumer
-                        {
-                            std::lock_guard<std::mutex> lock(m_receiveQueueMutex);
-                            m_receiveQueue.push(pkt);
-                        }
-                        m_receiveQueueCond.notify_one();
-                        continue; // try to process another packet
-                    }
-                }
+                setFailure("server closed the connection");
+                Logger::Warning("Connection: server closed the connection.");
             }
-            catch (const std::exception& e)
-            {
-                std::cerr << "Packet deserialization failed: " << e.what() << std::endl;
-                // Consider the connection corrupted? We'll break.
-                break;
-            }
-            catch (...)
-            {
-                std::cerr << "Unknown exception during packet deserialization" << std::endl;
-                break;
-            }
-
-            // If we get here, we couldn't deserialize a packet (not enough data or error)
+            m_running.store(false);
             break;
         }
 
-        // If we have processed all possible packets, check if buffer is full
-        if (m_recvBufferPos >= RECV_BUFFER_SIZE)
+        const int error = WSAGetLastError();
+
+        // A read timeout is how the loop stays responsive to disconnect().
+        if (error == WSAETIMEDOUT || error == WSAEWOULDBLOCK)
+            continue;
+
+        if (m_running.load())
         {
-            std::cerr << "Receive buffer overflow: possible oversized packet or stuck data" << std::endl;
-            // We cannot proceed; break to avoid infinite loop
-            break;
+            setFailure(DescribeSocketError(error));
+            Logger::Error(std::format("Connection: recv failed - {}", getLastError()));
         }
 
-        // Receive more data
-        int bytesToRecv = static_cast<int>(RECV_BUFFER_SIZE - m_recvBufferPos);
-        int bytesRead = recv(m_socket,
-                             m_recvBuffer + static_cast<int>(m_recvBufferPos),
-                             bytesToRecv,
-                             0);
-
-        if (bytesRead == SOCKET_ERROR)
-        {
-            int error = WSAGetLastError();
-            if (error == WSAETIMEDOUT)
-                continue; // timeout, try again
-            else if (error == WSAECONNRESET)
-            {
-                std::cerr << "Connection reset by peer." << std::endl;
-                break;
-            }
-            else
-            {
-                std::cerr << "recv() failed: " << error << std::endl;
-                break;
-            }
-        }
-        else if (bytesRead == 0)
-        {
-            // Connection closed gracefully
-            std::cerr << "Connection closed by remote." << std::endl;
-            break;
-        }
-        else
-        {
-            m_recvBufferPos += static_cast<size_t>(bytesRead);
-            m_stats.bytesReceived(static_cast<uint32_t>(bytesRead));
-            // Loop again to process any newly available packets
-        }
+        m_running.store(false);
+        break;
     }
-
-    m_running.store(false);
 }
 
-void Connection::sendThread()
+void Connection::parseFrames()
 {
-    while (m_running.load())
+    while (true)
     {
-        std::unique_lock<std::mutex> lock(m_sendQueueMutex);
-        m_sendQueueCond.wait(lock, [this] { return !m_running.load() || !m_sendQueue.empty(); });
+        const std::size_t available = m_receiveBuffer.size() - m_readPosition;
 
-        if (!m_running.load())
+        if (available < ProtocolLimits::HeaderSize)
             break;
 
-        // Take all pending packets
-        std::queue<std::shared_ptr<Packet>> localQueue;
-        std::swap(m_sendQueue, localQueue);
-        lock.unlock();
+        const uint8_t* cursor = m_receiveBuffer.data() + m_readPosition;
 
-        while (!localQueue.empty() && m_running.load())
+        uint16_t opcodeRaw    = 0;
+        uint32_t payloadLength = 0;
+        std::memcpy(&opcodeRaw, cursor, sizeof(opcodeRaw));
+        std::memcpy(&payloadLength, cursor + sizeof(opcodeRaw), sizeof(payloadLength));
+
+        opcodeRaw     = ntohs(opcodeRaw);
+        payloadLength = ntohl(payloadLength);
+
+        // Reject an absurd declared length before it is used for anything;
+        // otherwise the loop waits forever for data that will never arrive.
+        if (payloadLength > ProtocolLimits::MaxPayloadSize)
         {
-            auto pkt = std::move(localQueue.front());
-            localQueue.pop();
+            setFailure("server declared an oversized packet");
+            Logger::Error(std::format("Connection: declared payload of {} bytes exceeds the limit.",
+                                      payloadLength));
+            m_running.store(false);
+            return;
+        }
 
-            // Serialize packet
-            PacketBuffer pb;
-            PacketSerializer::serialize(*pkt, pb);
-            const char* data = pb.data();
-            size_t remaining = pb.size();
+        const std::size_t frameSize = ProtocolLimits::HeaderSize + payloadLength;
 
-            while (remaining > 0 && m_running.load())
-            {
-                int sent = send(m_socket, data, static_cast<int>(remaining), 0);
-                if (sent == SOCKET_ERROR)
-                {
-                    int error = WSAGetLastError();
-                    if (error == WSAETIMEDOUT)
-                        continue; // retry
-                    else
-                    {
-                        std::cerr << "send() failed: " << error << std::endl;
-                        m_running.store(false);
-                        break;
-                    }
-                }
-                else if (sent == 0)
-                {
-                    // Connection closed?
-                    break;
-                }
-                else
-                {
-                    data += sent;
-                    remaining -= static_cast<size_t>(sent);
-                    m_stats.bytesSent(static_cast<uint32_t>(sent));
-                    m_stats.packetsSent();
-                }
-            }
+        // Wait for the rest of a partially received frame.
+        if (available < frameSize)
+            break;
+
+        const uint8_t* payloadStart = cursor + ProtocolLimits::HeaderSize;
+
+        m_readPosition += frameSize;
+
+        const Opcode opcode = static_cast<Opcode>(opcodeRaw);
+
+        std::shared_ptr<Packet> packet = PacketRegistry::createPacket(opcode);
+        if (!packet)
+        {
+            // Unknown opcodes are skipped, not fatal: the server may be newer.
+            m_stats.invalidPacketReceived();
+            Logger::Warning(std::format("Connection: ignoring unknown opcode {}.", opcodeRaw));
+            continue;
+        }
+
+        PacketBuffer payload;
+        if (payloadLength > 0)
+            payload.write(payloadStart, payloadLength);
+
+        try
+        {
+            packet->deserialize(payload);
+        }
+        catch (const std::exception& error)
+        {
+            // A malformed packet is the peer's fault, not ours; drop the packet
+            // and keep the session, since the frame boundary is still known.
+            m_stats.invalidPacketReceived();
+            Logger::Warning(std::format("Connection: malformed {} (opcode {}): {}",
+                                        packet->getName(), opcodeRaw, error.what()));
+            continue;
+        }
+
+        m_stats.packetsReceived();
+
+        {
+            std::lock_guard<std::mutex> lock(m_receiveQueueMutex);
+            m_receiveQueue.push_back(std::move(packet));
         }
     }
+
+    // Release storage for frames already consumed, so a long session's buffer
+    // does not grow without bound.
+    if (m_readPosition > 0)
+    {
+        m_receiveBuffer.erase(m_receiveBuffer.begin(),
+                              m_receiveBuffer.begin() + static_cast<ptrdiff_t>(m_readPosition));
+        m_readPosition = 0;
+    }
+}
+
+void Connection::processReceivedPackets(
+    const std::function<void(const std::shared_ptr<Packet>&)>& callback)
+{
+    if (!callback)
+        return;
+
+    std::deque<std::shared_ptr<Packet>> pending;
+
+    {
+        std::lock_guard<std::mutex> lock(m_receiveQueueMutex);
+        pending.swap(m_receiveQueue);
+    }
+
+    // Handlers run on the caller's thread (the game thread), outside the lock,
+    // so a handler may safely send packets or tear the connection down.
+    for (const auto& packet : pending)
+        callback(packet);
 }

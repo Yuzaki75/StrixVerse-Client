@@ -6,7 +6,10 @@
 
 Scheduler::Scheduler(const std::string& name)
 {
-    // Note: the thread name is not set for simplicity.
+    // Thread naming is not wired up yet; the name is accepted so callers can
+    // already pass one.
+    (void)name;
+
     Start();
 }
 
