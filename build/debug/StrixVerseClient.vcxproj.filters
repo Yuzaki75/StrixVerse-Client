@@ -124,6 +124,9 @@
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\RenderSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\CharacterRenderSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\TileRendererSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -187,6 +190,12 @@
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\SplashScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\MainMenuScreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\CreditsScreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\LoadingScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -209,6 +218,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\GameScreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\audio\AudioManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\hud\HUD.cpp">
@@ -324,6 +336,12 @@
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\HandshakePacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\InventoryPacket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\InventoryUpdatePacket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\KeepAlive.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -349,6 +367,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PongPacket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerDataPacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerMovePacket.h">
@@ -427,6 +448,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\SpriteComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\CharacterComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\CharacterRenderSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\CharacterPalette.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\System.h">
@@ -525,7 +555,16 @@
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\SplashScreen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\MainMenuScreen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\CreditsScreen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\WorldBrowserScreen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\audio\AudioManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\hud\HUD.h">

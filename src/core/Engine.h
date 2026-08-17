@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include "../audio/AudioManager.h"
 #include "../graphics/Camera2D.h"
 #include "../graphics/SpriteBatch.h"
 #include "../graphics/UIRenderer.h"
@@ -75,6 +76,15 @@ public:
     // call repeatedly; returns true when a session is already established.
     bool ConnectToServer();
 
+    // Non-blocking form. Screens should prefer these: ConnectToServer() stalls
+    // the whole window for the connect timeout, which is invisible on
+    // localhost and very visible when the host is a friend's machine that is
+    // switched off.
+    using ConnectProgress = NetworkManager::ConnectProgress;
+
+    bool            BeginConnectToServer();
+    ConnectProgress PollConnectToServer();
+
     // True when the client is configured to run without a server.
     bool IsOfflineMode() const;
 
@@ -109,6 +119,14 @@ public:
 
     UIFonts* GetUIFonts() { return m_UIFonts.get(); }
     const UIFonts* GetUIFonts() const { return m_UIFonts.get(); }
+
+    AudioManager& GetAudio() { return m_Audio; }
+    const AudioManager& GetAudio() const { return m_Audio; }
+
+    // The screen shown before the current one. Settings uses it to know where
+    // Back should return to, since it is reachable from both the main menu and
+    // from gameplay.
+    ScreenID GetPreviousScreenId() const { return m_PreviousScreenId; }
 
     UIRenderer* GetUIRenderer() { return m_UIRenderer.get(); }
 
@@ -148,6 +166,8 @@ private:
     std::shared_ptr<SpriteBatch> m_SpriteBatch;
     std::shared_ptr<UIRenderer>  m_UIRenderer;
     std::shared_ptr<UIFonts>     m_UIFonts;
+
+    AudioManager m_Audio;
     std::shared_ptr<UIManager>   m_UIManager;
 
     UIScale m_UIScale;
@@ -170,6 +190,8 @@ private:
     float           m_TransitionLength = 0.28f;   // Seconds per half.
     float           m_FadeAlpha        = 0.0f;
     ScreenID        m_NextScreen       = ScreenID::Splash;
+    ScreenID        m_CurrentScreenId  = ScreenID::Splash;
+    ScreenID        m_PreviousScreenId = ScreenID::MainMenu;
     bool            m_HasNextScreen    = false;
 
     std::unique_ptr<AuthService>  m_AuthService;

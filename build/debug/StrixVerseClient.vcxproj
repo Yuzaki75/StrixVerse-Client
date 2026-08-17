@@ -89,11 +89,12 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\third_party\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /FS</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /utf-8 /FS</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <BufferSecurityCheck></BufferSecurityCheck>
       <CallingConvention></CallingConvention>
+      <ConformanceMode>true</ConformanceMode>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
@@ -103,6 +104,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <Optimization>Disabled</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
@@ -110,13 +112,14 @@
       <SupportJustMyCode></SupportJustMyCode>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;STRIX_GIT_COMMIT="3bd6d5f";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;STRIX_GIT_COMMIT="bcd03e4";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;STRIX_GIT_COMMIT=\"3bd6d5f\";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;STRIX_GIT_COMMIT=\"bcd03e4\";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\third_party\glad\include;C:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -182,11 +185,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\third_party\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /FS</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /utf-8 /FS</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck></BufferSecurityCheck>
       <CallingConvention></CallingConvention>
+      <ConformanceMode>true</ConformanceMode>
       <ExceptionHandling>Sync</ExceptionHandling>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <FloatingPointModel></FloatingPointModel>
@@ -195,6 +199,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <Optimization>MaxSpeed</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
@@ -202,15 +207,16 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <SupportJustMyCode></SupportJustMyCode>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="3bd6d5f";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="bcd03e4";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"3bd6d5f\";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"bcd03e4\";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\third_party\glad\include;C:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -276,11 +282,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\third_party\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /FS</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /utf-8 /FS</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck></BufferSecurityCheck>
       <CallingConvention></CallingConvention>
+      <ConformanceMode>true</ConformanceMode>
       <ExceptionHandling>Sync</ExceptionHandling>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <FloatingPointModel></FloatingPointModel>
@@ -289,6 +296,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <Optimization>MinSpace</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
@@ -296,15 +304,16 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <SupportJustMyCode></SupportJustMyCode>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="3bd6d5f";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="bcd03e4";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"3bd6d5f\";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"bcd03e4\";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\third_party\glad\include;C:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -370,11 +379,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\third_party\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /FS</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /utf-8 /FS</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck></BufferSecurityCheck>
       <CallingConvention></CallingConvention>
+      <ConformanceMode>true</ConformanceMode>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
@@ -384,6 +394,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <Optimization>MaxSpeed</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
@@ -391,13 +402,14 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <SupportJustMyCode></SupportJustMyCode>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="3bd6d5f";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT="bcd03e4";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"3bd6d5f\";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;STRIX_GIT_COMMIT=\"bcd03e4\";NOMINMAX;WIN32_LEAN_AND_MEAN;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Projects\StrixVerse\Client\src;C:\Projects\StrixVerse\Client\third_party;C:\Projects\StrixVerse\Client\third_party\glad\include;C:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -559,6 +571,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\NetworkSyncSystem.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\PlayerSystem.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\RenderSystem.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\CharacterRenderSystem.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\TileRendererSystem.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\Camera2DSystem.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\ecs\CollisionSystem.cpp" />
@@ -580,6 +593,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\Screen.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\ScreenFactory.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\SplashScreen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\MainMenuScreen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\CreditsScreen.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\LoadingScreen.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\LoginScreen.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\RegisterScreen.cpp" />
@@ -588,6 +603,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\WorldBrowserScreen.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\SettingsScreen.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\screens\GameScreen.cpp" />
+    <ClCompile Include="C:\Projects\StrixVerse\Client\src\audio\AudioManager.cpp" />
     <ClCompile Include="C:\Projects\StrixVerse\Client\src\hud\HUD.cpp" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\Application.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\core\AssetManager.h" />
@@ -625,6 +641,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\ChatMessagePacket.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\DisconnectPacket.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\HandshakePacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\InventoryPacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\InventoryUpdatePacket.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\KeepAlive.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\KeepAlivePacket.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\LoginFailedPacket.h" />
@@ -634,6 +652,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PingManager.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PingPacket.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PongPacket.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerDataPacket.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerMovePacket.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerRemovePacket.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\networking\PlayerSpawnPacket.h" />
@@ -660,6 +679,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\PlayerSystem.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\RenderSystem.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\SpriteComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\CharacterComponent.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\CharacterRenderSystem.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\graphics\CharacterPalette.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\System.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\SystemManager.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\ecs\TileRendererSystem.h" />
@@ -692,7 +714,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\ScreenIDs.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\SettingsScreen.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\SplashScreen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\MainMenuScreen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\CreditsScreen.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\screens\WorldBrowserScreen.h" />
+    <ClInclude Include="C:\Projects\StrixVerse\Client\src\audio\AudioManager.h" />
     <ClInclude Include="C:\Projects\StrixVerse\Client\src\hud\HUD.h" />
     <ResourceCompile Include="C:\Projects\StrixVerse\Client\resources\client.rc" />
   </ItemGroup>

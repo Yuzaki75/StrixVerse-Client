@@ -31,6 +31,16 @@ public:
     void setText(const std::string& text);
     const std::string& getText() const { return text_; }
 
+    // Clears the field the next time it gains focus, once.
+    //
+    // For a value the player did not type -- a remembered username restored at
+    // startup -- clicking the field means "I want a different one". Without
+    // this there is no selection support to replace it, so typing appends and
+    // signing in as someone else produces a mangled name like
+    // "olduserNewuser". Touched-once semantics: if the player never focuses
+    // the field, the restored value stands.
+    void setClearOnNextFocus(bool clear) { clearOnNextFocus_ = clear; }
+
     void setPlaceholderText(const std::string& text) { placeholder_ = text; }
     const std::string& getPlaceholderText() const { return placeholder_; }
 
@@ -105,6 +115,7 @@ private:
     int  maxLength_    = -1;
 
     bool   hasFocus_   = false;
+    bool   clearOnNextFocus_ = false;
     size_t caretIndex_ = 0;       // Byte offset into text_.
     float  caretTimer_ = 0.0f;
 

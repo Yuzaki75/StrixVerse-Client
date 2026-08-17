@@ -10,8 +10,11 @@
 #include "../ecs/ComponentManager.h"
 #include "../ecs/EntityManager.h"
 #include "../ecs/InputComponent.h"
+#include "../ecs/InputSystem.h"
 #include "../ecs/PlayerComponent.h"
+#include "../ecs/PlayerSystem.h"
 #include "../ecs/SpriteComponent.h"
+#include "../ecs/CharacterComponent.h"
 #include "../ecs/SystemManager.h"
 #include "../ecs/TransformComponent.h"
 #include "../ecs/VelocityComponent.h"
@@ -28,6 +31,9 @@
 #include "../ui/UIScale.h"
 #include "../ui/UITheme.h"
 
+#include <SDL3/SDL.h>
+
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <format>
@@ -66,10 +72,18 @@ void GameScreen::OnEnter()
         return;
     }
 
+    // No gameplay track exists yet, so the menu music stops here rather than
+    // looping underneath the game.
+    if (engine_)
+        engine_->GetAudio().StopMusic();
+
     CreateRoot();
 
     InitializeUI();
     InitializeHUD();
+
+    // After the HUD, so the overlay draws above it.
+    BuildPausePanel();
     InitializeWorld();
     InitializeActors();
 
@@ -81,7 +95,63 @@ void GameScreen::OnEnter()
     {
         for (const auto& [id, player] : engine_->getNetworkManager().getRemotePlayers())
             OnPlayerSpawn(id, player.username, player.tileX, player.tileY, false);
+
+        // Ask for the inventory, and show whatever is already known in case
+        // the reply landed while the loading screen was up.
+        engine_->getNetworkManager().sendInventoryRequest();
+        RefreshInventory();
+
+        // Stats arrive with the world join, so they are usually already here.
+        RefreshStats();
     }
+}
+
+void GameScreen::RefreshStats()
+{
+    if (!hud_ || !engine_)
+        return;
+
+    const NetworkManager::CharacterStats& source =
+        engine_->getNetworkManager().getCharacterStats();
+
+    HUD::Stats stats;
+    stats.known                 = source.known;
+    stats.level                 = source.level;
+    stats.experience            = source.experience;
+    stats.experienceToNextLevel = source.experienceToNextLevel;
+    stats.health                = source.health;
+    stats.maxHealth             = source.maxHealth;
+
+    hud_->SetStats(stats);
+
+    statsRevision_ = engine_->getNetworkManager().getStatsRevision();
+}
+
+void GameScreen::RefreshInventory()
+{
+    if (!hud_ || !engine_)
+        return;
+
+    const NetworkManager& network = engine_->getNetworkManager();
+
+    std::vector<HUD::InventoryEntry> entries;
+    entries.reserve(network.getInventory().size());
+
+    for (const auto& [slot, item] : network.getInventory())
+    {
+        if (item.IsEmpty())
+            continue;
+
+        HUD::InventoryEntry entry;
+        entry.slot     = slot;
+        entry.itemId   = item.itemId;
+        entry.quantity = item.quantity;
+        entries.push_back(entry);
+    }
+
+    hud_->SetInventory(entries);
+
+    inventoryRevision_ = network.getInventoryRevision();
 }
 
 void GameScreen::InitializeUI()
@@ -128,14 +198,463 @@ void GameScreen::InitializeHUD()
 
     RegisterNetworkHandlers();
 
-    // Placeholder values until the server drives these.
-    hud_->SetHealth(100.0f, 100.0f);
-    hud_->SetMana(50.0f, 50.0f);
-    hud_->SetLevel(5);
-    hud_->SetExperience(350, 500);
-    hud_->SetCoins(150);
-    hud_->SetGems(5);
     hud_->AddChatMessage("Welcome to StrixVerse!");
+}
+
+namespace
+{
+    // Server foreground tile id -> the client's five-way Tile::Type.
+    //
+    // The ids are WorldGenerator.cpp's; the client has no matching art for
+    // wood, leaves, bedrock or the ores, so those collapse onto the nearest
+    // type it can draw. Air is the one id with no tile at all: a null tile is
+    // skipped by TileRendererSystem and treated as passable by
+    // CollisionSystem, which is exactly what air should be.
+    //
+    // Returns false for air.
+    bool ServerTileToClientType(std::uint8_t id, StrixVerse::World::Tile::Type& outType)
+    {
+        using Type = StrixVerse::World::Tile::Type;
+
+        switch (id)
+        {
+        case 0:  return false;                      // air
+        case 1:  outType = Type::Dirt;   return true;
+        case 2:  outType = Type::Stone;  return true;
+        case 3:  outType = Type::Grass;  return true;
+        case 4:  outType = Type::Dirt;   return true;  // wood
+        case 5:  outType = Type::Grass;  return true;  // leaves
+        case 6:  outType = Type::Stone;  return true;  // bedrock
+        case 13: outType = Type::Water;  return true;  // lava
+
+        // A planted seed while it grows. Without this it fell through to the
+        // default and every sapling rendered as grey stone, which makes
+        // planting look broken even though the server accepted it.
+        case 19: outType = Type::Grass;  return true;  // sapling
+
+        default: outType = Type::Stone;  return true;  // ores and anything new
+        }
+    }
+} // namespace
+
+bool GameScreen::CanvasToServerTile(float canvasX, float canvasY,
+                                    int32_t& outTileX, int32_t& outTileY) const
+{
+    auto componentManager = ServiceLocator::Get<StrixVerse::ECS::ComponentManager>();
+    if (!componentManager || !world_)
+        return false;
+
+    const auto* transform =
+        componentManager->getComponent<StrixVerse::ECS::Transform>(playerEntity_);
+    if (!transform)
+        return false;
+
+    // The camera follows the player at zoom 1, so the centre of the design
+    // canvas is the player and the mapping is one canvas pixel to one world
+    // pixel. If zoom ever stops being 1 this has to divide by it.
+    const float worldPixelX =
+        transform->position.x + (canvasX - UIScale::kDesignWidth  * 0.5f);
+    const float worldPixelY =
+        transform->position.y + (canvasY - UIScale::kDesignHeight * 0.5f);
+
+    const int localRowX = static_cast<int>(std::floor(worldPixelX / kTileSize));
+    const int localRowY = static_cast<int>(std::floor(worldPixelY / kTileSize));
+
+    // Back into the server's Y-up space, the inverse of TileYToLocalY.
+    outTileX = static_cast<int32_t>(localRowX);
+    outTileY = static_cast<int32_t>((worldHeightInTiles_ - 1) - localRowY);
+    return true;
+}
+
+void GameScreen::BuildPausePanel()
+{
+    if (pausePanel_ || !uiManager_)
+        return;
+
+    // Built once and hidden, not created per Escape. Added to the UIManager
+    // after the HUD so it draws above it; UIManager renders in insertion order.
+    const float width  = S(260.0f);
+    const float height = S(170.0f);
+
+    pausePanel_ = std::make_shared<UIPanel>();
+    pausePanel_->setSize(width, height);
+    pausePanel_->setPosition((UIScale::kDesignWidth - width) * 0.5f,
+                             (UIScale::kDesignHeight - height) * 0.5f);
+    pausePanel_->setBackgroundColor(UITheme::Hex(0x1E2230, 0.97f));
+    pausePanel_->setBorder(UITheme::WithAlpha(UITheme::Accent, 0.45f), UITheme::BorderThin);
+    pausePanel_->setBorderRadius(UITheme::RadiusPanel);
+    pausePanel_->setVisible(false);
+    uiManager_->addElement(pausePanel_);
+
+    auto title = std::make_shared<UILabel>();
+    title->setText("PAUSED");
+    title->setFont(DisplayFont(UITheme::Display::Heading));
+    title->setTextColor(UITheme::Text);
+    title->setAlignment(UILabel::Alignment::Center);
+    title->setPosition(0.0f, S(18.0f));
+    title->setSize(width, S(24.0f));
+    pausePanel_->addChild(title);
+
+    const float buttonWidth  = width - S(40.0f);
+    const float buttonHeight = S(34.0f);
+    float y = S(60.0f);
+
+    auto resume = std::make_shared<UIButton>();
+    resume->setText("RESUME");
+    resume->setFont(DisplayFont(UITheme::Display::Button));
+    resume->setPosition(S(20.0f), y);
+    resume->setSize(buttonWidth, buttonHeight);
+    resume->setOnClick([this]() { SetPaused(false); });
+    pausePanel_->addChild(resume);
+
+    y += buttonHeight + S(12.0f);
+
+    // Settings remains a real screen change: leaving gameplay for it is the
+    // intended behaviour, unlike pausing.
+    auto settings = std::make_shared<UIButton>();
+    settings->setText("SETTINGS");
+    settings->setFont(DisplayFont(UITheme::Display::Button));
+    settings->setPosition(S(20.0f), y);
+    settings->setSize(buttonWidth, buttonHeight);
+    settings->setOnClick([this]() {
+        SetPaused(false);
+        OnSettingsButtonClicked();
+    });
+    pausePanel_->addChild(settings);
+}
+
+void GameScreen::SetPaused(bool paused)
+{
+    if (paused_ == paused)
+        return;
+
+    paused_ = paused;
+
+    if (pausePanel_)
+        pausePanel_->setVisible(paused_);
+
+    // Movement is stopped at the source. InputSystem samples the hardware
+    // keyboard every frame, so anything cleared here would be rewritten before
+    // MovementSystem ran; the system itself has to know.
+    if (auto systemManager = ServiceLocator::Get<StrixVerse::ECS::SystemManager>())
+    {
+        if (auto input = systemManager->getSystem<StrixVerse::ECS::InputSystem>())
+            input->SetGameplayPaused(paused_);
+    }
+
+    // The position on both edges of the pause. "Movement stops while paused" is
+    // not provable from a screenshot: the camera keeps lerping toward the
+    // player while the overlay is up, so the view drifts whether or not the
+    // player actually moved. Comparing these two lines settles it.
+    auto componentManager = ServiceLocator::Get<StrixVerse::ECS::ComponentManager>();
+    const auto* transform =
+        componentManager
+            ? componentManager->getComponent<StrixVerse::ECS::Transform>(playerEntity_)
+            : nullptr;
+
+    if (transform)
+    {
+        LOG_INFO(std::format("GameScreen: {} at tile {:.1f},{:.1f}",
+                             paused_ ? "paused" : "resumed",
+                             PlayerLocalXToTileX(transform->position.x),
+                             PlayerLocalYToTileY(transform->position.y)));
+    }
+    else
+    {
+        LOG_INFO(paused_ ? "GameScreen: paused" : "GameScreen: resumed");
+    }
+}
+
+bool GameScreen::GameplayInputBlocked() const
+{
+    if (paused_)
+        return true;
+
+    // The same test InputSystem uses to stop the player walking while a field
+    // has focus. Movement was already suppressed there, but clicks reached the
+    // screen unconditionally, so a player could mine and build in the middle of
+    // typing a chat message.
+    auto uiManager = ServiceLocator::Get<UIManager>();
+    return uiManager && uiManager->getFocusedElement() != nullptr;
+}
+
+void GameScreen::OnMouseDown(float x, float y)
+{
+    if (!engine_ || GameplayInputBlocked())
+        return;
+
+    int32_t tileX = 0;
+    int32_t tileY = 0;
+    if (!CanvasToServerTile(x, y, tileX, tileY))
+        return;
+
+    // The wrench inspects rather than edits, so it takes the click before any
+    // world edit is considered -- otherwise inspecting someone standing on
+    // ground would also dig it out from under them.
+    if (hud_ && hud_->GetSelectedTool() == HUD::Tool::Wrench)
+    {
+        InspectPlayerAt(tileX, tileY);
+        return;
+    }
+
+    engine_->getNetworkManager().sendBlockBreak(tileX, tileY);
+}
+
+void GameScreen::OnRightMouseDown(float x, float y)
+{
+    if (!engine_ || GameplayInputBlocked())
+        return;
+
+    int32_t tileX = 0;
+    int32_t tileY = 0;
+    if (!CanvasToServerTile(x, y, tileX, tileY))
+        return;
+
+    if (hud_ && hud_->GetSelectedTool() == HUD::Tool::Wrench)
+    {
+        InspectPlayerAt(tileX, tileY);
+        return;
+    }
+
+    auto& network = engine_->getNetworkManager();
+
+    // Prefer whatever the hotbar has selected. Hotbar slots 0 and 1 are the
+    // tools, so server inventory slot N sits at hotbar slot N + 2.
+    uint16_t itemId = 0;
+    if (hud_ && hud_->GetSelectedTool() == HUD::Tool::Item)
+    {
+        const uint8_t inventorySlot =
+            static_cast<uint8_t>(hud_->GetSelectedSlot() - HUD::kFirstItemSlot);
+
+        const auto it = network.getInventory().find(inventorySlot);
+        if (it != network.getInventory().end() && !it->second.IsEmpty())
+            itemId = it->second.itemId;
+    }
+
+    // Nothing selected, or an empty slot: fall back to the first thing held,
+    // so right-click still does something sensible before anyone has chosen.
+    if (itemId == 0)
+    {
+        for (const auto& [slotIndex, slot] : network.getInventory())
+        {
+            (void)slotIndex;
+            if (!slot.IsEmpty())
+            {
+                itemId = slot.itemId;
+                break;
+            }
+        }
+    }
+
+    if (itemId == 0)
+    {
+        LOG_INFO("GameScreen: nothing in the inventory to place");
+        return;
+    }
+
+    network.sendBlockPlace(tileX, tileY, itemId);
+}
+
+void GameScreen::InspectPlayerAt(int32_t tileX, int32_t tileY)
+{
+    if (!engine_ || !hud_)
+        return;
+
+    // Nearest player within a tile of the click. The roster is in server tile
+    // space, which is what CanvasToServerTile already produced, so no
+    // conversion is needed here.
+    const NetworkManager::RemotePlayer* found = nullptr;
+    float bestDistance = 1.5f;   // tiles; a little forgiveness on the click
+
+    for (const auto& [id, player] : engine_->getNetworkManager().getRemotePlayers())
+    {
+        (void)id;
+        const float dx = player.tileX - static_cast<float>(tileX);
+        const float dy = player.tileY - static_cast<float>(tileY);
+        const float distance = std::sqrt(dx * dx + dy * dy);
+
+        if (distance < bestDistance)
+        {
+            bestDistance = distance;
+            found = &player;
+        }
+    }
+
+    if (!found)
+    {
+        hud_->ShowNotification("No player there.");
+        return;
+    }
+
+    // Name and position are everything the server actually tells us about
+    // another player -- level and health arrive only for ourselves, via
+    // CharacterData. Showing anything more would mean inventing it.
+    hud_->ShowNotification(std::format("{}  -  tile {:.0f}, {:.0f}",
+                                       found->username, found->tileX, found->tileY),
+                           4.0f);
+}
+
+void GameScreen::ApplyPendingTileEdits()
+{
+    if (!engine_ || !world_)
+        return;
+
+    const auto edits = engine_->getNetworkManager().takePendingTileEdits();
+    if (edits.empty())
+        return;
+
+    for (const auto& edit : edits)
+    {
+        // Same flip the terrain builder uses, so an edit lands on the row the
+        // player is looking at.
+        const int localRowY = (worldHeightInTiles_ - 1) - static_cast<int>(edit.tileY);
+        if (localRowY < 0)
+            continue;
+
+        StrixVerse::World::Tile::Type type{};
+        if (!ServerTileToClientType(edit.tileId, type))
+        {
+            world_->SetTileAt(static_cast<int>(edit.tileX), localRowY, 0, nullptr);
+            continue;
+        }
+
+        world_->SetTileAt(static_cast<int>(edit.tileX), localRowY, 0,
+                          std::make_shared<StrixVerse::World::Tile>(type));
+    }
+}
+
+float GameScreen::TileYToLocalY(float tileY) const
+{
+    return (static_cast<float>(worldHeightInTiles_ - 1) - tileY) * kTileSize;
+}
+
+float GameScreen::LocalYToTileY(float localY) const
+{
+    return static_cast<float>(worldHeightInTiles_ - 1) - localY / kTileSize;
+}
+
+float GameScreen::PlayerLocalXToTileX(float localX) const
+{
+    // The column the player's middle is in, not the one their left edge
+    // touches. The server rounds what it is sent, and a three-quarter-tile
+    // sprite whose left edge is reported can round into the column beside the
+    // one it is actually standing in.
+    return std::floor((localX + kPlayerWidth * 0.5f) / kTileSize);
+}
+
+float GameScreen::PlayerLocalYToTileY(float localY) const
+{
+    // The row the player's feet are in. The epsilon keeps feet resting exactly
+    // on a tile boundary in the tile above the floor rather than inside it -
+    // the same edge case CollisionSystem::kEdgeEpsilon exists for.
+    const float feet = localY + kPlayerHeight - 0.01f;
+    const float row  = std::floor(feet / kTileSize);
+
+    return static_cast<float>(worldHeightInTiles_ - 1) - row;
+}
+
+void GameScreen::PlayerTileToLocal(float tileX, float tileY,
+                                   float& outLocalX, float& outLocalY) const
+{
+    // The exact inverse of the two above: centred in the column, feet on the
+    // floor of the row.
+    outLocalX = tileX * kTileSize + (kTileSize - kPlayerWidth) * 0.5f;
+
+    const float row = static_cast<float>(worldHeightInTiles_ - 1) - tileY;
+    outLocalY = (row + 1.0f) * kTileSize - kPlayerHeight;
+}
+
+void GameScreen::BuildWorldFromServerTerrain()
+{
+    if (!world_ || !engine_)
+        return;
+
+    const auto& terrain = engine_->getNetworkManager().getTerrain();
+    if (terrain.empty())
+    {
+        LOG_WARN("GameScreen: no terrain arrived from the server; the world will be empty");
+        return;
+    }
+
+    // Size the world to the chunks actually received rather than to a constant,
+    // so a server with different world limits still renders correctly.
+    std::int32_t maxChunkX = 0;
+    std::int32_t maxChunkY = 0;
+    for (const auto& [key, chunk] : terrain)
+    {
+        (void)key;
+        maxChunkX = std::max(maxChunkX, chunk.chunkX);
+        maxChunkY = std::max(maxChunkY, chunk.chunkY);
+    }
+
+    const int widthInChunks  = static_cast<int>(maxChunkX) + 1;
+    const int heightInChunks = static_cast<int>(maxChunkY) + 1;
+
+    // Fixed before any tile is placed: TileYToLocalY pivots around it, and the
+    // rows written below use the same value.
+    worldHeightInTiles_ = heightInChunks * 16;
+
+    // Allocates the chunk grid. It also generates placeholder terrain, but
+    // every tile below is overwritten from server data, so none of it survives.
+    world_->GenerateNewWorld(widthInChunks, heightInChunks, 1);
+
+    constexpr int kChunkSize = 16;   // matches Server/src/world/Chunk.h
+    std::size_t solid = 0;
+
+    for (const auto& [key, chunk] : terrain)
+    {
+        (void)key;
+        for (int localY = 0; localY < kChunkSize; ++localY)
+        {
+            for (int localX = 0; localX < kChunkSize; ++localX)
+            {
+                const std::size_t index =
+                    static_cast<std::size_t>(localY) * kChunkSize + static_cast<std::size_t>(localX);
+                if (index >= chunk.tiles.size())
+                    continue;
+
+                const int worldX = chunk.chunkX * kChunkSize + localX;
+
+                // Flip onto screen rows. The server's Y climbs toward the sky,
+                // so writing it straight through put the ground at the top of
+                // the screen with the trees hanging downward. This is the same
+                // conversion TileYToLocalY applies to the player, expressed in
+                // whole rows.
+                const int serverY = chunk.chunkY * kChunkSize + localY;
+                const int worldY  = (worldHeightInTiles_ - 1) - serverY;
+                if (worldY < 0)
+                    continue;
+
+                // A client chunk is 16x16xCHUNK_HEIGHT and TileRendererSystem
+                // draws every layer, but the server sends a single foreground
+                // plane. Clear the upper layers explicitly: GenerateNewWorld
+                // above fills the whole grid with random placeholder terrain,
+                // and anything left behind on layers 1+ is drawn straight over
+                // the server's world.
+                for (int z = 1; z < StrixVerse::World::Chunk::GetDepth(); ++z)
+                {
+                    world_->SetTileAt(worldX, worldY, z, nullptr);
+                }
+
+                // Layer 0 is written for every cell, air included, for the same
+                // reason -- skipping air would leave the placeholder in place
+                // and the world would be solid wherever the server said sky.
+                StrixVerse::World::Tile::Type type{};
+                if (!ServerTileToClientType(chunk.tiles[index], type))
+                {
+                    world_->SetTileAt(worldX, worldY, 0, nullptr);
+                    continue;
+                }
+
+                world_->SetTileAt(worldX, worldY, 0,
+                                  std::make_shared<StrixVerse::World::Tile>(type));
+                ++solid;
+            }
+        }
+    }
+
+    LOG_INFO(std::format("GameScreen: built world from {} server chunk(s), {} solid tile(s)",
+                         terrain.size(), solid));
 }
 
 void GameScreen::InitializeWorld()
@@ -153,17 +672,11 @@ void GameScreen::InitializeWorld()
     (void)entityManager;
     (void)componentManager;
 
-    // The world starts empty and stays empty. There is no sample terrain here:
-    // its contents come from a generator or from the server's chunk packets,
-    // and inventing tiles would only mask which of those is actually running.
-    //
-    // >>> Plug a world generator in here. Anything that fills this World is
-    //     drawn automatically - TileRendererSystem reads it every frame, so no
-    //     further wiring is needed. For example:
-    //
-    //         world_->GenerateFlatWorld(4, 4, 1, Tile::Type::Grass);
-    //
+    // Terrain comes from the server. Nothing is invented locally: if the
+    // chunks did not arrive the world stays empty, which is visible rather
+    // than papered over with sample tiles.
     world_ = std::make_unique<StrixVerse::World::World>();
+    BuildWorldFromServerTerrain();
 
     // The tile renderer belongs to the Engine and outlives this screen; the
     // screen only lends it the world to draw.
@@ -188,6 +701,12 @@ void GameScreen::InitializeWorld()
     {
         LOG_ERROR("GameScreen: CollisionSystem is not registered; movement will be unbounded");
     }
+
+    // Gravity is switched on with the world and off with it. CollisionSystem
+    // does nothing while it holds no world, so gravity without one would
+    // accelerate the player downward past every tile there is.
+    if (auto playerSystem = systemManager->getSystem<StrixVerse::ECS::PlayerSystem>())
+        playerSystem->SetGravityEnabled(true);
 
     LOG_INFO(std::format("GameScreen: entered '{}' ({} x {} tiles)",
                          engine_ ? engine_->GetSelectedWorldName() : std::string(),
@@ -273,8 +792,17 @@ void GameScreen::InitializeActors()
 
     if (world_ && world_->GetWidthInTiles() > 0 && world_->GetHeightInTiles() > 0)
     {
-        spawnX = static_cast<float>(world_->GetWidthInTiles()) * 0.5f * kTileSize;
-        spawnY = static_cast<float>(world_->GetHeightInTiles()) * 0.5f * kTileSize;
+        // Tile-aligned, so the ring search below steps whole tiles and the
+        // player lands flush on whatever it finds rather than a fraction of a
+        // tile inside it. The middle of the world is usually solid rock now
+        // that terrain blocks; FindFreeSpawn searches upward first and so
+        // surfaces, and the server corrects us to the position it has stored
+        // as soon as we report this one.
+        const float centreColumn = std::floor(static_cast<float>(world_->GetWidthInTiles()) * 0.5f);
+        const float centreRow    = std::floor(static_cast<float>(world_->GetHeightInTiles()) * 0.5f);
+
+        spawnX = centreColumn * kTileSize + (kTileSize - kPlayerWidth) * 0.5f;
+        spawnY = (centreRow + 1.0f) * kTileSize - kPlayerHeight;
 
         FindFreeSpawn(spawnX, spawnY);
     }
@@ -296,14 +824,20 @@ void GameScreen::InitializeActors()
     collider.enabled = true;
     componentManager->addComponent<StrixVerse::ECS::ColliderComponent>(playerEntity_, collider);
 
-    StrixVerse::ECS::SpriteComponent sprite;
-    sprite.textureID = white->GetRendererID();
-    sprite.r = 0.31f;   // UITheme::Primary, so the player reads as "ours".
-    sprite.g = 0.55f;
-    sprite.b = 1.0f;
-    sprite.a = 1.0f;
-    sprite.layer = 10;  // Above the tiles.
-    componentManager->addComponent<StrixVerse::ECS::SpriteComponent>(playerEntity_, sprite);
+    // A character, not a coloured box. The six indices come from PlayerData,
+    // which the server sends on world join; until it arrives every index is 0,
+    // which is a valid look rather than an absent one, so the player is never
+    // invisible while waiting.
+    StrixVerse::ECS::CharacterComponent look;
+    const auto& stats = engine_->getNetworkManager().getCharacterStats();
+    look.hair     = stats.look.hair;
+    look.skin     = stats.look.skin;
+    look.eyes     = stats.look.eyes;
+    look.shirt    = stats.look.shirt;
+    look.trousers = stats.look.trousers;
+    look.boots    = stats.look.boots;
+    look.layer    = 10;  // Above the tiles.
+    componentManager->addComponent<StrixVerse::ECS::CharacterComponent>(playerEntity_, look);
 
     componentManager->addComponent<StrixVerse::ECS::VelocityComponent>(
         playerEntity_, StrixVerse::ECS::VelocityComponent{});
@@ -356,10 +890,85 @@ void GameScreen::DestroyActors()
 
 void GameScreen::Update(float deltaTime)
 {
+    // Server-accepted world edits, applied before anything reads the world.
+    ApplyPendingTileEdits();
+
+    TrackAirborne();
+
     if (hud_)
         hud_->Update(deltaTime);
 
     PublishLocalPosition(deltaTime);
+
+    // Redraw the hotbar only when the inventory actually changed, rather than
+    // rebuilding it every frame.
+    if (engine_ && engine_->getNetworkManager().getInventoryRevision() != inventoryRevision_)
+        RefreshInventory();
+
+    if (engine_ && engine_->getNetworkManager().getStatsRevision() != statsRevision_)
+        RefreshStats();
+}
+
+void GameScreen::TrackAirborne()
+{
+    auto componentManager = ServiceLocator::Get<StrixVerse::ECS::ComponentManager>();
+    if (!componentManager || playerEntity_ == StrixVerse::ECS::NULL_ENTITY)
+        return;
+
+    const auto* collider =
+        componentManager->getComponent<StrixVerse::ECS::ColliderComponent>(playerEntity_);
+    const auto* transform =
+        componentManager->getComponent<StrixVerse::ECS::Transform>(playerEntity_);
+
+    if (!collider || !transform)
+        return;
+
+    const float tileY    = PlayerLocalYToTileY(transform->position.y);
+    const bool  grounded = collider->grounded;
+
+    if (!grounded)
+    {
+        if (wasGrounded_)
+        {
+            // The take-off tile is the last one we were *standing* on, not the
+            // first one we were seen falling from. CollisionSystem writes the
+            // grounded flag on the fixed simulation step while this runs every
+            // rendered frame, so by the time the flag flips the player has
+            // already left, and a short drop was measured entirely after it
+            // had happened - the log read "fell 0" for a fall that plainly
+            // ended a tile lower than it began.
+            airborneFromY_ = groundedTileY_;
+            airbornePeakY_ = std::max(groundedTileY_, tileY);
+            airborneLowY_  = std::min(groundedTileY_, tileY);
+        }
+        else
+        {
+            airbornePeakY_ = std::max(airbornePeakY_, tileY);
+            airborneLowY_  = std::min(airborneLowY_,  tileY);
+        }
+    }
+    else if (!wasGrounded_)
+    {
+        // Fold the landing tile into the range before measuring. A one-tile
+        // drop is over in a couple of frames, and sampling only the airborne
+        // frames missed the end of it entirely - the log read "fell 0" for a
+        // fall that plainly landed a tile lower than it started.
+        airbornePeakY_ = std::max(airbornePeakY_, tileY);
+        airborneLowY_  = std::min(airborneLowY_,  tileY);
+
+        // Server Y runs upward, so a climb is a rise in tile Y and a fall is a
+        // drop. Both are reported because a jump off a ledge is both.
+        LOG_INFO(std::format("GameScreen: landed at tile Y {:.0f} - left ground at {:.0f}, "
+                             "rose {:.0f}, fell {:.0f}",
+                             tileY, airborneFromY_,
+                             airbornePeakY_ - airborneFromY_,
+                             airbornePeakY_ - airborneLowY_));
+    }
+
+    if (grounded)
+        groundedTileY_ = tileY;
+
+    wasGrounded_ = grounded;
 }
 
 void GameScreen::OnKeyDown(int key, bool, bool)
@@ -373,8 +982,11 @@ void GameScreen::OnKeyDown(int key, bool, bool)
         return;
     }
 
+    // Escape toggles the overlay. This only runs once UIManager has already
+    // consumed an Escape to clear field focus, so the two-stage behaviour is
+    // preserved: Escape while typing abandons the message, Escape again pauses.
     if (key == UIKey::Escape)
-        OnSettingsButtonClicked();
+        SetPaused(!paused_);
 }
 
 void GameScreen::SubmitChat(const std::string& message)
@@ -504,8 +1116,9 @@ void GameScreen::OnPlayerSpawn(uint64_t entityId, const std::string& username,
         return;
     }
 
-    const float x = tileX * kTileSize;
-    const float y = tileY * kTileSize;
+    float x = 0.0f;
+    float y = 0.0f;
+    PlayerTileToLocal(tileX, tileY, x, y);
 
     StrixVerse::ECS::Entity entity = entityManager->createEntity();
 
@@ -515,14 +1128,24 @@ void GameScreen::OnPlayerSpawn(uint64_t entityId, const std::string& username,
     transform.scale      = {kPlayerWidth, kPlayerHeight};
     componentManager->addComponent<StrixVerse::ECS::Transform>(entity, transform);
 
-    StrixVerse::ECS::SpriteComponent sprite;
-    sprite.textureID = playerTexture_->GetRendererID();
-    sprite.r = 0.42f;   // Purple, so other players read differently from us.
-    sprite.g = 0.36f;
-    sprite.b = 0.91f;
-    sprite.a = 1.0f;
-    sprite.layer = 9;   // Just under the local player.
-    componentManager->addComponent<StrixVerse::ECS::SpriteComponent>(entity, sprite);
+    // Their look, from the PlayerSpawn that announced them. Other players are
+    // no longer told apart by being a different colour of rectangle -- they are
+    // told apart by looking like themselves.
+    StrixVerse::ECS::CharacterComponent look;
+    for (const auto& [id, remote] : engine_->getNetworkManager().getRemotePlayers())
+    {
+        if (id != entityId)
+            continue;
+        look.hair     = remote.look.hair;
+        look.skin     = remote.look.skin;
+        look.eyes     = remote.look.eyes;
+        look.shirt    = remote.look.shirt;
+        look.trousers = remote.look.trousers;
+        look.boots    = remote.look.boots;
+        break;
+    }
+    look.layer = 9;   // Just under the local player.
+    componentManager->addComponent<StrixVerse::ECS::CharacterComponent>(entity, look);
 
     // NetworkSyncSystem copies these onto the transform each frame; nothing
     // else drives a remote player, so it has no velocity or input.
@@ -566,8 +1189,7 @@ void GameScreen::OnPlayerMove(uint64_t entityId, float tileX, float tileY)
 
     if (auto* network = componentManager->getComponent<StrixVerse::ECS::NetworkComponent>(it->second))
     {
-        network->x = tileX * kTileSize;
-        network->y = tileY * kTileSize;
+        PlayerTileToLocal(tileX, tileY, network->x, network->y);
     }
 }
 
@@ -600,8 +1222,18 @@ void GameScreen::ApplyServerCorrection(float tileX, float tileY)
     if (!transform)
         return;
 
-    transform->position.x = tileX * kTileSize;
-    transform->position.y = tileY * kTileSize;
+    PlayerTileToLocal(tileX, tileY, transform->position.x, transform->position.y);
+
+    // A correction is the server disagreeing about where we are. Keeping the
+    // velocity would carry the player straight back into whatever was
+    // rejected, so the fall or jump in progress ends here and gravity starts
+    // again from rest.
+    if (auto* velocity =
+            componentManager->getComponent<StrixVerse::ECS::VelocityComponent>(playerEntity_))
+    {
+        velocity->vx = 0.0f;
+        velocity->vy = 0.0f;
+    }
 
     // Do not immediately re-send the position we were just corrected to.
     lastSentTileX_ = tileX;
@@ -636,9 +1268,12 @@ void GameScreen::PublishLocalPosition(float deltaTime)
         return;
 
     // The server stores tile coordinates and validates against tile bounds, so
-    // the conversion has to happen here rather than on the wire.
-    const float tileX = transform->position.x / kTileSize;
-    const float tileY = transform->position.y / kTileSize;
+    // the conversion has to happen here rather than on the wire. It is the tile
+    // the player *occupies* that is reported - whole numbers, because the
+    // server rounds to a tile anyway and sending a fraction only invites the
+    // two sides to round it differently.
+    const float tileX = PlayerLocalXToTileX(transform->position.x);
+    const float tileY = PlayerLocalYToTileY(transform->position.y);
 
     if (hasSentMove_ &&
         std::fabs(tileX - lastSentTileX_) < kMoveEpsilonTiles &&
@@ -685,6 +1320,10 @@ void GameScreen::OnExit()
 
         if (auto collision = systemManager->getSystem<StrixVerse::ECS::CollisionSystem>())
             collision->SetWorld(nullptr);
+
+        // Nothing left to fall onto.
+        if (auto playerSystem = systemManager->getSystem<StrixVerse::ECS::PlayerSystem>())
+            playerSystem->SetGravityEnabled(false);
     }
 
     world_.reset();

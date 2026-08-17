@@ -98,6 +98,11 @@ float Timer::GetFixedTimestep()
     return s_FixedTimestep;
 }
 
+void Timer::DiscardOwedFixedSteps()
+{
+    s_Accumulator = 0.0;
+}
+
 bool Timer::ConsumeFixedStep()
 {
     if (s_Accumulator >= static_cast<double>(s_FixedTimestep))

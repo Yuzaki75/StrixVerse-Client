@@ -77,6 +77,11 @@ namespace
     constexpr const char* kBackgroundArtwork = "assets/ui/world_loading/nature_3/origbig.png";
 
     constexpr float kArtworkAlpha = 0.30f;
+
+    // Title theme. It keeps playing across Login and Register - those screens
+    // do not ask for anything else - and is replaced when World Selection
+    // starts its own track.
+    constexpr const char* kMusic = "assets/audio/music/Beyond_the_Iron_Gate(Splash).ogg";
 }
 
 SplashScreen::SplashScreen(Engine* engine)
@@ -94,6 +99,9 @@ void SplashScreen::OnEnter()
 
     elapsed_  = 0.0f;
     advanced_ = false;
+
+    if (engine_)
+        engine_->GetAudio().PlayMusic(kMusic);
 
     CreateRoot();
 
@@ -321,7 +329,7 @@ void SplashScreen::Advance()
         return;
 
     advanced_ = true;
-    RequestScreenChange(ScreenID::Login);
+    RequestScreenChange(ScreenID::MainMenu);
 }
 
 void SplashScreen::OnKeyDown(int, bool, bool)

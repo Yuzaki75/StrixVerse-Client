@@ -20,10 +20,17 @@ namespace StrixVerse
         // against what stopped it. Resolving X before Y is what lets an entity
         // slide along a wall instead of sticking to it.
         //
-        // A tile blocks when it exists and reports !IsWalkable(), which today
-        // means water. Change Tile's constructor to change what is solid - this
-        // system deliberately holds no opinion of its own. A null tile is empty
-        // space, so a generator carves rooms by leaving tiles unset.
+        // A tile blocks when it exists and reports IsSolid(). Change Tile's
+        // constructor to change what is solid - this system deliberately holds
+        // no opinion of its own. A null tile is empty space, so a generator
+        // carves rooms by leaving tiles unset.
+        //
+        // It also reports whether each collider is standing on something, in
+        // ColliderComponent::grounded, by probing a short way below the
+        // resolved position. PlayerSystem reads that to decide whether a jump
+        // is allowed. The probe is explicit rather than inferred from "the Y
+        // step was clamped" so that a player resting perfectly still - whose
+        // clamped step is zero either way - still reads as grounded.
         // -----------------------------------------------------------------
         class CollisionSystem : public System
         {

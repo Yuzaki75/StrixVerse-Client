@@ -54,6 +54,12 @@ public:
     // accumulated. Call in a while-loop each frame to run fixed updates.
     static bool ConsumeFixedStep();
 
+    // Throws away whatever fixed steps are still owed. Call after capping the
+    // number of steps run in one frame: a stall long enough to owe more steps
+    // than the cap allows is one the simulation should skip rather than catch
+    // up on, because catching up teleports everything that moves.
+    static void DiscardOwedFixedSteps();
+
 private:
     static float s_DeltaTime;
     static float s_FPS;

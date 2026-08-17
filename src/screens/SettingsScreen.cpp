@@ -132,6 +132,11 @@ void SettingsScreen::OnEnter()
     backButton_->addChild(backIcon);
     backButton_->setLabelInset(S(18.0f), 0.0f);
 
+    // Only offered when Settings was opened from gameplay - there is no world
+    // to leave when it was opened from the main menu.
+    if (!engine_ || engine_->GetPreviousScreenId() != ScreenID::Game)
+        return;
+
     // Leaving is destructive to the session, so it is styled as such and kept
     // clear of Back.
     leaveButton_ = std::make_shared<UIButton>();
@@ -174,6 +179,9 @@ void SettingsScreen::OnKeyDown(int key, bool, bool)
 
 void SettingsScreen::OnBackButtonClicked()
 {
-    // Settings is entered from gameplay, so that is where Back returns to.
-    RequestScreenChange(ScreenID::Game);
+    // Settings is reachable from the main menu and from gameplay, so Back
+    // returns to whichever it was. Anything else falls back to the menu.
+    const ScreenID previous = engine_ ? engine_->GetPreviousScreenId() : ScreenID::MainMenu;
+
+    RequestScreenChange(previous == ScreenID::Game ? ScreenID::Game : ScreenID::MainMenu);
 }

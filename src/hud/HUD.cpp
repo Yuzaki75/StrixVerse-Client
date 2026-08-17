@@ -1,4 +1,5 @@
 #include "HUD.h"
+#include "../core/AssetManager.h"
 #include "../core/Engine.h"
 #include "../core/Window.h"
 #include "../core/Logger.h"
@@ -12,28 +13,21 @@
 #include "../ui/UILabel.h"
 #include "../ui/UIManager.h"
 #include "../ui/UIPanel.h"
+#include "../ui/UIProgressBar.h"
 #include "../ui/UIScale.h"
 #include "../ui/UITextBox.h"
 #include "../ui/UITheme.h"
+
+#include <format>
 
 HUD::HUD(Engine* engine)
     : m_Engine(engine)
     , m_UIManager(nullptr)
     , m_HealthPanel(nullptr)
     , m_HealthLabel(nullptr)
-    , m_HealthIcon(nullptr)
-    , m_ManaPanel(nullptr)
-    , m_ManaLabel(nullptr)
-    , m_ManaIcon(nullptr)
     , m_LevelPanel(nullptr)
     , m_LevelLabel(nullptr)
     , m_ExperienceLabel(nullptr)
-    , m_CoinPanel(nullptr)
-    , m_CoinLabel(nullptr)
-    , m_CoinIcon(nullptr)
-    , m_GemPanel(nullptr)
-    , m_GemLabel(nullptr)
-    , m_GemIcon(nullptr)
     , m_ChatBackground(nullptr)
     , m_NotificationPanel(nullptr)
     , m_NotificationLabel(nullptr)
@@ -48,11 +42,9 @@ HUD::~HUD()
     if (m_UIManager)
     {
         if (m_HealthPanel) m_UIManager->removeElement(m_HealthPanel);
-        if (m_ManaPanel) m_UIManager->removeElement(m_ManaPanel);
         if (m_LevelPanel) m_UIManager->removeElement(m_LevelPanel);
-        if (m_CoinPanel) m_UIManager->removeElement(m_CoinPanel);
-        if (m_GemPanel) m_UIManager->removeElement(m_GemPanel);
         if (m_ChatBackground) m_UIManager->removeElement(m_ChatBackground);
+        if (m_InventoryBar) m_UIManager->removeElement(m_InventoryBar);
         if (m_NotificationPanel) m_UIManager->removeElement(m_NotificationPanel);
     }
     // Note: We do not delete the UI elements here because they are managed by shared_ptr.
@@ -78,10 +70,9 @@ void HUD::Initialize()
 
     // Create all HUD sections
     CreateHealthSection();
-    CreateManaSection();
     CreateLevelSection();
-    CreateCurrencySection();
     CreateChatSection();
+    CreateInventorySection();
     CreateNotificationSection();
 
     LOG_INFO("HUD initialized");
@@ -110,53 +101,54 @@ void HUD::Render()
     // unless we have custom rendering. We'll leave this empty for now.
 }
 
-void HUD::SetHealth(float current, float maximum)
+void HUD::SetStats(const Stats& stats)
 {
+    // Blank rather than zeroed: "0/0" would read as a real value.
+    if (!stats.known)
+    {
+        if (m_HealthLabel)     m_HealthLabel->setText("");
+        if (m_HealthBar)       m_HealthBar->setProgress(0.0f);
+        if (m_LevelLabel)      m_LevelLabel->setText("");
+        if (m_ExperienceLabel) m_ExperienceLabel->setText("");
+        if (m_ExperienceBar)   m_ExperienceBar->setProgress(0.0f);
+        return;
+    }
+
     if (m_HealthLabel)
-    {
-        // Format: "HP: 100/100"
-        m_HealthLabel->setText("HP: " + std::to_string((int)current) + "/" + std::to_string((int)maximum));
-    }
-}
+        m_HealthLabel->setText(std::format("{} / {}", stats.health, stats.maxHealth));
 
-void HUD::SetMana(float current, float maximum)
-{
-    if (m_ManaLabel)
+    if (m_HealthBar)
     {
-        // Format: "MP: 50/50"
-        m_ManaLabel->setText("MP: " + std::to_string((int)current) + "/" + std::to_string((int)maximum));
-    }
-}
+        const float ratio = stats.maxHealth > 0
+                                ? static_cast<float>(stats.health) /
+                                  static_cast<float>(stats.maxHealth)
+                                : 0.0f;
+        m_HealthBar->setProgress(ratio);
 
-void HUD::SetExperience(int current, int requiredForNextLevel)
-{
+        // Colour follows the same thresholds the world list uses.
+        m_HealthBar->setFillColor(ratio <= 0.25f   ? UITheme::Danger
+                                  : ratio <= 0.5f  ? UITheme::Warning
+                                                   : UITheme::Success);
+    }
+
+    if (m_LevelLabel)
+        m_LevelLabel->setText(std::format("LVL {}", stats.level));
+
     if (m_ExperienceLabel)
     {
-        m_ExperienceLabel->setText("EXP: " + std::to_string(current) + "/" + std::to_string(requiredForNextLevel));
+        m_ExperienceLabel->setText(
+            stats.experienceToNextLevel > 0
+                ? std::format("{} / {}", stats.experience, stats.experienceToNextLevel)
+                : std::format("{}", stats.experience));
     }
-}
 
-void HUD::SetLevel(int level)
-{
-    if (m_LevelLabel)
+    if (m_ExperienceBar)
     {
-        m_LevelLabel->setText("LVL: " + std::to_string(level));
-    }
-}
-
-void HUD::SetCoins(int amount)
-{
-    if (m_CoinLabel)
-    {
-        m_CoinLabel->setText(std::to_string(amount));
-    }
-}
-
-void HUD::SetGems(int amount)
-{
-    if (m_GemLabel)
-    {
-        m_GemLabel->setText(std::to_string(amount));
+        const float ratio = stats.experienceToNextLevel > 0
+                                ? static_cast<float>(stats.experience) /
+                                  static_cast<float>(stats.experienceToNextLevel)
+                                : 0.0f;
+        m_ExperienceBar->setProgress(ratio);
     }
 }
 
@@ -232,120 +224,83 @@ namespace
 
 void HUD::CreateHealthSection()
 {
+    // Caption on the left, figures on the right, bar underneath. The old
+    // version placed a UIImage with no texture where an icon should be, which
+    // simply drew nothing and left a gap.
+    const float width   = S(200.0f);
+    const float height  = S(40.0f);
+    const float padding = S(9.0f);
+
     m_HealthPanel = std::make_shared<UIPanel>();
-    m_HealthPanel->setSize(S(200.0f), S(30.0f));
+    m_HealthPanel->setSize(width, height);
     m_HealthPanel->setPosition(S(20.0f), S(20.0f));
     StyleStatPanel(m_HealthPanel);
     m_UIManager->addElement(m_HealthPanel);
 
-    m_HealthIcon = std::make_shared<UIImage>();
-    m_HealthIcon->setSize(S(18.0f), S(18.0f));
-    m_HealthIcon->setPosition(S(7.0f), S(6.0f));
-    m_HealthIcon->setColor(UITheme::Danger);
-    m_HealthPanel->addChild(m_HealthIcon);
+    auto caption = std::make_shared<UILabel>();
+    caption->setText("HP");
+    caption->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Small));
+    caption->setTextColor(UITheme::Danger);
+    caption->setPosition(padding, S(8.0f));
+    caption->setSize(S(40.0f), S(10.0f));
+    m_HealthPanel->addChild(caption);
 
     m_HealthLabel = std::make_shared<UILabel>();
-    m_HealthLabel->setText("HP: 100/100");
-    m_HealthLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Regular));
-    m_HealthLabel->setTextColor(UITheme::Text);
-    m_HealthLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
-    m_HealthLabel->setPosition(S(32.0f), 0.0f);
-    m_HealthLabel->setSize(S(160.0f), S(30.0f));
+    m_HealthLabel->setText("");
+    m_HealthLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Small));
+    m_HealthLabel->setTextColor(UITheme::Subtext);
+    m_HealthLabel->setAlignment(UILabel::Alignment::Right);
+    m_HealthLabel->setPosition(padding, S(8.0f));
+    m_HealthLabel->setSize(width - padding * 2.0f, S(10.0f));
     m_HealthPanel->addChild(m_HealthLabel);
-}
 
-void HUD::CreateManaSection()
-{
-    m_ManaPanel = std::make_shared<UIPanel>();
-    m_ManaPanel->setSize(S(200.0f), S(30.0f));
-    m_ManaPanel->setPosition(S(20.0f), S(56.0f));
-    StyleStatPanel(m_ManaPanel);
-    m_UIManager->addElement(m_ManaPanel);
-
-    m_ManaIcon = std::make_shared<UIImage>();
-    m_ManaIcon->setSize(S(18.0f), S(18.0f));
-    m_ManaIcon->setPosition(S(7.0f), S(6.0f));
-    m_ManaIcon->setColor(UITheme::Primary);
-    m_ManaPanel->addChild(m_ManaIcon);
-
-    m_ManaLabel = std::make_shared<UILabel>();
-    m_ManaLabel->setText("MP: 50/50");
-    m_ManaLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Regular));
-    m_ManaLabel->setTextColor(UITheme::Text);
-    m_ManaLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
-    m_ManaLabel->setPosition(S(32.0f), 0.0f);
-    m_ManaLabel->setSize(S(160.0f), S(30.0f));
-    m_ManaPanel->addChild(m_ManaLabel);
+    m_HealthBar = std::make_shared<UIProgressBar>();
+    m_HealthBar->setProgress(0.0f);
+    m_HealthBar->setFillColor(UITheme::Danger);
+    m_HealthBar->setGlowColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
+    m_HealthBar->setBorderRadius(S(2.0f));
+    m_HealthBar->setPosition(padding, S(24.0f));
+    m_HealthBar->setSize(width - padding * 2.0f, S(6.0f));
+    m_HealthPanel->addChild(m_HealthBar);
 }
 
 void HUD::CreateLevelSection()
 {
+    const float width   = S(200.0f);
+    const float height  = S(40.0f);
+    const float padding = S(9.0f);
+
     m_LevelPanel = std::make_shared<UIPanel>();
-    m_LevelPanel->setSize(S(150.0f), S(38.0f));
-    m_LevelPanel->setPosition(S(20.0f), S(92.0f));
+    m_LevelPanel->setSize(width, height);
+    m_LevelPanel->setPosition(S(20.0f), S(66.0f));
     StyleStatPanel(m_LevelPanel);
     m_UIManager->addElement(m_LevelPanel);
 
     m_LevelLabel = std::make_shared<UILabel>();
-    m_LevelLabel->setText("LVL: 1");
-    m_LevelLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Display, UITheme::Display::Small));
-    m_LevelLabel->setTextColor(UITheme::Text);
-    m_LevelLabel->setPosition(S(9.0f), S(7.0f));
-    m_LevelLabel->setSize(S(132.0f), S(10.0f));
+    m_LevelLabel->setText("");
+    m_LevelLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Small));
+    m_LevelLabel->setTextColor(UITheme::Accent);
+    m_LevelLabel->setPosition(padding, S(8.0f));
+    m_LevelLabel->setSize(S(80.0f), S(10.0f));
     m_LevelPanel->addChild(m_LevelLabel);
 
     m_ExperienceLabel = std::make_shared<UILabel>();
-    m_ExperienceLabel->setText("EXP: 0/100");
+    m_ExperienceLabel->setText("");
     m_ExperienceLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Small));
     m_ExperienceLabel->setTextColor(UITheme::Subtext);
-    m_ExperienceLabel->setPosition(S(9.0f), S(21.0f));
-    m_ExperienceLabel->setSize(S(132.0f), S(12.0f));
+    m_ExperienceLabel->setAlignment(UILabel::Alignment::Right);
+    m_ExperienceLabel->setPosition(padding, S(8.0f));
+    m_ExperienceLabel->setSize(width - padding * 2.0f, S(10.0f));
     m_LevelPanel->addChild(m_ExperienceLabel);
-}
 
-void HUD::CreateCurrencySection()
-{
-    m_CoinPanel = std::make_shared<UIPanel>();
-    m_CoinPanel->setSize(S(150.0f), S(30.0f));
-    m_CoinPanel->setPosition(S(20.0f), S(138.0f));
-    StyleStatPanel(m_CoinPanel);
-    m_UIManager->addElement(m_CoinPanel);
-
-    m_CoinIcon = std::make_shared<UIImage>();
-    m_CoinIcon->setSize(S(18.0f), S(18.0f));
-    m_CoinIcon->setPosition(S(7.0f), S(6.0f));
-    m_CoinIcon->setColor(UITheme::Gold);
-    m_CoinPanel->addChild(m_CoinIcon);
-
-    m_CoinLabel = std::make_shared<UILabel>();
-    m_CoinLabel->setText("0");
-    m_CoinLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Regular));
-    m_CoinLabel->setTextColor(UITheme::Gold);
-    m_CoinLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
-    m_CoinLabel->setPosition(S(32.0f), 0.0f);
-    m_CoinLabel->setSize(S(110.0f), S(30.0f));
-    m_CoinPanel->addChild(m_CoinLabel);
-
-    m_GemPanel = std::make_shared<UIPanel>();
-    m_GemPanel->setSize(S(150.0f), S(30.0f));
-    m_GemPanel->setPosition(S(20.0f), S(174.0f));
-    StyleStatPanel(m_GemPanel);
-    m_UIManager->addElement(m_GemPanel);
-
-    m_GemIcon = std::make_shared<UIImage>();
-    m_GemIcon->setSize(S(18.0f), S(18.0f));
-    m_GemIcon->setPosition(S(7.0f), S(6.0f));
-    m_GemIcon->setColor(UITheme::Accent);
-    m_GemPanel->addChild(m_GemIcon);
-
-    m_GemLabel = std::make_shared<UILabel>();
-    m_GemLabel->setText("0");
-    m_GemLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Regular));
-    m_GemLabel->setTextColor(UITheme::Accent);
-    m_GemLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
-    m_GemLabel->setPosition(S(32.0f), 0.0f);
-    m_GemLabel->setSize(S(110.0f), S(30.0f));
-    m_GemPanel->addChild(m_GemLabel);
+    m_ExperienceBar = std::make_shared<UIProgressBar>();
+    m_ExperienceBar->setProgress(0.0f);
+    m_ExperienceBar->setFillColor(UITheme::Accent);
+    m_ExperienceBar->setGlowColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
+    m_ExperienceBar->setBorderRadius(S(2.0f));
+    m_ExperienceBar->setPosition(padding, S(24.0f));
+    m_ExperienceBar->setSize(width - padding * 2.0f, S(6.0f));
+    m_LevelPanel->addChild(m_ExperienceBar);
 }
 
 void HUD::CreateChatSection()
@@ -433,6 +388,250 @@ bool HUD::IsChatInputFocused() const
 {
     return m_UIManager && m_ChatInput &&
            m_UIManager->getFocusedElement() == m_ChatInput;
+}
+
+void HUD::CreateInventorySection()
+{
+    // Ten slots along the bottom edge, clear of the world label. The design
+    // set does not specify a hotbar, so this uses the shared panel and slot
+    // tokens rather than inventing a look.
+    constexpr size_t kSlotCount = 10;
+
+    const float slotSize = S(34.0f);
+    const float gap      = S(4.0f);
+    const float padding  = S(6.0f);
+
+    const float barWidth  = static_cast<float>(kSlotCount) * slotSize +
+                            static_cast<float>(kSlotCount - 1) * gap + padding * 2.0f;
+    const float barHeight = slotSize + padding * 2.0f;
+
+    m_InventoryBar = std::make_shared<UIPanel>();
+    m_InventoryBar->setSize(barWidth, barHeight);
+    m_InventoryBar->setPosition((UIScale::kDesignWidth - barWidth) * 0.5f,
+                                UIScale::kDesignHeight - barHeight - S(64.0f));
+    m_InventoryBar->setBackgroundColor(UITheme::Hex(0x0E121E, 0.66f));
+    m_InventoryBar->setBorder(UITheme::SubtleBorder, UITheme::BorderThin);
+    m_InventoryBar->setBorderRadius(UITheme::RadiusPanel);
+    m_UIManager->addElement(m_InventoryBar);
+
+    Font* slotFont = HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Small);
+
+    m_InventorySlots.clear();
+    m_InventoryLabels.clear();
+    m_InventorySlots.reserve(kSlotCount);
+    m_InventoryLabels.reserve(kSlotCount);
+
+    for (size_t i = 0; i < kSlotCount; ++i)
+    {
+        auto slot = std::make_shared<UIPanel>();
+        slot->setSize(slotSize, slotSize);
+        slot->setPosition(padding + static_cast<float>(i) * (slotSize + gap), padding);
+        slot->setBackgroundColor(UITheme::RowBackground);
+        slot->setBorder(UITheme::SubtleBorder, UITheme::BorderThin);
+        slot->setBorderRadius(UITheme::RadiusCard);
+        m_InventoryBar->addChild(slot);
+
+        // Item identity, centred. Stands in for artwork until items have any.
+        auto label = std::make_shared<UILabel>();
+        label->setFont(slotFont);
+        label->setTextColor(UITheme::Subtext);
+        label->setAlignment(UILabel::Alignment::Center);
+        label->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
+        label->setPosition(0.0f, 0.0f);
+        label->setSize(slotSize, slotSize);
+        slot->addChild(label);
+
+        // Stack count, bottom right, as a hotbar conventionally shows it.
+        auto count = std::make_shared<UILabel>();
+        count->setFont(slotFont);
+        count->setTextColor(UITheme::Gold);
+        count->setAlignment(UILabel::Alignment::Right);
+        count->setVerticalAlignment(UILabel::VerticalAlignment::Bottom);
+        count->setPosition(0.0f, 0.0f);
+        count->setSize(slotSize - S(3.0f), slotSize - S(2.0f));
+        slot->addChild(count);
+
+        // Click target. Transparent, sized to the slot, drawn last so it sits
+        // above the labels and receives the click instead of them.
+        auto hit = std::make_shared<UIButton>();
+        hit->setPosition(0.0f, 0.0f);
+        hit->setSize(slotSize, slotSize);
+        hit->setText("");
+        const Color invisible(0.0f, 0.0f, 0.0f, 0.0f);
+        hit->setNormalColors(invisible, invisible, invisible);
+        hit->setHoverColors(UITheme::WithAlpha(UITheme::Accent, 0.12f),
+                            UITheme::WithAlpha(UITheme::Accent, 0.12f),
+                            UITheme::WithAlpha(UITheme::Accent, 0.35f));
+        hit->setBorderRadius(UITheme::RadiusCard);
+
+        const uint8_t slotIndex = static_cast<uint8_t>(i);
+        hit->setOnClick([this, slotIndex]() { SetSelectedSlot(slotIndex); });
+        slot->addChild(hit);
+
+        // Artwork sits above the slot background and below the click target,
+        // so the icon draws over the panel but the button still takes input.
+        auto icon = std::make_shared<UIImage>();
+        const float iconInset = S(4.0f);
+        icon->setPosition(iconInset, iconInset);
+        icon->setSize(slotSize - iconInset * 2.0f, slotSize - iconInset * 2.0f);
+        icon->setVisible(false);
+        slot->addChild(icon);
+
+        m_InventorySlots.push_back(slot);
+        m_InventoryLabels.push_back(label);
+        m_InventoryCounts.push_back(count);
+        m_InventoryIcons.push_back(icon);
+        m_SlotButtons.push_back(hit);
+    }
+
+    // The two permanent tools. Written straight into the labels rather than
+    // routed through SetInventory, because they are not inventory: they are
+    // always present and the server knows nothing about them.
+    if (m_InventoryLabels.size() > kWrenchSlot)
+    {
+        m_InventoryLabels[kPunchSlot]->setText("PUNCH");
+        m_InventoryLabels[kPunchSlot]->setTextColor(UITheme::Text);
+        m_InventoryLabels[kWrenchSlot]->setText("WRENCH");
+        m_InventoryLabels[kWrenchSlot]->setTextColor(UITheme::Accent);
+    }
+
+    RefreshSlotHighlight();
+}
+
+std::string HUD::IconPathForItem(uint16_t itemId)
+{
+    // Explicit table rather than arithmetic. Item ids and tile ids are related
+    // by the item's placeBlockId, which lives in the server's items.json and
+    // is not sent to the client -- and it is not a formula: 1000 places tile 1,
+    // but 1004 places tile 6. Guessing would put the wrong picture on the slot.
+    //
+    // Seeds are named by their own item id, so those map directly.
+    switch (itemId)
+    {
+    case 1000: return "assets/tiles/001_dirt.png";
+    case 1002: return "assets/tiles/002_stone.png";
+    case 1004: return "assets/tiles/006_bedrock.png";
+    case 1006: return "assets/tiles/013_lava.png";
+    case 1008: return "assets/tiles/011_copper_ore.png";
+    case 1010: return "assets/tiles/012_lantern.png";
+
+    case 1001: return "assets/items/1001_dirt_seed.png";
+    case 1003: return "assets/items/1003_rock_seed.png";
+    case 1009: return "assets/items/1009_copper_seed.png";
+    case 1011: return "assets/items/1011_lantern_seed.png";
+
+    default:   return {};
+    }
+}
+
+void HUD::SetSelectedSlot(uint8_t slot)
+{
+    if (slot >= m_InventorySlots.size())
+        return;
+
+    m_SelectedSlot = slot;
+    RefreshSlotHighlight();
+
+    if (m_OnSlotSelected)
+        m_OnSlotSelected(slot);
+}
+
+void HUD::RefreshSlotHighlight()
+{
+    for (size_t i = 0; i < m_InventorySlots.size(); ++i)
+    {
+        if (!m_InventorySlots[i])
+            continue;
+
+        const bool selected = (i == m_SelectedSlot);
+        m_InventorySlots[i]->setBorder(selected ? UITheme::Accent : UITheme::SubtleBorder,
+                                       selected ? UITheme::BorderThick : UITheme::BorderThin);
+    }
+}
+
+void HUD::SetInventory(const std::vector<InventoryEntry>& entries)
+{
+    // Clear every slot first, so a slot the server no longer reports goes
+    // back to empty instead of keeping a stale item.
+    for (size_t i = 0; i < m_InventorySlots.size(); ++i)
+    {
+        // The two tool slots are not inventory and must survive a sync;
+        // clearing them here would blank PUNCH and WRENCH every time the
+        // server sent an inventory update.
+        if (i < kFirstItemSlot)
+            continue;
+
+        if (m_InventorySlots[i])
+        {
+            m_InventorySlots[i]->setBackgroundColor(UITheme::RowBackground);
+            m_InventorySlots[i]->setBorder(UITheme::SubtleBorder, UITheme::BorderThin);
+        }
+
+        if (m_InventoryLabels[i])
+            m_InventoryLabels[i]->setText("");
+
+        if (m_InventoryCounts[i])
+            m_InventoryCounts[i]->setText("");
+
+        // Hidden rather than cleared: an icon left visible would advertise an
+        // item the player has just spent.
+        if (i < m_InventoryIcons.size() && m_InventoryIcons[i])
+            m_InventoryIcons[i]->setVisible(false);
+    }
+
+    for (const InventoryEntry& entry : entries)
+    {
+        // The server's inventory is 0-based and the first two hotbar slots are
+        // tools, so server slot 0 is drawn at hotbar slot 2. Without this shift
+        // the first inventory item lands underneath PUNCH and is invisible.
+        const size_t barSlot = static_cast<size_t>(entry.slot) + kFirstItemSlot;
+
+        if (barSlot >= m_InventorySlots.size())
+            continue;   // Beyond the visible bar.
+
+        if (auto& slot = m_InventorySlots[barSlot])
+        {
+            slot->setBackgroundColor(UITheme::WithAlpha(UITheme::Primary, 0.16f));
+            slot->setBorder(UITheme::WithAlpha(UITheme::Primary, 0.45f), UITheme::BorderThin);
+        }
+
+        // There is no item art or name table yet, so the slot shows the id and
+        // the count, which is everything the server actually tells us.
+        // Artwork where there is any, the id as a readable fallback where
+        // there is not.
+        const std::string iconPath = IconPathForItem(entry.itemId);
+        std::shared_ptr<Texture> icon;
+
+        if (!iconPath.empty())
+        {
+            if (auto assets = ServiceLocator::Get<AssetManager>())
+            {
+                // Mipmaps off: 32x32 pixel art shown small goes soft with them.
+                icon = assets->LoadTexture(iconPath, false, false);
+            }
+        }
+
+        if (icon && barSlot < m_InventoryIcons.size() && m_InventoryIcons[barSlot])
+        {
+            m_InventoryIcons[barSlot]->setTexture(std::move(icon));
+            m_InventoryIcons[barSlot]->setVisible(true);
+
+            if (auto& label = m_InventoryLabels[barSlot])
+                label->setText("");
+        }
+        else if (auto& label = m_InventoryLabels[barSlot])
+        {
+            label->setText(std::format("{}", entry.itemId));
+            label->setTextColor(UITheme::Text);
+        }
+
+        if (auto& count = m_InventoryCounts[barSlot])
+            count->setText(entry.quantity > 1 ? std::format("{}", entry.quantity) : std::string());
+    }
+
+    // Repainted last: the loop above resets borders, which would otherwise
+    // erase the selection ring.
+    RefreshSlotHighlight();
 }
 
 void HUD::CreateNotificationSection()

@@ -39,6 +39,7 @@ C:\Projects\StrixVerse\Client\src\ecs\MovementSystem.cpp;C:\Projects\StrixVerse\
 C:\Projects\StrixVerse\Client\src\ecs\NetworkSyncSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\NetworkSyncSystem.obj
 C:\Projects\StrixVerse\Client\src\ecs\PlayerSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\PlayerSystem.obj
 C:\Projects\StrixVerse\Client\src\ecs\RenderSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\RenderSystem.obj
+C:\Projects\StrixVerse\Client\src\ecs\CharacterRenderSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\CharacterRenderSystem.obj
 C:\Projects\StrixVerse\Client\src\ecs\TileRendererSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\TileRendererSystem.obj
 C:\Projects\StrixVerse\Client\src\ecs\Camera2DSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Camera2DSystem.obj
 C:\Projects\StrixVerse\Client\src\ecs\CollisionSystem.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\CollisionSystem.obj
@@ -60,6 +61,8 @@ C:\Projects\StrixVerse\Client\src\ui\UIScale.cpp;C:\Projects\StrixVerse\Client\b
 C:\Projects\StrixVerse\Client\src\screens\Screen.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\Screen.obj
 C:\Projects\StrixVerse\Client\src\screens\ScreenFactory.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\ScreenFactory.obj
 C:\Projects\StrixVerse\Client\src\screens\SplashScreen.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\SplashScreen.obj
+C:\Projects\StrixVerse\Client\src\screens\MainMenuScreen.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\MainMenuScreen.obj
+C:\Projects\StrixVerse\Client\src\screens\CreditsScreen.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\CreditsScreen.obj
 C:\Projects\StrixVerse\Client\src\screens\LoadingScreen.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\LoadingScreen.obj
 C:\Projects\StrixVerse\Client\src\screens\LoginScreen.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\LoginScreen.obj
 C:\Projects\StrixVerse\Client\src\screens\RegisterScreen.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\RegisterScreen.obj
@@ -68,4 +71,5 @@ C:\Projects\StrixVerse\Client\src\screens\ContinueScreen.cpp;C:\Projects\StrixVe
 C:\Projects\StrixVerse\Client\src\screens\WorldBrowserScreen.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\WorldBrowserScreen.obj
 C:\Projects\StrixVerse\Client\src\screens\SettingsScreen.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\SettingsScreen.obj
 C:\Projects\StrixVerse\Client\src\screens\GameScreen.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\GameScreen.obj
+C:\Projects\StrixVerse\Client\src\audio\AudioManager.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\AudioManager.obj
 C:\Projects\StrixVerse\Client\src\hud\HUD.cpp;C:\Projects\StrixVerse\Client\build\debug\StrixVerseClient.dir\Debug\HUD.obj

@@ -33,6 +33,10 @@ namespace
     constexpr float kRowPadY      = S(12.0f);
     constexpr float kPopWidth     = S(80.0f);
 
+    // World Selection has its own theme, replacing the title music.
+    constexpr const char* kMusic =
+        "assets/audio/music/Lanterns_Over_the_Lake(world Selection).ogg";
+
     std::string ToLower(std::string value)
     {
         std::transform(value.begin(), value.end(), value.begin(),
@@ -106,6 +110,9 @@ void WorldBrowserScreen::OnEnter()
     joining_ = false;
     query_.clear();
     filter_ = Filter::All;
+
+    if (engine_)
+        engine_->GetAudio().PlayMusic(kMusic);
 
     if (WorldManager* worlds = engine_ ? engine_->GetWorldManager() : nullptr)
         worlds_ = worlds->GetAvailableWorlds();

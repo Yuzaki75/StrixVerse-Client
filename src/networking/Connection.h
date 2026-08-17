@@ -55,7 +55,27 @@ public:
     static void cleanup();
 
     // Blocking connect. Returns false and sets the failure reason on error.
+    // Blocking connect. Kept for callers that genuinely want to wait; it is
+    // now beginConnect() followed by pollConnect() until the deadline.
     bool connect(const std::string& host, uint16_t port);
+
+    // Non-blocking connect, in two parts, so the caller can keep drawing
+    // frames while the socket comes up. A dead host used to stall the whole
+    // window for the full timeout with no feedback.
+    enum class ConnectProgress
+    {
+        Pending,     // still waiting; call again next frame
+        Connected,
+        Failed
+    };
+
+    // Starts resolving and connecting. Returns false if it failed outright,
+    // in which case pollConnect() must not be called.
+    bool beginConnect(const std::string& host, uint16_t port);
+
+    // Advances a pending connect without blocking. Safe to call only after a
+    // successful beginConnect().
+    ConnectProgress pollConnect();
 
     void disconnect();
 
@@ -82,6 +102,16 @@ private:
     void closeSocket();
 
     SOCKET m_socket = INVALID_SOCKET;
+
+    // Pending non-blocking connect. Held between beginConnect() and the
+    // pollConnect() that resolves it.
+    std::string           m_pendingHost;
+    uint16_t              m_pendingPort = 0;
+    std::chrono::steady_clock::time_point m_connectDeadline{};
+
+    // Shared tail of both connect paths: applies the socket options that must
+    // be set once the connection is actually up.
+    void finishConnect();
 
     std::atomic<State> m_state{State::Disconnected};
     std::atomic<bool>  m_running{false};

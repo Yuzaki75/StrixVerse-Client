@@ -37,6 +37,15 @@ public:
     // Opens a session and sends the handshake. Blocking, with a short timeout.
     bool connect(const std::string& host, uint16_t port);
 
+    // Non-blocking connect. beginConnect() returns immediately; pollConnect()
+    // is called once a frame until it stops reporting Pending. The handshake
+    // is sent automatically on success, so a Connected result means the
+    // session is ready to use.
+    using ConnectProgress = Connection::ConnectProgress;
+
+    bool            beginConnect(const std::string& host, uint16_t port);
+    ConnectProgress pollConnect();
+
     void disconnect();
 
     bool isConnected() const;
@@ -93,12 +102,25 @@ public:
     // --- Other players ----------------------------------------------------
     // One player currently in the world, as last reported by the server.
     // Coordinates are in tiles, matching the wire format.
+    // Six palette indices. Shared shape for the local player (from PlayerData)
+    // and for everyone else (from PlayerSpawn), so one renderer draws both.
+    struct Appearance
+    {
+        uint8_t hair     = 0;
+        uint8_t skin     = 0;
+        uint8_t eyes     = 0;
+        uint8_t shirt    = 0;
+        uint8_t trousers = 0;
+        uint8_t boots    = 0;
+    };
+
     struct RemotePlayer
     {
         uint64_t    id = 0;
         std::string username;
         float       tileX = 0.0f;
         float       tileY = 0.0f;
+        Appearance  look{};
     };
 
     // The roster is kept here rather than on the gameplay screen because the
@@ -117,6 +139,51 @@ public:
         return m_RemotePlayers.find(id) != m_RemotePlayers.end();
     }
 
+    // --- Character stats --------------------------------------------------
+    // The local player's own stats, as last reported. Everything here comes
+    // from the server; the client never invents a value. `known` stays false
+    // until PlayerData arrives, and the HUD leaves the fields blank until it
+    // does rather than showing a made-up starting figure.
+    struct CharacterStats
+    {
+        bool     known      = false;
+        Appearance look{};
+        int32_t  level      = 0;
+        int32_t  experience = 0;
+        uint32_t experienceToNextLevel = 0;
+        uint32_t health     = 0;
+        uint32_t maxHealth  = 0;
+    };
+
+    const CharacterStats& getCharacterStats() const { return m_Stats; }
+
+    uint32_t getStatsRevision() const { return m_StatsRevision; }
+
+    // --- Inventory --------------------------------------------------------
+    struct InventorySlot
+    {
+        uint16_t itemId     = 0;   // Zero means the slot is empty.
+        uint16_t quantity   = 0;
+        uint16_t durability = 0;
+
+        bool IsEmpty() const { return itemId == 0 || quantity == 0; }
+    };
+
+    // Asks the server for a full inventory sync. There is no outbound way to
+    // change a slot: the server rejects client-authored InventoryUpdate as a
+    // protocol violation, so every change here originates server-side.
+    bool sendInventoryRequest();
+
+    // Slots as last reported, indexed by slot number. Held here rather than on
+    // a screen because the reply can arrive during a screen change.
+    const std::unordered_map<uint8_t, InventorySlot>& getInventory() const
+    {
+        return m_Inventory;
+    }
+
+    // Bumped whenever the inventory changes, so a view can redraw only then.
+    uint32_t getInventoryRevision() const { return m_InventoryRevision; }
+
     // --- World entry ------------------------------------------------------
     // True once the server has answered a world-join request with WorldState.
     // Tracked here rather than on the loading screen because the reply can
@@ -124,6 +191,62 @@ public:
     bool isWorldConfirmed() const { return m_WorldConfirmed; }
     const std::string& getCurrentWorld() const { return m_CurrentWorld; }
     uint32_t getWorldTimeOfDay() const { return m_WorldTimeOfDay; }
+
+    // --- Terrain ----------------------------------------------------------
+    // One chunk of foreground tile ids, as delivered by the server.
+    struct TerrainChunk
+    {
+        int32_t              chunkX = 0;
+        int32_t              chunkY = 0;
+        std::vector<uint8_t> tiles;   // 16*16, row-major
+    };
+
+    // Chunks received for the current world, keyed by packed chunk
+    // coordinate. Held here for the same reason as the inventory and the
+    // player roster: the server sends the whole world immediately after
+    // WorldState, which is while the loading screen is up and seconds before
+    // GameScreen exists to receive it.
+    const std::unordered_map<uint64_t, TerrainChunk>& getTerrain() const
+    {
+        return m_Terrain;
+    }
+
+    // Bumped on every chunk received, so a consumer can tell whether the
+    // world it built is still current.
+    uint32_t getTerrainRevision() const { return m_TerrainRevision; }
+
+    // Packs a chunk coordinate into the terrain map's key.
+    static uint64_t terrainKey(int32_t chunkX, int32_t chunkY)
+    {
+        return (static_cast<uint64_t>(static_cast<uint32_t>(chunkX)) << 32) |
+                static_cast<uint32_t>(chunkY);
+    }
+
+    // --- World edits ------------------------------------------------------
+    // Asks the server to break or place a block. Neither applies anything
+    // locally: the server validates reach, rate and inventory, then broadcasts
+    // the result. Applying optimistically would let a rejected edit leave a
+    // hole only this player can see.
+    bool sendBlockBreak(int32_t tileX, int32_t tileY);
+    bool sendBlockPlace(int32_t tileX, int32_t tileY, uint16_t itemId);
+
+    // One accepted edit, as broadcast by the server.
+    struct TileEdit
+    {
+        int32_t tileX  = 0;
+        int32_t tileY  = 0;
+        uint8_t tileId = 0;   // 0 = air, i.e. the block was broken
+    };
+
+    // Edits that have arrived but not yet been applied to the drawable world.
+    // GameScreen drains this each frame; anything that arrives before it
+    // exists simply waits here.
+    std::vector<TileEdit> takePendingTileEdits()
+    {
+        std::vector<TileEdit> out;
+        out.swap(m_PendingTileEdits);
+        return out;
+    }
 
     const NetworkStatistics& getStatistics() const;
 
@@ -146,6 +269,21 @@ private:
     uint32_t    m_WorldTimeOfDay = 0;
 
     std::unordered_map<uint64_t, RemotePlayer> m_RemotePlayers;
+
+    std::unordered_map<uint8_t, InventorySlot> m_Inventory;
+    uint32_t                                   m_InventoryRevision = 0;
+
+    std::unordered_map<uint64_t, TerrainChunk> m_Terrain;
+    uint32_t                                   m_TerrainRevision = 0;
+    std::vector<TileEdit>                      m_PendingTileEdits;
+
+    // Applies an accepted edit to the stored chunk and queues it for the
+    // world. Keeping the store in step means a later rebuild from m_Terrain
+    // still reflects every edit.
+    void recordTileEdit(int32_t tileX, int32_t tileY, uint8_t tileId);
+
+    CharacterStats m_Stats;
+    uint32_t       m_StatsRevision = 0;
 
     bool        m_authenticated = false;
     uint64_t    m_playerId      = 0;

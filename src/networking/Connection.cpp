@@ -103,6 +103,34 @@ void Connection::closeSocket()
 
 bool Connection::connect(const std::string& host, uint16_t port)
 {
+    // The blocking form, expressed in terms of the non-blocking one so both
+    // share exactly one implementation of the handshake.
+    if (!beginConnect(host, port))
+        return false;
+
+    for (;;)
+    {
+        switch (pollConnect())
+        {
+        case ConnectProgress::Connected:
+            return true;
+
+        case ConnectProgress::Failed:
+            Logger::Error(std::format("Connection: failed to connect to {}:{} - {}",
+                                      host, port, getLastError()));
+            return false;
+
+        case ConnectProgress::Pending:
+            // Yield rather than spin: this path is only used where the caller
+            // has already accepted that it will wait.
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            break;
+        }
+    }
+}
+
+bool Connection::beginConnect(const std::string& host, uint16_t port)
+{
     if (m_state.load() == State::Connected)
         return true;
 
@@ -144,56 +172,90 @@ bool Connection::connect(const std::string& host, uint16_t port)
     u_long nonBlocking = 1;
     ioctlsocket(m_socket, FIONBIO, &nonBlocking);
 
-    bool connected = false;
-
-    if (::connect(m_socket, resolved->ai_addr, static_cast<int>(resolved->ai_addrlen)) == 0)
-    {
-        connected = true;
-    }
-    else if (WSAGetLastError() == WSAEWOULDBLOCK)
-    {
-        fd_set writeSet;
-        FD_ZERO(&writeSet);
-        FD_SET(m_socket, &writeSet);
-
-        timeval timeout{};
-        timeout.tv_sec  = kConnectTimeoutMs / 1000;
-        timeout.tv_usec = (kConnectTimeoutMs % 1000) * 1000;
-
-        const int ready = select(0, nullptr, &writeSet, nullptr, &timeout);
-        if (ready > 0)
-        {
-            int soError = 0;
-            int length  = sizeof(soError);
-            getsockopt(m_socket, SOL_SOCKET, SO_ERROR,
-                       reinterpret_cast<char*>(&soError), &length);
-
-            if (soError == 0)
-                connected = true;
-            else
-                setFailure(DescribeSocketError(soError));
-        }
-        else
-        {
-            setFailure("connection timed out");
-        }
-    }
-    else
-    {
-        setFailure(DescribeSocketError(WSAGetLastError()));
-    }
+    const int result = ::connect(m_socket, resolved->ai_addr,
+                                 static_cast<int>(resolved->ai_addrlen));
+    const int connectError = (result == 0) ? 0 : WSAGetLastError();
 
     freeaddrinfo(resolved);
 
-    if (!connected)
+    m_pendingHost = host;
+    m_pendingPort = port;
+    m_connectDeadline =
+        std::chrono::steady_clock::now() + std::chrono::milliseconds(kConnectTimeoutMs);
+
+    if (result == 0)
     {
+        // Connected immediately, which is normal on loopback.
+        finishConnect();
+        return true;
+    }
+
+    if (connectError != WSAEWOULDBLOCK)
+    {
+        setFailure(DescribeSocketError(connectError));
         closeSocket();
-        Logger::Error(std::format("Connection: failed to connect to {}:{} - {}",
-                                  host, port, getLastError()));
         return false;
     }
 
-    nonBlocking = 0;
+    // In progress. pollConnect() takes it from here, a frame at a time.
+    return true;
+}
+
+Connection::ConnectProgress Connection::pollConnect()
+{
+    if (m_state.load() == State::Connected)
+        return ConnectProgress::Connected;
+
+    if (m_socket == INVALID_SOCKET)
+        return ConnectProgress::Failed;
+
+    fd_set writeSet;
+    FD_ZERO(&writeSet);
+    FD_SET(m_socket, &writeSet);
+
+    fd_set errorSet;
+    FD_ZERO(&errorSet);
+    FD_SET(m_socket, &errorSet);
+
+    // Zero timeout: this asks "is it done yet" and returns immediately, which
+    // is the whole point -- the caller stays responsive.
+    timeval immediate{};
+    immediate.tv_sec  = 0;
+    immediate.tv_usec = 0;
+
+    const int ready = select(0, nullptr, &writeSet, &errorSet, &immediate);
+
+    if (ready > 0)
+    {
+        int soError = 0;
+        int length  = sizeof(soError);
+        getsockopt(m_socket, SOL_SOCKET, SO_ERROR,
+                   reinterpret_cast<char*>(&soError), &length);
+
+        if (soError != 0)
+        {
+            setFailure(DescribeSocketError(soError));
+            closeSocket();
+            return ConnectProgress::Failed;
+        }
+
+        finishConnect();
+        return ConnectProgress::Connected;
+    }
+
+    if (std::chrono::steady_clock::now() >= m_connectDeadline)
+    {
+        setFailure("connection timed out");
+        closeSocket();
+        return ConnectProgress::Failed;
+    }
+
+    return ConnectProgress::Pending;
+}
+
+void Connection::finishConnect()
+{
+    u_long nonBlocking = 0;
     ioctlsocket(m_socket, FIONBIO, &nonBlocking);
 
     // A read timeout lets the receive thread poll m_running.
@@ -218,8 +280,8 @@ bool Connection::connect(const std::string& host, uint16_t port)
     m_running.store(true);
     m_receiveThread = std::thread(&Connection::receiveThread, this);
 
-    Logger::Info(std::format("Connection: connected to {}:{}", host, port));
-    return true;
+    Logger::Info(std::format("Connection: connected to {}:{}",
+                             m_pendingHost, m_pendingPort));
 }
 
 void Connection::disconnect()

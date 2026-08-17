@@ -57,6 +57,11 @@ public:
     void SetFullscreen(bool fullscreen);
     void SetVSync(bool vsync);
 
+    // --- Audio ----------------------------------------------------------
+    // Music level, 0 (silent) to 100. Read as "musicVolume" in the config.
+    int GetMusicVolume() const;
+    void SetMusicVolume(int volume);
+
     // Path of the backing file (relative to the working directory).
     const std::string& GetFilePath() const;
 
@@ -66,6 +71,8 @@ private:
     std::string m_ServerHost = "127.0.0.1";
     int m_ServerPort = 17091;
     bool m_Offline = false;
+
+    int m_MusicVolume = 70;
 
     int m_Width = 1280;
     int m_Height = 720;

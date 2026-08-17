@@ -20,6 +20,12 @@ namespace StrixVerse
             // being inside the next tile along.
             constexpr float kEdgeEpsilon = 0.001f;
 
+            // How far below the resolved position to look for ground, in
+            // pixels. Small enough that standing at the lip of a drop reads as
+            // airborne, large enough to survive the sub-pixel gap left when a
+            // fall is clamped against a floor.
+            constexpr float kGroundProbe = 1.0f;
+
             int TileIndex(float worldCoordinate, float tileSize)
             {
                 return static_cast<int>(std::floor(worldCoordinate / tileSize));
@@ -59,7 +65,7 @@ namespace StrixVerse
             for (int z = 0; z < depth; ++z)
             {
                 const auto tile = m_World->GetTileAt(tileX, tileY, z);
-                if (tile && !tile->IsWalkable())
+                if (tile && tile->IsSolid())
                     return true;
             }
 
@@ -164,8 +170,11 @@ namespace StrixVerse
                 if (!transform || !velocity || !collider || !collider->enabled)
                     continue;
 
-                if (velocity->vx == 0.0f && velocity->vy == 0.0f)
-                    continue;
+                // A stationary entity used to be skipped here. It cannot be any
+                // more: standing still is precisely the state in which the
+                // grounded answer matters, and skipping it left the flag stale
+                // at whatever it was when the player last moved - so a jump
+                // worked once and then never again.
 
                 const float left   = transform->position.x;
                 const float top    = transform->position.y;
@@ -180,6 +189,18 @@ namespace StrixVerse
                 const float allowedY = ClampY(left + allowedX, right + allowedX,
                                               top, bottom, velocity->vy * dt);
                 velocity->vy = allowedY / dt;
+
+                // Grounded is answered from where this step ends, not from
+                // where it began, so a player who has just landed is grounded
+                // on the same frame and can jump again immediately.
+                const float restingLeft   = left   + allowedX;
+                const float restingRight  = right  + allowedX;
+                const float restingTop    = top    + allowedY;
+                const float restingBottom = bottom + allowedY;
+
+                collider->grounded =
+                    ClampY(restingLeft, restingRight, restingTop, restingBottom,
+                           kGroundProbe) < kGroundProbe;
             }
         }
     }

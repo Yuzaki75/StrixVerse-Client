@@ -27,6 +27,13 @@ namespace StrixVerse
             auto uiManager = ServiceLocator::Get<UIManager>();
             const bool typing = uiManager && uiManager->getFocusedElement() != nullptr;
 
+            // Pause joins the same condition rather than being applied after
+            // the fact. Clearing the component from GameScreen::Update did not
+            // work: this system repopulates the bitset from the live keyboard
+            // in the same frame, so the reset was simply overwritten and the
+            // player walked around behind the pause overlay.
+            const bool blocked = typing || m_GameplayPaused;
+
             // Get the current keyboard state from SDL.
             const bool *state = SDL_GetKeyboardState(nullptr);
 
@@ -39,10 +46,11 @@ namespace StrixVerse
                     {
                         continue;
                     }
-                    if (typing)
+                    if (blocked)
                     {
                         // Report every key as released, so anything already
-                        // held stops the moment the field takes focus.
+                        // held stops the moment the field takes focus or the
+                        // game pauses.
                         input->keys.reset();
                         continue;
                     }

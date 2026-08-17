@@ -2,6 +2,7 @@
 
 #include "ComponentManager.h"
 #include "EntityManager.h"
+#include "../core/AssetManager.h"
 #include "../core/Engine.h"
 #include "../core/Logger.h"
 #include "../core/ServiceLocator.h"
@@ -53,6 +54,37 @@ namespace StrixVerse
             {
                 const auto type = static_cast<StrixVerse::World::Tile::Type>(i);
                 m_TileTextures[type] = CreateTileTexture(type);
+            }
+
+            // Vertical slice: one real sprite alongside four generated colours.
+            //
+            // The art the server ships is 32x32, named by tile id, and matches
+            // kTileSize exactly. Before keying the whole renderer on tile id --
+            // which means carrying that id through the world build instead of
+            // collapsing it onto five types -- this proves the parts that
+            // actually carry risk: that AssetManager loads and caches the file,
+            // that the blend state suits finished art, and that the UVs are the
+            // right way up after the loader stopped flipping images.
+            //
+            // If dirt draws correctly next to flat-coloured stone, the path is
+            // proven and the rest is mechanical. If it does not, this is one
+            // line to remove.
+            if (auto assets = ServiceLocator::Get<AssetManager>())
+            {
+                // LoadTexture, not GetTexture: the latter only consults the
+                // cache and returns null for anything not already loaded.
+                // Mipmaps off: these are 32x32 pixel art drawn at 1:1, and
+                // minification filtering is what turns crisp pixels to mush.
+                if (auto sprite = assets->LoadTexture("assets/tiles/001_dirt.png", false, false))
+                {
+                    m_TileTextures[StrixVerse::World::Tile::Type::Dirt] = std::move(sprite);
+                    LOG_INFO("TileRendererSystem: dirt is using the server sprite");
+                }
+                else
+                {
+                    LOG_WARN("TileRendererSystem: assets/tiles/001_dirt.png did not load; "
+                             "keeping the generated colour");
+                }
             }
 
             LOG_INFO("TileRendererSystem: initialised");

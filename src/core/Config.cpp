@@ -134,6 +134,8 @@ bool Config::Load()
     ParseString(json, "host", m_ServerHost);
     ParseBool(json, "offline", m_Offline);
 
+    ParseInt(json, "musicVolume", m_MusicVolume);
+
     Validate();
 
     return true;
@@ -189,6 +191,12 @@ bool Config::Validate()
     m_Width = width;
     m_Height = height;
 
+    const int volume = std::clamp(m_MusicVolume, 0, 100);
+    if (volume != m_MusicVolume)
+        valid = false;
+
+    m_MusicVolume = volume;
+
     return valid;
 }
 
@@ -209,6 +217,13 @@ void Config::SetServerHost(const std::string& host)
 {
     if (!host.empty())
         m_ServerHost = host;
+}
+
+int Config::GetMusicVolume() const { return m_MusicVolume; }
+
+void Config::SetMusicVolume(int volume)
+{
+    m_MusicVolume = std::clamp(volume, 0, 100);
 }
 
 bool Config::IsOfflineMode() const { return m_Offline; }

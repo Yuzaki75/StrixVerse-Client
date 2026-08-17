@@ -15,6 +15,8 @@
 #include "../ui/UITheme.h"
 
 #include <array>
+#include <filesystem>
+#include <fstream>
 
 namespace
 {
@@ -415,9 +417,96 @@ void LoginScreen::BuildForm(float columnX, float columnWidth)
     statusLabel_->setSize(contentWidth, S(14.0f));
     panel->addChild(statusLabel_);
 
+    // Restore the remembered sign-in, if there is one. Only the username comes
+    // back; the password is never stored, so focus goes to the password field
+    // rather than the username field when one is restored.
+    const std::string remembered = LoadRememberedUsername();
+    if (!remembered.empty() && usernameBox_)
+    {
+        usernameBox_->setText(remembered);
+
+        // Clicking the field means the player wants a different account, so
+        // the restored name is replaced rather than typed over.
+        usernameBox_->setClearOnNextFocus(true);
+
+        if (rememberBox_)
+            rememberBox_->setChecked(true);
+
+        if (uiManager_ && passwordBox_)
+            uiManager_->setFocusedElement(passwordBox_);
+
+        return;
+    }
+
     // Start with the username field ready for typing.
     if (uiManager_ && usernameBox_)
         uiManager_->setFocusedElement(usernameBox_);
+}
+
+// -----------------------------------------------------------------------------
+// Remembered sign-in
+// -----------------------------------------------------------------------------
+// The username only. Storing the password would mean writing a credential to
+// disk in plaintext next to the executable, which is worse than the typing it
+// saves -- a "stay signed in" that skips the password entirely wants the
+// server's session token, not the password itself.
+
+std::string LoginScreen::RememberedLoginPath()
+{
+    return "saves/remembered_login.txt";
+}
+
+std::string LoginScreen::LoadRememberedUsername()
+{
+    std::ifstream file(RememberedLoginPath());
+    if (!file.is_open())
+        return {};
+
+    std::string line;
+    while (std::getline(file, line))
+    {
+        constexpr const char* kKey = "username=";
+        constexpr std::size_t kKeyLength = 9;
+
+        if (line.rfind(kKey, 0) == 0)
+        {
+            std::string value = line.substr(kKeyLength);
+
+            // Written on Windows, so a stray carriage return is likely.
+            while (!value.empty() && (value.back() == '\r' || value.back() == '\n'))
+                value.pop_back();
+
+            return value;
+        }
+    }
+
+    return {};
+}
+
+void LoginScreen::SaveRememberedUsername(const std::string& username)
+{
+    std::error_code ec;
+    std::filesystem::create_directories("saves", ec);
+    if (ec)
+    {
+        LOG_WARN("LoginScreen: could not create the saves directory; sign-in will not be remembered");
+        return;
+    }
+
+    std::ofstream file(RememberedLoginPath(), std::ios::trunc);
+    if (!file.is_open())
+    {
+        LOG_WARN("LoginScreen: could not write the remembered sign-in");
+        return;
+    }
+
+    file << "username=" << username << '\n';
+}
+
+void LoginScreen::ClearRememberedUsername()
+{
+    std::error_code ec;
+    std::filesystem::remove(RememberedLoginPath(), ec);
 }
 
 void LoginScreen::SetStatus(const std::string& message, const Color& color)
@@ -485,13 +574,16 @@ void LoginScreen::Submit()
 
     SetBusy(true);
 
-    // The session has to exist before credentials can be sent. Connecting is
-    // blocking with a short timeout, so report it while it happens.
+    // The session has to exist before credentials can be sent. Connecting no
+    // longer blocks: the window keeps drawing and Update() below drives it to
+    // completion. Previously this stalled the whole client for the connect
+    // timeout, so a wrong host in client.json looked like a frozen window
+    // rather than an error.
     if (!engine_->IsOfflineMode() && !engine_->getNetworkManager().isConnected())
     {
         SetStatus("Connecting to server...", UITheme::Accent);
 
-        if (!engine_->ConnectToServer())
+        if (!engine_->BeginConnectToServer())
         {
             const std::string reason = engine_->getNetworkManager().getLastError();
             SetBusy(false);
@@ -500,6 +592,14 @@ void LoginScreen::Submit()
                       UITheme::Danger);
             return;
         }
+
+        // Credentials are held until the socket is up. They are not sent to
+        // AuthService yet, so nothing leaves the machine until there is a
+        // connection to send it on.
+        connecting_       = true;
+        pendingUsername_  = username;
+        pendingPassword_  = password;
+        return;
     }
 
     SetStatus("Authenticating...", UITheme::Accent);
@@ -507,15 +607,64 @@ void LoginScreen::Submit()
     auth->BeginLogin(username, password);
 }
 
+void LoginScreen::UpdateConnect()
+{
+    if (!connecting_ || !engine_)
+        return;
+
+    switch (engine_->PollConnectToServer())
+    {
+    case Engine::ConnectProgress::Pending:
+        return;   // still dialling; try again next frame
+
+    case Engine::ConnectProgress::Failed:
+    {
+        connecting_ = false;
+        pendingPassword_.clear();
+
+        const std::string reason = engine_->getNetworkManager().getLastError();
+        SetBusy(false);
+        SetStatus(reason.empty() ? "Could not reach the server."
+                                 : "Server unreachable: " + reason,
+                  UITheme::Danger);
+        return;
+    }
+
+    case Engine::ConnectProgress::Connected:
+        break;
+    }
+
+    connecting_ = false;
+
+    AuthService* auth = engine_->GetAuthService();
+    if (!auth)
+    {
+        pendingPassword_.clear();
+        SetBusy(false);
+        SetStatus("Authentication service unavailable.", UITheme::Danger);
+        return;
+    }
+
+    SetStatus("Authenticating...", UITheme::Accent);
+    auth->BeginLogin(pendingUsername_, pendingPassword_);
+
+    // Not kept a moment longer than needed.
+    pendingPassword_.clear();
+}
+
 void LoginScreen::Update(float deltaTime)
 {
+    // Advances a pending connect. Runs before the auth check below because
+    // until the socket is up there is no login in flight to report on.
+    UpdateConnect();
+
     AuthService* auth = engine_ ? engine_->GetAuthService() : nullptr;
     if (!auth)
         return;
 
     auth->Update(deltaTime);
 
-    if (!submitting_)
+    if (!submitting_ || connecting_)
         return;
 
     switch (auth->GetStatus())
@@ -526,6 +675,14 @@ void LoginScreen::Update(float deltaTime)
 
         if (engine_)
             engine_->SetSignedInUser(auth->GetUsername());
+
+        // Only persisted on success, so a failed attempt never leaves a
+        // remembered name behind. Unchecking the box clears a previously
+        // remembered one rather than merely declining to update it.
+        if (rememberBox_ && rememberBox_->isChecked())
+            SaveRememberedUsername(auth->GetUsername());
+        else
+            ClearRememberedUsername();
 
         // The Connecting screen owns the rest of the sign-in sequence.
         RequestScreenChange(ScreenID::Connecting);

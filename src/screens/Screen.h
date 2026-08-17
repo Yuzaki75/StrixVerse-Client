@@ -55,6 +55,12 @@ public:
     virtual void OnKeyDown(int key, bool ctrl, bool shift);
     virtual void OnMouseDown(float x, float y);
 
+    // Right button. Separate from OnMouseDown because the button that fired
+    // the event is the only reliable source: polling SDL for the current
+    // button mask reports whatever happens to be held at that instant, which
+    // made a right-click read as a left-click whenever both were pressed.
+    virtual void OnRightMouseDown(float x, float y);
+
     // True while the screen wants raw key/mouse notifications even when a UI
     // element is focused. Only the splash screen needs this.
     virtual bool WantsRawInput() const { return false; }

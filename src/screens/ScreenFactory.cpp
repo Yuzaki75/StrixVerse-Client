@@ -1,10 +1,12 @@
 #include "ScreenFactory.h"
 
 #include "ConnectingScreen.h"
+#include "CreditsScreen.h"
 #include "ContinueScreen.h"
 #include "GameScreen.h"
 #include "LoadingScreen.h"
 #include "LoginScreen.h"
+#include "MainMenuScreen.h"
 #include "RegisterScreen.h"
 #include "SettingsScreen.h"
 #include "SplashScreen.h"
@@ -16,6 +18,10 @@ std::unique_ptr<Screen> ScreenFactory::CreateScreen(ScreenID id, Engine* engine)
     {
         case ScreenID::Splash:
             return std::make_unique<SplashScreen>(engine);
+        case ScreenID::MainMenu:
+            return std::make_unique<MainMenuScreen>(engine);
+        case ScreenID::Credits:
+            return std::make_unique<CreditsScreen>(engine);
         case ScreenID::Login:
             return std::make_unique<LoginScreen>(engine);
         case ScreenID::Register:

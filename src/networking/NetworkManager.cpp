@@ -3,9 +3,12 @@
 #include "ChatMessagePacket.h"
 #include "DisconnectPacket.h"
 #include "HandshakePacket.h"
+#include "InventoryPacket.h"
+#include "InventoryUpdatePacket.h"
 #include "LoginPacket.h"
 #include "PacketRegistry.h"
 #include "PingPacket.h"
+#include "PlayerDataPacket.h"
 #include "PlayerMovePacket.h"
 #include "PlayerRemovePacket.h"
 #include "PlayerSpawnPacket.h"
@@ -13,6 +16,9 @@
 #include "RegisterPacket.h"
 #include "WorldJoinPacket.h"
 #include "WorldLeavePacket.h"
+#include "BlockBreakPacket.h"
+#include "BlockPlacePacket.h"
+#include "ChunkLoadPacket.h"
 #include "WorldStatePacket.h"
 #include "../core/Logger.h"
 #include "../core/Version.h"
@@ -96,6 +102,64 @@ bool NetworkManager::initialize()
                                          state->WorldName));
             }));
 
+    // Terrain. The server sends the whole playable world immediately after
+    // WorldState, so these arrive while the loading screen is up. Collected
+    // here and handed to GameScreen when it is built.
+    m_dispatcher->addHandler(
+        Opcode::ChunkLoad,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* load = static_cast<const ChunkLoadPacket*>(packet.get());
+
+                // A short chunk would leave holes that read as walkable air,
+                // so a partial chunk is dropped rather than half-applied.
+                if (load->Tiles.size() != ChunkLoadPacket::kTileCount)
+                {
+                    Logger::Warning(std::format(
+                        "NetworkManager: chunk ({}, {}) carried {} tiles, expected {}; ignored.",
+                        load->ChunkX, load->ChunkY,
+                        load->Tiles.size(), ChunkLoadPacket::kTileCount));
+                    return;
+                }
+
+                TerrainChunk chunk;
+                chunk.chunkX = load->ChunkX;
+                chunk.chunkY = load->ChunkY;
+                chunk.tiles  = load->Tiles;
+
+                m_Terrain[terrainKey(load->ChunkX, load->ChunkY)] = std::move(chunk);
+                ++m_TerrainRevision;
+            }));
+
+    // World edits, echoed by the server once accepted. These arrive for edits
+    // made by anyone, including this client -- the server is the only thing
+    // that decides an edit happened.
+    m_dispatcher->addHandler(
+        Opcode::BlockBreak,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* broken = static_cast<const BlockBreakPacket*>(packet.get());
+                recordTileEdit(broken->X, broken->Y, 0);   // 0 = air
+            }));
+
+    m_dispatcher->addHandler(
+        Opcode::BlockPlace,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* placed = static_cast<const BlockPlacePacket*>(packet.get());
+
+                // The wire carries the ITEM id, and the world stores TILE ids.
+                // They coincide for the block items the generator uses, so the
+                // value is passed through; anything that does not fit a byte
+                // is clamped rather than wrapping into an unrelated tile.
+                const uint16_t itemId = placed->ItemID;
+                recordTileEdit(placed->X, placed->Y,
+                               static_cast<uint8_t>(itemId > 255 ? 255 : itemId));
+            }));
+
     // The roster is maintained here so it survives the screen change between
     // joining a world and the gameplay screen being built.
     m_dispatcher->addHandler(
@@ -110,6 +174,16 @@ bool NetworkManager::initialize()
                 entry.username = spawn->Username;
                 entry.tileX    = spawn->X;
                 entry.tileY    = spawn->Y;
+
+                // What they look like. The server sends this with the spawn
+                // and the client used to stop reading before it, so everyone
+                // else was drawn identically.
+                entry.look.hair     = spawn->Appearance.hair;
+                entry.look.skin     = spawn->Appearance.skin;
+                entry.look.eyes     = spawn->Appearance.eyes;
+                entry.look.shirt    = spawn->Appearance.shirt;
+                entry.look.trousers = spawn->Appearance.trousers;
+                entry.look.boots    = spawn->Appearance.boots;
             }));
 
     m_dispatcher->addHandler(
@@ -136,6 +210,86 @@ bool NetworkManager::initialize()
 
                 it->second.tileX = move->X;
                 it->second.tileY = move->Y;
+            }));
+
+    // Character stats. Sent on world join, which happens while the loading
+    // screen is up, so this is recorded here rather than on the HUD.
+    m_dispatcher->addHandler(
+        Opcode::PlayerData,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* data = static_cast<const PlayerDataPacket*>(packet.get());
+
+                m_Stats.known      = true;
+                m_Stats.look.hair     = data->Appearance.hair;
+                m_Stats.look.skin     = data->Appearance.skin;
+                m_Stats.look.eyes     = data->Appearance.eyes;
+                m_Stats.look.shirt    = data->Appearance.shirt;
+                m_Stats.look.trousers = data->Appearance.trousers;
+                m_Stats.look.boots    = data->Appearance.boots;
+                m_Stats.level      = data->Level;
+                m_Stats.experience = data->Experience;
+                m_Stats.experienceToNextLevel = data->ExperienceToNextLevel;
+                m_Stats.health     = data->Health;
+                m_Stats.maxHealth  = data->MaxHealth;
+
+                ++m_StatsRevision;
+
+                Logger::Info(std::format("NetworkManager: stats - level {}, xp {}, hp {}/{}.",
+                                         data->Level, data->Experience,
+                                         data->Health, data->MaxHealth));
+            }));
+
+    // Inventory, kept here for the same reason as the roster: the reply to the
+    // request can land while a screen change is in flight.
+    m_dispatcher->addHandler(
+        Opcode::Inventory,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* inventory = static_cast<const InventoryPacket*>(packet.get());
+
+                // A full sync replaces what we had; slots absent from it are
+                // empty, not merely unchanged.
+                m_Inventory.clear();
+
+                for (const auto& entry : inventory->DecodeSlots())
+                {
+                    if (entry.itemId == 0)
+                        continue;
+
+                    InventorySlot& slot = m_Inventory[entry.slot];
+                    slot.itemId   = entry.itemId;
+                    slot.quantity = entry.quantity;
+                }
+
+                ++m_InventoryRevision;
+
+                Logger::Info(std::format("NetworkManager: inventory synced, {} occupied slot(s).",
+                                         m_Inventory.size()));
+            }));
+
+    m_dispatcher->addHandler(
+        Opcode::InventoryUpdate,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* update = static_cast<const InventoryUpdatePacket*>(packet.get());
+
+                if (update->ItemID == 0 || update->Quantity == 0)
+                {
+                    m_Inventory.erase(update->SlotIndex);
+                }
+                else
+                {
+                    InventorySlot& slot = m_Inventory[update->SlotIndex];
+                    slot.itemId     = update->ItemID;
+                    slot.quantity   = update->Quantity;
+                    slot.durability = update->Durability;
+                }
+
+                ++m_InventoryRevision;
             }));
 
     // A Disconnect is the server explaining why it is closing the session.
@@ -179,6 +333,51 @@ bool NetworkManager::connect(const std::string& host, uint16_t port)
     }
 
     return true;
+}
+
+bool NetworkManager::beginConnect(const std::string& host, uint16_t port)
+{
+    if (!m_initialized || !m_connection)
+    {
+        Logger::Error("NetworkManager: beginConnect called before initialize.");
+        return false;
+    }
+
+    m_host = host;
+    m_port = port;
+
+    clearSession();
+
+    return m_connection->beginConnect(host, port);
+}
+
+NetworkManager::ConnectProgress NetworkManager::pollConnect()
+{
+    if (!m_connection)
+        return ConnectProgress::Failed;
+
+    switch (m_connection->pollConnect())
+    {
+    case Connection::ConnectProgress::Pending:
+        return ConnectProgress::Pending;
+
+    case Connection::ConnectProgress::Failed:
+        return ConnectProgress::Failed;
+
+    case Connection::ConnectProgress::Connected:
+        break;
+    }
+
+    // The socket is up. The handshake is the first frame of a session and has
+    // to go out before the caller treats the connection as usable, so it is
+    // sent here rather than left to the caller to remember.
+    if (!sendHandshake())
+    {
+        m_connection->disconnect();
+        return ConnectProgress::Failed;
+    }
+
+    return ConnectProgress::Connected;
 }
 
 void NetworkManager::disconnect()
@@ -263,6 +462,20 @@ bool NetworkManager::sendWorldJoin(const std::string& worldName)
     return sendPacket(packet);
 }
 
+bool NetworkManager::sendInventoryRequest()
+{
+    if (!isConnected())
+        return false;
+
+    auto packet = std::make_shared<InventoryPacket>();
+
+    // The server answers for the connection's own player and ignores both
+    // fields; they are set only so nothing goes out uninitialised.
+    packet->PlayerID = m_playerId;
+
+    return sendPacket(packet);
+}
+
 bool NetworkManager::sendWorldLeave()
 {
     // Leaving invalidates the world confirmation and everyone we could see.
@@ -312,6 +525,66 @@ bool NetworkManager::sendPlayerMove(float tileX, float tileY,
     packet->VelocityZ = 0.0f;
 
     return sendPacket(packet);
+}
+
+bool NetworkManager::sendBlockBreak(int32_t tileX, int32_t tileY)
+{
+    if (!isConnected())
+        return false;
+
+    auto packet = std::make_shared<BlockBreakPacket>();
+    packet->X = tileX;
+    packet->Y = tileY;
+    packet->Z = 0;          // foreground layer
+    packet->ToolID = 0;     // bare hands until tools are selectable
+    packet->Face = 0;
+
+    return sendPacket(packet);
+}
+
+bool NetworkManager::sendBlockPlace(int32_t tileX, int32_t tileY, uint16_t itemId)
+{
+    if (!isConnected())
+        return false;
+
+    auto packet = std::make_shared<BlockPlacePacket>();
+    packet->X = tileX;
+    packet->Y = tileY;
+    packet->Z = 0;
+    packet->ItemID = itemId;
+    packet->Face = 0;
+
+    return sendPacket(packet);
+}
+
+void NetworkManager::recordTileEdit(int32_t tileX, int32_t tileY, uint8_t tileId)
+{
+    constexpr int32_t kChunkSize = 16;
+
+    // Floor division, not truncation: a negative coordinate would otherwise
+    // land in the wrong chunk. The server should never send one, but this is
+    // network input and the cost of being right is a comparison.
+    const int32_t chunkX = (tileX >= 0) ? tileX / kChunkSize
+                                        : ((tileX + 1) / kChunkSize) - 1;
+    const int32_t chunkY = (tileY >= 0) ? tileY / kChunkSize
+                                        : ((tileY + 1) / kChunkSize) - 1;
+
+    auto it = m_Terrain.find(terrainKey(chunkX, chunkY));
+    if (it != m_Terrain.end())
+    {
+        const int32_t localX = tileX - chunkX * kChunkSize;
+        const int32_t localY = tileY - chunkY * kChunkSize;
+        const std::size_t index =
+            static_cast<std::size_t>(localY) * kChunkSize + static_cast<std::size_t>(localX);
+
+        if (index < it->second.tiles.size())
+        {
+            it->second.tiles[index] = tileId;
+        }
+    }
+
+    m_PendingTileEdits.push_back(TileEdit{tileX, tileY, tileId});
+    ++m_TerrainRevision;
 }
 
 void NetworkManager::addPacketHandler(Opcode opcode, const std::shared_ptr<PacketHandler>& handler)
@@ -370,6 +643,12 @@ void NetworkManager::clearSession()
     m_CurrentWorld.clear();
     m_WorldTimeOfDay = 0;
     m_RemotePlayers.clear();
+
+    m_Inventory.clear();
+    ++m_InventoryRevision;
+
+    m_Stats = CharacterStats{};
+    ++m_StatsRevision;
 
     m_authenticated = false;
     m_playerId      = 0;

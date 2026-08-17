@@ -3,17 +3,23 @@
 #include "ChatMessagePacket.h"
 #include "DisconnectPacket.h"
 #include "HandshakePacket.h"
+#include "InventoryPacket.h"
+#include "InventoryUpdatePacket.h"
 #include "KeepAlivePacket.h"
 #include "LoginFailedPacket.h"
 #include "LoginPacket.h"
 #include "LoginSuccessPacket.h"
 #include "PingPacket.h"
+#include "PlayerDataPacket.h"
 #include "PlayerMovePacket.h"
 #include "PlayerRemovePacket.h"
 #include "PlayerSpawnPacket.h"
 #include "PongPacket.h"
 #include "RegisterPacket.h"
 #include "WorldJoinPacket.h"
+#include "BlockBreakPacket.h"
+#include "BlockPlacePacket.h"
+#include "ChunkLoadPacket.h"
 #include "WorldStatePacket.h"
 
 std::unordered_map<Opcode, PacketRegistry::CreatorFunc>& PacketRegistry::getMap()
@@ -69,10 +75,24 @@ void PacketRegistry::registerAllPacketTypes()
     add(Opcode::WorldJoin,  [] { return std::make_shared<WorldJoinPacket>(); });
     add(Opcode::WorldState, [] { return std::make_shared<WorldStatePacket>(); });
 
+    // Terrain. ChunkLoad is inbound only; the client never sends terrain.
+    add(Opcode::ChunkLoad,  [] { return std::make_shared<ChunkLoadPacket>(); });
+
+    // World edits. These travel both ways: the client sends an intent, and the
+    // server broadcasts the same packet type back once it has accepted it.
+    add(Opcode::BlockBreak, [] { return std::make_shared<BlockBreakPacket>(); });
+    add(Opcode::BlockPlace, [] { return std::make_shared<BlockPlacePacket>(); });
+
     // Player replication
     add(Opcode::PlayerSpawn,  [] { return std::make_shared<PlayerSpawnPacket>(); });
     add(Opcode::PlayerMove,   [] { return std::make_shared<PlayerMovePacket>(); });
     add(Opcode::PlayerRemove, [] { return std::make_shared<PlayerRemovePacket>(); });
+    add(Opcode::PlayerData,   [] { return std::make_shared<PlayerDataPacket>(); });
+
+    // Inventory. InventoryUpdate is inbound only - the server disconnects a
+    // client that sends one - but it still needs an entry here to be decoded.
+    add(Opcode::Inventory,       [] { return std::make_shared<InventoryPacket>(); });
+    add(Opcode::InventoryUpdate, [] { return std::make_shared<InventoryUpdatePacket>(); });
 
     // Chat
     add(Opcode::ChatMessage, [] { return std::make_shared<ChatMessagePacket>(); });

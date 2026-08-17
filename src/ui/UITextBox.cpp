@@ -185,6 +185,15 @@ void UITextBox::onFocusGained()
 {
     hasFocus_   = true;
     caretTimer_ = 0.0f;
+
+    // A restored value the player did not type is replaced rather than
+    // appended to. Consumed on use, so this only applies to the first focus.
+    if (clearOnNextFocus_)
+    {
+        clearOnNextFocus_ = false;
+        text_.clear();
+    }
+
     caretIndex_ = text_.size();
 }
 

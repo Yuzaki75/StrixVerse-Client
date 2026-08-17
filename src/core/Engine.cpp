@@ -26,6 +26,7 @@
 #include "ecs/PlayerComponent.h"
 #include "ecs/PlayerSystem.h"
 #include "ecs/RenderSystem.h"
+#include "ecs/CharacterRenderSystem.h"
 #include "ecs/SpriteComponent.h"
 #include "ecs/SystemManager.h"
 #include "ecs/TileRendererSystem.h"
@@ -38,6 +39,11 @@
 
 namespace
 {
+    // Most fixed simulation steps run for a single rendered frame. Timer
+    // already clamps a frame to 0.25s, so this only bites after a stall long
+    // enough that catching up would be worse than skipping.
+    constexpr int kMaxFixedStepsPerFrame = 8;
+
     // Translates SDL key codes into the UI's own key enum so nothing under
     // ui/ or screens/ has to include SDL.
     int TranslateKey(SDL_Keycode key)
@@ -85,6 +91,11 @@ bool Engine::Initialize(Window* window, Config* config)
 
     m_Window = window;
     m_Config = config;
+
+    // The device itself is not opened until a screen asks for a track.
+    m_Audio.SetMusicVolume(m_Config
+                               ? static_cast<float>(m_Config->GetMusicVolume()) / 100.0f
+                               : 0.7f);
 
     Timer::Initialize();
 
@@ -180,6 +191,13 @@ bool Engine::Initialize(Window* window, Config* config)
     auto renderSystem = m_pSystemManager->createSystem<StrixVerse::ECS::RenderSystem>();
     m_pSystemManager->addSystem(renderSystem);
 
+    // After RenderSystem, so characters draw over ordinary sprites. Players
+    // carry a CharacterComponent instead of a SpriteComponent, so the two
+    // systems never draw the same entity twice.
+    auto characterRenderSystem =
+        m_pSystemManager->createSystem<StrixVerse::ECS::CharacterRenderSystem>();
+    m_pSystemManager->addSystem(characterRenderSystem);
+
     m_UIManager = std::make_shared<UIManager>();
     ServiceLocator::Provide(m_UIManager);
 
@@ -230,6 +248,30 @@ bool Engine::ConnectToServer()
     Logger::Info(std::format("Engine: connecting to {}:{}...", host, port));
 
     return m_NetworkManager.connect(host, port);
+}
+
+bool Engine::BeginConnectToServer()
+{
+    if (IsOfflineMode())
+        return false;
+
+    if (m_NetworkManager.isConnected())
+        return true;
+
+    const std::string host = m_Config ? m_Config->GetServerHost() : std::string("127.0.0.1");
+    const uint16_t    port = static_cast<uint16_t>(m_Config ? m_Config->GetServerPort() : 17091);
+
+    Logger::Info(std::format("Engine: connecting to {}:{}...", host, port));
+
+    return m_NetworkManager.beginConnect(host, port);
+}
+
+Engine::ConnectProgress Engine::PollConnectToServer()
+{
+    if (m_NetworkManager.isConnected())
+        return ConnectProgress::Connected;
+
+    return m_NetworkManager.pollConnect();
 }
 
 void Engine::Run()
@@ -309,16 +351,30 @@ void Engine::ProcessEvents()
 
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
         {
-            if (event.button.button != SDL_BUTTON_LEFT)
+            // Left and right both reach the screen; anything else is ignored.
+            // Right-click used to be dropped here, which is why placing a
+            // block sent nothing at all -- the screen never heard about it.
+            const bool isLeft  = (event.button.button == SDL_BUTTON_LEFT);
+            const bool isRight = (event.button.button == SDL_BUTTON_RIGHT);
+            if (!isLeft && !isRight)
                 break;
 
             const glm::vec2 canvas = m_UIScale.ToCanvas(event.button.x, event.button.y);
 
-            if (m_UIManager)
+            // The UI is left-click only. Feeding it right-clicks would let a
+            // right-click press buttons, which no part of the design expects.
+            if (isLeft && m_UIManager)
                 m_UIManager->handleMouseDown(canvas.x, canvas.y);
 
+            // Routed by the button that actually fired the event, so the
+            // screen never has to guess which one it was.
             if (m_CurrentScreen)
-                m_CurrentScreen->OnMouseDown(canvas.x, canvas.y);
+            {
+                if (isLeft)
+                    m_CurrentScreen->OnMouseDown(canvas.x, canvas.y);
+                else
+                    m_CurrentScreen->OnRightMouseDown(canvas.x, canvas.y);
+            }
             break;
         }
 
@@ -406,9 +462,15 @@ void Engine::SwitchScreen(ScreenID id)
 {
     if (m_CurrentScreen)
     {
+        // Remember where we came from, so a screen reachable from more than
+        // one place knows where Back should go.
+        m_PreviousScreenId = m_CurrentScreenId;
+
         m_CurrentScreen->OnExit();
         m_CurrentScreen.reset();
     }
+
+    m_CurrentScreenId = id;
 
     // Belt and braces: even if a screen forgets to tear down an element, no
     // UI state survives into the next screen.
@@ -484,7 +546,37 @@ void Engine::Update(float deltaTime)
         return;
 
     if (m_pSystemManager)
-        m_pSystemManager->update(Timer::GetFixedTimestep());
+    {
+        // Drain the accumulated frame time a fixed step at a time.
+        //
+        // This used to run the ECS exactly once per rendered frame, and pass
+        // it the fixed timestep as the elapsed time. That is not a fixed
+        // timestep - it is a variable one wearing a constant's clothes, and it
+        // ties simulation speed directly to frame rate. At 60fps the lie holds
+        // because a frame really is 1/60s. Measured here, uncapped, the client
+        // runs at 500-900fps with the world on screen, so it was advancing the
+        // simulation by a second of game time for every 60 frames and burning
+        // through those in a tenth of a second: everything that moved ran an
+        // order of magnitude fast, and would run at a different speed again on
+        // every machine it was played on.
+        //
+        // Timer has kept the accumulator and offered ConsumeFixedStep for
+        // exactly this since it was written. Neither was ever called.
+        const float step = Timer::GetFixedTimestep();
+
+        int steps = 0;
+        while (steps < kMaxFixedStepsPerFrame && Timer::ConsumeFixedStep())
+        {
+            m_pSystemManager->update(step);
+            ++steps;
+        }
+
+        if (steps == kMaxFixedStepsPerFrame)
+            Timer::DiscardOwedFixedSteps();
+    }
+
+    // Keeps the music buffer topped up and loops it at the end of the track.
+    m_Audio.Update();
 
     m_NetworkManager.update(deltaTime);
 
@@ -554,6 +646,9 @@ void Engine::Shutdown()
 
     if (m_State == EngineState::Running)
         Stop();
+
+    // Silence before the screens go, so nothing keeps playing over teardown.
+    m_Audio.Shutdown();
 
     if (m_CurrentScreen)
     {

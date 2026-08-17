@@ -22,7 +22,9 @@ bool Window::Create(
     int height,
     const std::string& title)
 {
-    if (!SDL_Init(SDL_INIT_VIDEO))
+    // Audio is initialised here alongside video so AudioManager can open a
+    // device; SDL requires the subsystem before any audio call.
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
     {
         Logger::Error(SDL_GetError());
         return false;

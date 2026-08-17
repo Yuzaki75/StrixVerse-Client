@@ -14,7 +14,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # --------------------------------------------------
 
 if(MSVC)
-    add_compile_options(/W4)
+    # Matches the server's flag set so both halves are held to the same
+    # standard: conformance mode on, parallel compilation, UTF-8 source and
+    # execution charset, and the conforming preprocessor.
+    add_compile_options(
+        /W4
+        /permissive-
+        /MP
+        /utf-8
+        /Zc:preprocessor
+    )
 
     # <windows.h> arrives through the Winsock networking layer. Without these
     # its min/max macros break every std::min / std::max call site.
@@ -110,6 +119,7 @@ set(SOURCES
     src/ecs/NetworkSyncSystem.cpp
     src/ecs/PlayerSystem.cpp
     src/ecs/RenderSystem.cpp
+    src/ecs/CharacterRenderSystem.cpp
     src/ecs/TileRendererSystem.cpp
     src/ecs/Camera2DSystem.cpp
     src/ecs/CollisionSystem.cpp
@@ -142,6 +152,8 @@ set(SOURCES
     src/screens/ScreenFactory.cpp
 
     src/screens/SplashScreen.cpp
+    src/screens/MainMenuScreen.cpp
+    src/screens/CreditsScreen.cpp
     src/screens/LoadingScreen.cpp
     src/screens/LoginScreen.cpp
     src/screens/RegisterScreen.cpp
@@ -150,6 +162,12 @@ set(SOURCES
     src/screens/WorldBrowserScreen.cpp
     src/screens/SettingsScreen.cpp
     src/screens/GameScreen.cpp
+
+    # --------------------------------------------------
+    # Audio
+    # --------------------------------------------------
+
+    src/audio/AudioManager.cpp
 
     # --------------------------------------------------
     # HUD
@@ -220,6 +238,8 @@ set(HEADERS
     src/networking/ChatMessagePacket.h
     src/networking/DisconnectPacket.h
     src/networking/HandshakePacket.h
+    src/networking/InventoryPacket.h
+    src/networking/InventoryUpdatePacket.h
     src/networking/KeepAlive.h
     src/networking/KeepAlivePacket.h
     src/networking/LoginFailedPacket.h
@@ -229,6 +249,7 @@ set(HEADERS
     src/networking/PingManager.h
     src/networking/PingPacket.h
     src/networking/PongPacket.h
+    src/networking/PlayerDataPacket.h
     src/networking/PlayerMovePacket.h
     src/networking/PlayerRemovePacket.h
     src/networking/PlayerSpawnPacket.h
@@ -260,6 +281,9 @@ set(HEADERS
     src/ecs/PlayerSystem.h
     src/ecs/RenderSystem.h
     src/ecs/SpriteComponent.h
+    src/ecs/CharacterComponent.h
+    src/ecs/CharacterRenderSystem.h
+    src/graphics/CharacterPalette.h
     src/ecs/System.h
     src/ecs/SystemManager.h
     src/ecs/TileRendererSystem.h
@@ -302,11 +326,15 @@ set(HEADERS
     src/screens/ScreenIDs.h
     src/screens/SettingsScreen.h
     src/screens/SplashScreen.h
+    src/screens/MainMenuScreen.h
+    src/screens/CreditsScreen.h
     src/screens/WorldBrowserScreen.h
 
     # --------------------------------------------------
     # HUD
     # --------------------------------------------------
+
+    src/audio/AudioManager.h
 
     src/hud/HUD.h
 )

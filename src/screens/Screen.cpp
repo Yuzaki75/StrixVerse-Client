@@ -38,6 +38,7 @@ void Screen::Update(float)
 void Screen::OnKeyDown(int, bool, bool) {}
 
 void Screen::OnMouseDown(float, float) {}
+void Screen::OnRightMouseDown(float, float) {}
 
 void Screen::RequestScreenChange(ScreenID nextScreen)
 {
