@@ -91,12 +91,22 @@ public:
 
     // --- Session state ----------------------------------------------------
     bool isAuthenticated() const { return m_authenticated; }
-    uint64_t getPlayerId() const { return m_playerId; }
+
+    // This client's own entity id, as the server assigned it. Zero until
+    // LoginSuccess arrives.
+    //
+    // Every packet the server sends about a player is keyed on this, so it is
+    // how the client tells its own from everyone else's. Before it was used,
+    // that question was answered by "an id that is not in the roster must be
+    // me" - which is true only for as long as the roster is complete and the
+    // server's send rules never change.
+    uint64_t getEntityId() const { return m_entityId; }
+    bool isSelf(uint64_t id) const { return m_entityId != 0 && id == m_entityId; }
     const std::string& getUsername() const { return m_username; }
     const std::string& getSessionToken() const { return m_sessionToken; }
 
     // Called by the login flow once LoginSuccess arrives.
-    void setSession(uint64_t playerId, const std::string& username, const std::string& token);
+    void setSession(uint64_t entityId, const std::string& username, const std::string& token);
     void clearSession();
 
     // --- Other players ----------------------------------------------------
@@ -153,6 +163,15 @@ public:
         uint32_t experienceToNextLevel = 0;
         uint32_t health     = 0;
         uint32_t maxHealth  = 0;
+
+        // Where the server says this character is, in its tile coordinates.
+        // `hasPosition` is separate from `known` so a spawn is only ever taken
+        // from a packet that actually carried one - the client must never fall
+        // back to 0,0, which is a real corner of the world and would drop the
+        // player into bedrock.
+        bool     hasPosition = false;
+        float    tileX       = 0.0f;
+        float    tileY       = 0.0f;
     };
 
     const CharacterStats& getCharacterStats() const { return m_Stats; }
@@ -285,8 +304,16 @@ private:
     CharacterStats m_Stats;
     uint32_t       m_StatsRevision = 0;
 
+    // PlayerData is sent unicast to a joining client to describe its own
+    // character, and *also* broadcast to everyone else when a player changes
+    // appearance. Nothing distinguished the two, so a client applied another
+    // player's level, experience and health as its own the moment that player
+    // restyled themselves. That filter now uses m_entityId below, which
+    // LoginSuccess establishes before any of this arrives - one id, from the
+    // earliest authoritative source, rather than a second one latched here.
+
     bool        m_authenticated = false;
-    uint64_t    m_playerId      = 0;
+    uint64_t    m_entityId      = 0;
     std::string m_username;
     std::string m_sessionToken;
 

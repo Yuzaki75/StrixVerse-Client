@@ -71,12 +71,12 @@ void AuthService::AttachHandlers()
             s_TokenExpiry    = std::chrono::system_clock::now() + std::chrono::hours(1);
 
             if (m_Network)
-                m_Network->setSession(success->PlayerID, success->Username, success->SessionToken);
+                m_Network->setSession(success->EntityID, success->Username, success->SessionToken);
 
             m_OfflineSession = false;
 
             Logger::Info(std::format("AuthService: server authenticated '{}' (player {}).",
-                                     success->Username, success->PlayerID));
+                                     success->Username, success->EntityID));
 
             Succeed(m_Pending == PendingKind::Register ? "Account created" : "Authentication complete");
         });

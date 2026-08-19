@@ -9,7 +9,13 @@
 class LoginSuccessPacket final : public Packet
 {
 public:
-    uint64_t PlayerID = 0;
+    // The player's runtime **entity** id, not their account id - the two are
+    // separate spaces and were both called PlayerID on both sides. Every
+    // packet about a player after login (spawn, move, remove, chat, character
+    // data) is keyed on this one, so it is what lets this client tell its own
+    // packets from everyone else's. Mirrors LoginSuccessPacket::EntityID on
+    // the server; the wire layout is unchanged, only the name.
+    uint64_t EntityID = 0;
     std::string Username;
     std::string SessionToken;
 
@@ -19,14 +25,14 @@ public:
 
     void serialize(PacketBuffer& buffer) const override
     {
-        buffer.write(PlayerID);
+        buffer.write(EntityID);
         buffer.writeString(Username, ProtocolLimits::MaxUsernameLength);
         buffer.writeString(SessionToken, ProtocolLimits::MaxStringLength);
     }
 
     void deserialize(PacketBuffer& buffer) override
     {
-        PlayerID = buffer.read<uint64_t>();
+        EntityID = buffer.read<uint64_t>();
         Username = buffer.readString(ProtocolLimits::MaxUsernameLength);
         SessionToken = buffer.readString(ProtocolLimits::MaxStringLength);
     }

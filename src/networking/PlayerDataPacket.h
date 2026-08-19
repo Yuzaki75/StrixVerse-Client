@@ -14,6 +14,17 @@
 class PlayerDataPacket final : public Packet
 {
 public:
+    // Must equal CharacterDataPacket::FormatVersion on the server. The byte
+    // exists because this layout is maintained by hand in two repositories,
+    // and three times already the two have drifted and been read at the wrong
+    // offsets without anything noticing - a wrong offset still yields a
+    // number. An unknown version is now refused rather than guessed at.
+    static constexpr uint8_t FormatVersion = 1;
+
+    // True once a packet of a version this client understands has been read.
+    // Nothing downstream should trust the fields until it is.
+    bool Valid = false;
+
     uint64_t    CharacterID = 0;
     std::string Name;
 
@@ -42,12 +53,21 @@ public:
     uint32_t    MaxHealth  = 0;
     uint32_t    ExperienceToNextLevel = 0;
 
+    // Where the server says this character is, in its own tile coordinates
+    // (Y up). This is the authoritative spawn: before it existed the client
+    // invented one at the middle of the world and searched outward for a gap
+    // it fit in, which is how players ended up wedged between a tree and a
+    // cliff instead of standing where they logged out.
+    int32_t     TileX = 0;
+    int32_t     TileY = 0;
+
     Opcode getOpcode() const override { return Opcode::PlayerData; }
 
     const char* getName() const override { return "PlayerDataPacket"; }
 
     void serialize(PacketBuffer& buffer) const override
     {
+        buffer.write(FormatVersion);
         buffer.write(CharacterID);
         buffer.writeString(Name, ProtocolLimits::MaxUsernameLength);
         buffer.write(Appearance.hair);
@@ -61,10 +81,24 @@ public:
         buffer.write(Health);
         buffer.write(MaxHealth);
         buffer.write(ExperienceToNextLevel);
+        buffer.write(TileX);
+        buffer.write(TileY);
     }
 
     void deserialize(PacketBuffer& buffer) override
     {
+        Valid = false;
+
+        const uint8_t version = buffer.read<uint8_t>();
+        if (version != FormatVersion)
+        {
+            // Stop rather than read the rest at offsets that no longer mean
+            // what this build thinks they mean. Every field keeps its default
+            // and `Valid` stays false, so a caller that ignores this cannot
+            // silently act on rubbish.
+            return;
+        }
+
         CharacterID = buffer.read<uint64_t>();
         Name        = buffer.readString(ProtocolLimits::MaxUsernameLength);
         Appearance.hair     = buffer.read<uint8_t>();
@@ -78,5 +112,9 @@ public:
         Health      = buffer.read<uint32_t>();
         MaxHealth   = buffer.read<uint32_t>();
         ExperienceToNextLevel = buffer.read<uint32_t>();
+        TileX = buffer.read<int32_t>();
+        TileY = buffer.read<int32_t>();
+
+        Valid = true;
     }
 };

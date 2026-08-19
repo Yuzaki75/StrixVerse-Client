@@ -169,6 +169,16 @@ bool NetworkManager::initialize()
             {
                 const auto* spawn = static_cast<const PlayerSpawnPacket*>(packet.get());
 
+                // Never enter ourselves in the roster of other players. The
+                // server excludes the joiner from its own spawn broadcast
+                // today, so this has not bitten - but the roster is what the
+                // rest of the client uses to answer "is this someone else?",
+                // and one such packet would put a second copy of this player
+                // in the world and start treating our own corrections as
+                // somebody else's movement.
+                if (isSelf(spawn->EntityID))
+                    return;
+
                 RemotePlayer& entry = m_RemotePlayers[spawn->EntityID];
                 entry.id       = spawn->EntityID;
                 entry.username = spawn->Username;
@@ -202,8 +212,15 @@ bool NetworkManager::initialize()
             {
                 const auto* move = static_cast<const PlayerMovePacket*>(packet.get());
 
-                // Only track players we already know about; an unknown id is
-                // the server correcting us, not a new player.
+                // Our own id here is the server correcting us, and the
+                // roster must never gain an entry for ourselves - that would
+                // draw a second copy of this player standing where the server
+                // thinks we are. Asking outright is better than the previous
+                // "an id I do not recognise must be me", which was only true
+                // while the roster happened to be complete.
+                if (isSelf(move->PlayerID))
+                    return;
+
                 const auto it = m_RemotePlayers.find(move->PlayerID);
                 if (it == m_RemotePlayers.end())
                     return;
@@ -221,6 +238,31 @@ bool NetworkManager::initialize()
             {
                 const auto* data = static_cast<const PlayerDataPacket*>(packet.get());
 
+                // A packet whose version this build does not recognise leaves
+                // every field at its default. Acting on those would show a
+                // level-0 character with no health and spawn them at tile 0,0,
+                // which is worse than showing nothing.
+                if (!data->Valid)
+                {
+                    Logger::Warning("NetworkManager: ignoring PlayerData in an "
+                                    "unrecognised wire format.");
+                    return;
+                }
+
+                // Only our own character. The same packet is broadcast to
+                // everyone else when a player restyles themselves, so without
+                // this a client adopted the restyling player's level, health
+                // and position as its own.
+                //
+                // LoginSuccess established our entity id long before this
+                // arrives. Falling back to accepting the first packet only
+                // matters if it somehow did not, and is better than dropping
+                // our own stats on the floor.
+                if (m_entityId != 0 && data->CharacterID != m_entityId)
+                {
+                    return;
+                }
+
                 m_Stats.known      = true;
                 m_Stats.look.hair     = data->Appearance.hair;
                 m_Stats.look.skin     = data->Appearance.skin;
@@ -234,11 +276,21 @@ bool NetworkManager::initialize()
                 m_Stats.health     = data->Health;
                 m_Stats.maxHealth  = data->MaxHealth;
 
+                // The authoritative spawn. Kept here rather than on the
+                // gameplay screen because this packet arrives while the
+                // loading screen is still up, seconds before that screen
+                // exists - the same reason the roster and inventory live here.
+                m_Stats.tileX      = static_cast<float>(data->TileX);
+                m_Stats.tileY      = static_cast<float>(data->TileY);
+                m_Stats.hasPosition = true;
+
                 ++m_StatsRevision;
 
-                Logger::Info(std::format("NetworkManager: stats - level {}, xp {}, hp {}/{}.",
+                Logger::Info(std::format("NetworkManager: stats - level {}, xp {}, hp {}/{}, "
+                                         "at tile {},{}.",
                                          data->Level, data->Experience,
-                                         data->Health, data->MaxHealth));
+                                         data->Health, data->MaxHealth,
+                                         data->TileX, data->TileY));
             }));
 
     // Inventory, kept here for the same reason as the roster: the reply to the
@@ -454,7 +506,7 @@ bool NetworkManager::sendWorldJoin(const std::string& worldName)
 
     // The server ignores the client-supplied id and spawn point and uses the
     // session's authenticated player and the world's own spawn.
-    packet->PlayerID  = m_playerId;
+    packet->PlayerID  = m_entityId;
     packet->WorldName = worldName;
     packet->SpawnX    = 0.0f;
     packet->SpawnY    = 0.0f;
@@ -471,7 +523,7 @@ bool NetworkManager::sendInventoryRequest()
 
     // The server answers for the connection's own player and ignores both
     // fields; they are set only so nothing goes out uninitialised.
-    packet->PlayerID = m_playerId;
+    packet->PlayerID = m_entityId;
 
     return sendPacket(packet);
 }
@@ -498,7 +550,7 @@ bool NetworkManager::sendChat(const std::string& message)
 
     // The server overwrites this with the authenticated player's id; it is set
     // only so the field is not left uninitialised on the wire.
-    packet->SenderID = m_playerId;
+    packet->SenderID = m_entityId;
     packet->Message  = message.size() > ProtocolLimits::MaxChatMessageLength
                            ? message.substr(0, ProtocolLimits::MaxChatMessageLength)
                            : message;
@@ -516,7 +568,7 @@ bool NetworkManager::sendPlayerMove(float tileX, float tileY,
 
     // The server ignores this id and uses the connection's own player, but the
     // field still has to be on the wire.
-    packet->PlayerID  = m_playerId;
+    packet->PlayerID  = m_entityId;
     packet->X         = tileX;
     packet->Y         = tileY;
     packet->Z         = 0.0f;
@@ -624,17 +676,17 @@ void NetworkManager::update(float deltaTime)
         m_pingManager->update(deltaTime);
 }
 
-void NetworkManager::setSession(uint64_t playerId,
+void NetworkManager::setSession(uint64_t entityId,
                                 const std::string& username,
                                 const std::string& token)
 {
-    m_playerId      = playerId;
+    m_entityId      = entityId;
     m_username      = username;
     m_sessionToken  = token;
     m_authenticated = true;
 
-    Logger::Info(std::format("NetworkManager: session established for '{}' (player {}).",
-                             username, playerId));
+    Logger::Info(std::format("NetworkManager: session established for '{}' (entity {}).",
+                             username, entityId));
 }
 
 void NetworkManager::clearSession()
@@ -651,7 +703,7 @@ void NetworkManager::clearSession()
     ++m_StatsRevision;
 
     m_authenticated = false;
-    m_playerId      = 0;
+    m_entityId      = 0;
     m_username.clear();
     m_sessionToken.clear();
 }

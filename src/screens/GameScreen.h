@@ -112,7 +112,13 @@ private:
     // Spawns the local player and the camera that follows it.
     void InitializeActors();
 
-    // Nudges a spawn point to the nearest position the player fits in.
+    // True when the player box would overlap solid terrain here. Used to
+    // report a disagreement with the server rather than act on one.
+    bool collisionBlocksSpawn(float x, float y) const;
+
+    // Nudges a spawn point to the nearest position the player fits in. Only
+    // used for the fallback spawn - a position the server gave us is never
+    // moved, because it is right and we are guessing.
     void FindFreeSpawn(float& x, float& y) const;
 
     void DestroyActors();

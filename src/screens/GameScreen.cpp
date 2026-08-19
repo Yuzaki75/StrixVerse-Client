@@ -5,6 +5,7 @@
 #include "../core/Logger.h"
 #include "../core/ServiceLocator.h"
 #include "../ecs/Camera2DComponent.h"
+#include "../ecs/Camera2DSystem.h"
 #include "../ecs/ColliderComponent.h"
 #include "../ecs/CollisionSystem.h"
 #include "../ecs/ComponentManager.h"
@@ -354,10 +355,18 @@ void GameScreen::SetPaused(bool paused)
 
     if (transform)
     {
-        LOG_INFO(std::format("GameScreen: {} at tile {:.1f},{:.1f}",
+        // The camera goes on the same line as the player. Away from an edge the
+        // two track exactly; near one they must diverge, and that difference is
+        // the only direct evidence that the world clamp is doing anything.
+        const glm::vec2 eye = engine_ ? engine_->GetCamera().GetPosition() : glm::vec2{0.0f, 0.0f};
+
+        LOG_INFO(std::format("GameScreen: {} at tile {:.1f},{:.1f} - player px {:.0f},{:.0f} "
+                             "camera px {:.0f},{:.0f}",
                              paused_ ? "paused" : "resumed",
                              PlayerLocalXToTileX(transform->position.x),
-                             PlayerLocalYToTileY(transform->position.y)));
+                             PlayerLocalYToTileY(transform->position.y),
+                             transform->position.x, transform->position.y,
+                             eye.x, eye.y));
     }
     else
     {
@@ -708,10 +717,32 @@ void GameScreen::InitializeWorld()
     if (auto playerSystem = systemManager->getSystem<StrixVerse::ECS::PlayerSystem>())
         playerSystem->SetGravityEnabled(true);
 
+    // The camera may not leave the world. It takes the size in pixels rather
+    // than a world pointer: it never reads a tile, only the extent, and a raw
+    // pointer would be a third system to remember to null on the way out.
+    if (auto cameraSystem = systemManager->getSystem<StrixVerse::ECS::Camera2DSystem>())
+    {
+        cameraSystem->SetWorldBounds(static_cast<float>(world_->GetWidthInTiles())  * kTileSize,
+                                     static_cast<float>(world_->GetHeightInTiles()) * kTileSize);
+    }
+
     LOG_INFO(std::format("GameScreen: entered '{}' ({} x {} tiles)",
                          engine_ ? engine_->GetSelectedWorldName() : std::string(),
                          world_->GetWidthInTiles(),
                          world_->GetHeightInTiles()));
+}
+
+bool GameScreen::collisionBlocksSpawn(float x, float y) const
+{
+    auto systemManager = ServiceLocator::Get<StrixVerse::ECS::SystemManager>();
+    if (!systemManager)
+        return false;
+
+    auto collision = systemManager->getSystem<StrixVerse::ECS::CollisionSystem>();
+    if (!collision)
+        return false;
+
+    return collision->IsAreaBlocked(x, y, kPlayerWidth, kPlayerHeight);
 }
 
 void GameScreen::FindFreeSpawn(float& x, float& y) const
@@ -727,13 +758,28 @@ void GameScreen::FindFreeSpawn(float& x, float& y) const
     if (!collision->IsAreaBlocked(x, y, kPlayerWidth, kPlayerHeight))
         return;
 
-    // The middle of the world can easily be inside water. Search outwards in
-    // rings for the nearest tile the player actually fits in, rather than
-    // spawning them somewhere they cannot move out of.
+    // Search outwards in rings for somewhere the player actually fits.
+    //
+    // "Fits" is not enough on its own. A gap exactly one tile wide passes that
+    // test and is a cell: the player stands in it and cannot walk out in
+    // either direction, which is precisely what happened between a tree trunk
+    // and a raised stone platform. So the first pass also requires room to
+    // step sideways, and only if no such place exists in range does a second
+    // pass accept a bare fit - standing somewhere cramped still beats standing
+    // inside a rock.
     constexpr int kMaxRings = 64;
 
     const float startX = x;
     const float startY = y;
+
+    const auto stepAside = [&](float cx, float cy) {
+        return !collision->IsAreaBlocked(cx - kTileSize, cy, kPlayerWidth, kPlayerHeight) ||
+               !collision->IsAreaBlocked(cx + kTileSize, cy, kPlayerWidth, kPlayerHeight);
+    };
+
+    float fallbackX = 0.0f;
+    float fallbackY = 0.0f;
+    bool  haveFallback = false;
 
     for (int ring = 1; ring <= kMaxRings; ++ring)
     {
@@ -748,17 +794,35 @@ void GameScreen::FindFreeSpawn(float& x, float& y) const
                 const float candidateX = startX + static_cast<float>(dx) * kTileSize;
                 const float candidateY = startY + static_cast<float>(dy) * kTileSize;
 
-                if (!collision->IsAreaBlocked(candidateX, candidateY, kPlayerWidth, kPlayerHeight))
+                if (collision->IsAreaBlocked(candidateX, candidateY, kPlayerWidth, kPlayerHeight))
+                    continue;
+
+                if (stepAside(candidateX, candidateY))
                 {
                     x = candidateX;
                     y = candidateY;
                     return;
                 }
+
+                if (!haveFallback)
+                {
+                    fallbackX    = candidateX;
+                    fallbackY    = candidateY;
+                    haveFallback = true;
+                }
             }
         }
     }
 
-    LOG_WARN("GameScreen: no clear spawn found near the world centre");
+    if (haveFallback)
+    {
+        LOG_WARN("GameScreen: spawn has no room to either side; the player starts boxed in");
+        x = fallbackX;
+        y = fallbackY;
+        return;
+    }
+
+    LOG_WARN("GameScreen: no clear spawn found near the requested position");
 }
 
 void GameScreen::InitializeActors()
@@ -783,21 +847,57 @@ void GameScreen::InitializeActors()
         return;
     }
 
-    const std::shared_ptr<Texture>& white = playerTexture_;
-
-    // Spawn in the middle of the world rather than on its corner. An empty
-    // world has no middle, so the origin is the fallback.
+    // Where to put the player.
+    //
+    // The server is the only thing that knows this, and it now says so in
+    // PlayerData. Previously it did not, so this guessed the middle of the
+    // world and searched outward for the nearest gap it fit in - which put a
+    // returning player nowhere near where they left, sometimes wedged in a
+    // one-tile slot between a tree and a cliff, and left the client reporting
+    // a position the server had never agreed to.
+    //
+    // The guess survives only as a fallback for a world entered before the
+    // stats packet arrived. It is a worse answer, so it says so in the log.
     float spawnX = 0.0f;
     float spawnY = 0.0f;
 
-    if (world_ && world_->GetWidthInTiles() > 0 && world_->GetHeightInTiles() > 0)
+    const bool haveWorld = world_ && world_->GetWidthInTiles() > 0 &&
+                           world_->GetHeightInTiles() > 0;
+
+    const NetworkManager::CharacterStats& stats =
+        engine_->getNetworkManager().getCharacterStats();
+
+    if (stats.hasPosition)
     {
-        // Tile-aligned, so the ring search below steps whole tiles and the
-        // player lands flush on whatever it finds rather than a fraction of a
-        // tile inside it. The middle of the world is usually solid rock now
-        // that terrain blocks; FindFreeSpawn searches upward first and so
-        // surfaces, and the server corrects us to the position it has stored
-        // as soon as we report this one.
+        PlayerTileToLocal(stats.tileX, stats.tileY, spawnX, spawnY);
+
+        LOG_INFO(std::format("GameScreen: spawning at the server's tile {:.0f},{:.0f}",
+                             stats.tileX, stats.tileY));
+
+        // Deliberately not nudged.
+        //
+        // This did call FindFreeSpawn, on the theory that the client might
+        // disagree about the terrain. Entering a freshly generated world showed
+        // why that is wrong: the search moved the player three tiles to a spot
+        // the server considered unreachable, the very first position report was
+        // rejected as movement through solid terrain, and the server put them
+        // back where it had said all along. The server is authoritative about
+        // where a player is. If its answer looks blocked from here, the honest
+        // response is to stand there and let collision and gravity resolve it,
+        // not to pick somewhere else and argue.
+        if (haveWorld && collisionBlocksSpawn(spawnX, spawnY))
+        {
+            LOG_WARN(std::format("GameScreen: the server's spawn tile {:.0f},{:.0f} reads as "
+                                 "solid here; standing there anyway",
+                                 stats.tileX, stats.tileY));
+        }
+    }
+    else if (haveWorld)
+    {
+        LOG_WARN("GameScreen: no position from the server; falling back to the world centre");
+
+        // Tile-aligned, so the ring search steps whole tiles and the player
+        // lands flush on what it finds rather than a fraction inside it.
         const float centreColumn = std::floor(static_cast<float>(world_->GetWidthInTiles()) * 0.5f);
         const float centreRow    = std::floor(static_cast<float>(world_->GetHeightInTiles()) * 0.5f);
 
@@ -829,7 +929,6 @@ void GameScreen::InitializeActors()
     // which is a valid look rather than an absent one, so the player is never
     // invisible while waiting.
     StrixVerse::ECS::CharacterComponent look;
-    const auto& stats = engine_->getNetworkManager().getCharacterStats();
     look.hair     = stats.look.hair;
     look.skin     = stats.look.skin;
     look.eyes     = stats.look.eyes;
@@ -1171,19 +1270,27 @@ void GameScreen::OnPlayerMove(uint64_t entityId, float tileX, float tileY)
     if (!componentManager)
         return;
 
+    // A move addressed to us is the server correcting a position it rejected.
+    //
+    // This used to be inferred rather than asked: any id not in the roster was
+    // assumed to be ours, on the reasoning that the server excludes the sender
+    // from its broadcasts. That happens to be true, but it makes every
+    // correction depend on the roster being complete and on a server send rule
+    // staying as it is - and it silently turns a spawn that has not arrived yet
+    // into a teleport. LoginSuccess tells us our entity id, so ask directly.
+    if (engine_ && engine_->getNetworkManager().isSelf(entityId))
+    {
+        ApplyServerCorrection(tileX, tileY);
+        return;
+    }
+
     const auto it = remotePlayers_.find(entityId);
 
     if (it == remotePlayers_.end())
     {
-        // The server never relays our own movement back to us - Broadcast
-        // excludes the sender - so a PlayerMove for anyone outside the roster
-        // is the correction it sends when it rejects a move of ours. The
-        // roster is NetworkManager's, which has been current since before this
-        // screen existed, so an unknown id here really is unknown.
-        if (engine_ && engine_->getNetworkManager().isRemotePlayer(entityId))
-            return;   // Known player, but no entity yet: its spawn is pending.
-
-        ApplyServerCorrection(tileX, tileY);
+        // Someone else, whose spawn has not been processed yet. Their position
+        // is already recorded in NetworkManager's roster and will be applied
+        // when the entity is created, so there is nothing to do here.
         return;
     }
 
@@ -1324,6 +1431,12 @@ void GameScreen::OnExit()
         // Nothing left to fall onto.
         if (auto playerSystem = systemManager->getSystem<StrixVerse::ECS::PlayerSystem>())
             playerSystem->SetGravityEnabled(false);
+
+        // No world, no bounds. The menu screens have no camera entity, but
+        // leaving stale bounds behind would clamp the first frame of the next
+        // world against the previous one's size.
+        if (auto cameraSystem = systemManager->getSystem<StrixVerse::ECS::Camera2DSystem>())
+            cameraSystem->ClearWorldBounds();
     }
 
     world_.reset();

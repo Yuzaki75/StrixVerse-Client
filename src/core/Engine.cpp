@@ -16,6 +16,7 @@
 // Component and System includes for ECS setup
 #include "ecs/Camera2DComponent.h"
 #include "ecs/Camera2DSystem.h"
+#include "ecs/CharacterComponent.h"
 #include "ecs/ColliderComponent.h"
 #include "ecs/CollisionSystem.h"
 #include "ecs/InputComponent.h"
@@ -156,6 +157,15 @@ bool Engine::Initialize(Window* window, Config* config)
     m_pComponentManager->registerComponent<StrixVerse::ECS::Camera2DComponent>();
     m_pComponentManager->registerComponent<StrixVerse::ECS::ColliderComponent>();
 
+    // CharacterRenderSystem is created below and GameScreen gives every player
+    // a CharacterComponent, but the type itself was never registered here.
+    // ComponentManager::addComponent asserts that the type it is handed has a
+    // recorded size, and an unregistered type records zero - so entering any
+    // world aborted the Debug build on the frame the player was created. The
+    // Release build survived it only because addComponent creates the storage
+    // lazily at the correct size, which is luck rather than intent.
+    m_pComponentManager->registerComponent<StrixVerse::ECS::CharacterComponent>();
+
     // Systems run in registration order, for both update and render, so this
     // single order has to satisfy both:
     //
@@ -196,6 +206,9 @@ bool Engine::Initialize(Window* window, Config* config)
     // systems never draw the same entity twice.
     auto characterRenderSystem =
         m_pSystemManager->createSystem<StrixVerse::ECS::CharacterRenderSystem>();
+
+        // Cheap, and it runs before anything can depend on the answer.
+        StrixVerse::ECS::Camera2DSystem::SelfTest();
     m_pSystemManager->addSystem(characterRenderSystem);
 
     m_UIManager = std::make_shared<UIManager>();

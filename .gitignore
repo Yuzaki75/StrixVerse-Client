@@ -7,6 +7,11 @@ bin/
 lib/
 out/
 
+# Produced by package.ps1: the shippable client plus the VC++ runtime. It is
+# ~10 MB of copied binaries rebuilt from the tree on demand, so it does not
+# belong in history.
+dist/
+
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
