@@ -164,6 +164,22 @@ bool Config::Save() const
          << "        \"height\": " << m_Height << ",\n"
          << "        \"fullscreen\": " << (m_Fullscreen ? "true" : "false") << ",\n"
          << "        \"vsync\": " << (m_VSync ? "true" : "false") << "\n"
+         << "    },\n"
+         // Everything Load() reads, so a round trip keeps every setting.
+         //
+         // This wrote the window block alone while Load parsed eight keys, so
+         // the server host, offline mode and music volume were read at startup
+         // and silently discarded on save. A volume control could never have
+         // worked whatever the UI did, because the value had nowhere to go.
+         << "    \"server\":\n"
+         << "    {\n"
+         << "        \"host\": \"" << m_ServerHost << "\",\n"
+         << "        \"port\": " << m_ServerPort << ",\n"
+         << "        \"offline\": " << (m_Offline ? "true" : "false") << "\n"
+         << "    },\n"
+         << "    \"audio\":\n"
+         << "    {\n"
+         << "        \"musicVolume\": " << m_MusicVolume << "\n"
          << "    }\n"
          << "}\n";
 

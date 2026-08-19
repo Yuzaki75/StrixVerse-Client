@@ -11,6 +11,7 @@
 #include "PacketDispatcher.h"
 #include "PingManager.h"
 #include "Protocol.h"
+#include "../core/WorldManager.h"
 
 // -----------------------------------------------------------------------------
 // NetworkManager
@@ -66,6 +67,11 @@ public:
                       const std::string& email,
                       const std::string& password);
     bool sendWorldJoin(const std::string& worldName);
+
+    // Asks the server what worlds it has. The reply populates WorldManager,
+    // which the world browser reads - it had a setter and no source, so the
+    // browser could only ever show its empty state.
+    bool sendWorldListRequest();
 
     // Leaves the current world. The session stays open, so the player returns
     // to World Selection rather than being disconnected.

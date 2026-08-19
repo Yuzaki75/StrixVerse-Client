@@ -84,6 +84,7 @@ WorldManager::WorldManager()
 void WorldManager::SetAvailableWorlds(std::vector<WorldInfo> worlds)
 {
     m_Worlds = std::move(worlds);
+    ++m_WorldsRevision;
 
     LOG_INFO(std::format("WorldManager: world list updated ({} worlds)", m_Worlds.size()));
 }
@@ -91,6 +92,7 @@ void WorldManager::SetAvailableWorlds(std::vector<WorldInfo> worlds)
 void WorldManager::ClearAvailableWorlds()
 {
     m_Worlds.clear();
+    ++m_WorldsRevision;
 }
 
 const WorldInfo* WorldManager::FindWorld(const std::string& name) const
@@ -175,7 +177,7 @@ bool WorldManager::GetLastWorld(const std::string& username, LastWorldSession& o
 
 void WorldManager::SetLastWorld(const std::string& worldName, const std::string& username)
 {
-    SaveWorld(worldName, username);
+    SaveLastSession(worldName, username);
 }
 
 void WorldManager::ClearLastWorld()
@@ -204,7 +206,7 @@ bool WorldManager::EnsureSaveDirectoryExists() const
     return true;
 }
 
-bool WorldManager::SaveWorld(const std::string& worldName, const std::string& username)
+bool WorldManager::SaveLastSession(const std::string& worldName, const std::string& username)
 {
     if (!EnsureSaveDirectoryExists())
         return false;
@@ -217,8 +219,8 @@ bool WorldManager::SaveWorld(const std::string& worldName, const std::string& us
         return false;
     }
 
-    // Only the session identity is stored. A world's contents belong to the
-    // server, so there is nothing else here to serialise; the timestamp is what
+    // The session identity, which is all there is: a world's contents belong
+    // to the server, so there is nothing else to serialise; the timestamp is what
     // lets "Last Played" report a real elapsed time, and the username is what
     // keeps one account's session from being offered to another.
     outFile << "worldName=" << worldName << "\n";
@@ -237,10 +239,8 @@ bool WorldManager::SaveWorld(const std::string& worldName, const std::string& us
     return true;
 }
 
-bool WorldManager::LoadWorld(std::string& outWorldName, StrixVerse::World::World& world)
+bool WorldManager::LoadLastSession(std::string& outWorldName)
 {
-    (void)world;   // World deserialisation is not implemented yet.
-
     if (!std::filesystem::exists(m_SaveFilePath))
     {
         LOG_INFO(std::format("WorldManager: no save file found at {}", m_SaveFilePath.string()));

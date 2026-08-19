@@ -79,8 +79,17 @@ public:
     // The saved session belongs to one account. The username is stored with it
     // and checked on read, so a new or different account never inherits
     // somebody else's last world - it goes to World Selection instead.
-    bool SaveWorld(const std::string& worldName, const std::string& username);
-    bool LoadWorld(std::string& outWorldName, StrixVerse::World::World& world);
+    // Records which world this account was last in, and when.
+    //
+    // Named for what it stores. It used to be SaveWorld/LoadWorld against a
+    // file called world_save.txt, with LoadWorld taking a World& it discarded
+    // with a (void) cast - so the API read as a half-finished world serialiser
+    // when it is a complete and correct session record. A world's contents
+    // belong to the server, so there is deliberately nothing else to write.
+    //
+    // The file keeps its old name so an existing "last world" is not orphaned.
+    bool SaveLastSession(const std::string& worldName, const std::string& username);
+    bool LoadLastSession(std::string& outWorldName);
 
     // True only when a session is saved for this specific account.
     bool HasSavedWorldFor(const std::string& username) const;
@@ -90,6 +99,11 @@ public:
     // --- World catalogue --------------------------------------------------
     // Worlds available to join. Empty until a server supplies a list.
     const std::vector<WorldInfo>& GetAvailableWorlds() const { return m_Worlds; }
+
+    // Bumped whenever the catalogue changes. The world browser polls this so
+    // the list appears when the server's reply lands, rather than only when
+    // the screen is opened or Refresh is pressed.
+    uint32_t GetAvailableWorldsRevision() const { return m_WorldsRevision; }
 
     // Replaces the catalogue wholesale. Called when a world list arrives.
     void SetAvailableWorlds(std::vector<WorldInfo> worlds);
@@ -122,4 +136,5 @@ private:
     std::filesystem::path    m_SaveFilePath;
 
     std::vector<WorldInfo> m_Worlds;
+    uint32_t               m_WorldsRevision = 0;
 };

@@ -323,12 +323,12 @@ bool LoadingScreen::RunStage(size_t index)
         if (WorldManager* worlds = engine_ ? engine_->GetWorldManager() : nullptr)
         {
             std::string loadedName;
-            StrixVerse::World::World world;
 
-            // A missing save is normal for a world being entered for the first
-            // time, so this is not treated as a failure.
-            if (worlds->LoadWorld(loadedName, world))
-                LOG_INFO("LoadingScreen: world data restored for '" + loadedName + "'");
+            // A missing record is normal the first time an account plays, so
+            // this is not treated as a failure. It restores which world was
+            // last entered, not the world itself - the server owns that.
+            if (worlds->LoadLastSession(loadedName))
+                LOG_INFO("LoadingScreen: last session was in '" + loadedName + "'");
         }
         return true;
 

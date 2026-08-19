@@ -144,7 +144,6 @@ void ConnectingScreen::BuildLayout()
 
     y += stepsHeight + kSectionGap;
 
-    BuildBranchCard(centreX, y);
     BuildFailureCard(centreX, y);
 
     // Flavour line pinned near the bottom, as in the design.
@@ -183,69 +182,6 @@ void ConnectingScreen::BuildSteps(float centreX, float& y)
         stepLabels_[i] = label;
 
         rowY += kStepSize + kStepGap;
-    }
-}
-
-void ConnectingScreen::BuildBranchCard(float centreX, float y)
-{
-    const float cardHeight = S(86.0f);
-
-    branchCard_ = std::make_shared<UIPanel>();
-    branchCard_->setBackgroundColor(UITheme::WithAlpha(UITheme::Primary, 0.07f));
-    branchCard_->setBorder(UITheme::WithAlpha(UITheme::Primary, 0.25f), UITheme::BorderThin);
-    branchCard_->setBorderRadius(UITheme::RadiusPanel);
-    branchCard_->setPosition(centreX - kCardWidth * 0.5f, y);
-    branchCard_->setSize(kCardWidth, cardHeight);
-    branchCard_->setVisible(false);
-    root_->addChild(branchCard_);
-
-    auto prompt = std::make_shared<UILabel>();
-    prompt->setText(hasLastWorld_ ? "Last world found - where would you like to go?"
-                                  : "No previous world - choose where to begin.");
-    prompt->setFont(BodyFont(UITheme::Body::Regular));
-    prompt->setTextColor(UITheme::Accent);
-    prompt->setAlignment(UILabel::Alignment::Center);
-    prompt->setPosition(S(10.0f), S(14.0f));
-    prompt->setSize(kCardWidth - S(20.0f), S(18.0f));
-    branchCard_->addChild(prompt);
-
-    const float buttonY      = S(38.0f);
-    const float buttonHeight = S(30.0f);
-    const float gap          = S(10.0f);
-    const float padding      = S(20.0f);
-
-    if (hasLastWorld_)
-    {
-        const float buttonWidth = (kCardWidth - padding * 2.0f - gap) * 0.5f;
-
-        auto continueButton = std::make_shared<UIButton>();
-        continueButton->setText("CONTINUE");
-        continueButton->setFont(DisplayFont(UITheme::Display::Label));
-        continueButton->setVariant(UIButton::Variant::Primary);
-        continueButton->setPosition(padding, buttonY);
-        continueButton->setSize(buttonWidth, buttonHeight);
-        continueButton->setOnClick([this]() { RequestScreenChange(ScreenID::Continue); });
-        branchCard_->addChild(continueButton);
-
-        auto changeButton = std::make_shared<UIButton>();
-        changeButton->setText("CHANGE WORLD");
-        changeButton->setFont(DisplayFont(UITheme::Display::Small));
-        changeButton->setVariant(UIButton::Variant::Purple);
-        changeButton->setPosition(padding + buttonWidth + gap, buttonY);
-        changeButton->setSize(buttonWidth, buttonHeight);
-        changeButton->setOnClick([this]() { RequestScreenChange(ScreenID::WorldBrowser); });
-        branchCard_->addChild(changeButton);
-    }
-    else
-    {
-        auto selectButton = std::make_shared<UIButton>();
-        selectButton->setText("SELECT A WORLD");
-        selectButton->setFont(DisplayFont(UITheme::Display::Label));
-        selectButton->setVariant(UIButton::Variant::Primary);
-        selectButton->setPosition(padding, buttonY);
-        selectButton->setSize(kCardWidth - padding * 2.0f, buttonHeight);
-        selectButton->setOnClick([this]() { RequestScreenChange(ScreenID::WorldBrowser); });
-        branchCard_->addChild(selectButton);
     }
 }
 
@@ -331,11 +267,24 @@ void ConnectingScreen::ShowBranch()
         statusLabel_->setTextColor(UITheme::Success);
     }
 
-    if (branchCard_)
-        branchCard_->setVisible(true);
-
     if (failureCard_)
         failureCard_->setVisible(false);
+
+    // Go straight where the answer already points, rather than asking a
+    // question the next screen is about to ask again.
+    //
+    // This screen used to show its own card - "Last world found - where would
+    // you like to go?", CONTINUE or CHANGE WORLD - and CONTINUE led to
+    // ContinueScreen, which asks exactly the same thing with the same two
+    // buttons. The player answered an identical question twice in a row, and
+    // the first time they answered it there was nothing on screen to answer it
+    // *with*: this screen knows only that a saved world exists, while Continue
+    // shows its name, when it was last played and who is in it.
+    //
+    // So the decision belongs there, and this screen's job ends at "you are
+    // authenticated". A player with no saved world has no decision to make
+    // here at all and goes straight to the browser.
+    RequestScreenChange(hasLastWorld_ ? ScreenID::Continue : ScreenID::WorldBrowser);
 }
 
 void ConnectingScreen::ShowFailure(const std::string& reason)
@@ -353,9 +302,6 @@ void ConnectingScreen::ShowFailure(const std::string& reason)
 
     if (failureCard_)
         failureCard_->setVisible(true);
-
-    if (branchCard_)
-        branchCard_->setVisible(false);
 
     // Mark the step that failed.
     if (currentStep_ < kStepCount)

@@ -5,6 +5,7 @@
 #include "../core/world/World.h"
 
 #include <memory>
+#include <cstdint>
 #include <unordered_map>
 #include <vector>
 
@@ -48,12 +49,20 @@ namespace StrixVerse
             std::shared_ptr<Texture> CreateTileTexture(StrixVerse::World::Tile::Type type) const;
             Texture* GetTileTexture(StrixVerse::World::Tile::Type type);
 
+            // The sprite for a server tile id, or null if that id has no art.
+            // Loaded once on first use and cached, including the misses, so a
+            // missing file costs one failed load rather than one per frame.
+            Texture* GetTileTextureForId(std::uint8_t serverId);
+
             StrixVerse::World::World* m_World = nullptr;
 
             // One solid-colour texture per tile type, owned for the lifetime of
             // the system so the batch can reference them freely.
             std::unordered_map<StrixVerse::World::Tile::Type,
                                std::shared_ptr<Texture>> m_TileTextures;
+
+            // Keyed on the server's tile id. A null entry is a remembered miss.
+            std::unordered_map<std::uint8_t, std::shared_ptr<Texture>> m_TileSprites;
 
             float m_TileSize = 32.0f;
         };

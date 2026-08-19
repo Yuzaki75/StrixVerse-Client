@@ -117,6 +117,12 @@ void WorldBrowserScreen::OnEnter()
     if (WorldManager* worlds = engine_ ? engine_->GetWorldManager() : nullptr)
         worlds_ = worlds->GetAvailableWorlds();
 
+    // Ask the server for its catalogue. Whatever is already cached is shown
+    // immediately, above; the reply arrives a frame or two later and Update()
+    // picks it up, so opening this screen never blocks on the network.
+    if (engine_)
+        engine_->getNetworkManager().sendWorldListRequest();
+
     CreateRoot();
 
     const float originX = DesignOriginX();
@@ -374,6 +380,26 @@ void WorldBrowserScreen::SetFilter(Filter filter)
     RebuildList();
 }
 
+void WorldBrowserScreen::Update(float deltaTime)
+{
+    (void)deltaTime;
+
+    // The catalogue arrives from the server a moment after this screen opens,
+    // so it cannot be read once in OnEnter and left. Rebuilt only when the
+    // revision moves, which is the same pattern the HUD uses for stats and
+    // inventory.
+    WorldManager* worlds = engine_ ? engine_->GetWorldManager() : nullptr;
+    if (!worlds)
+        return;
+
+    if (worlds->GetAvailableWorldsRevision() == worldsRevision_)
+        return;
+
+    worldsRevision_ = worlds->GetAvailableWorldsRevision();
+    worlds_         = worlds->GetAvailableWorlds();
+    RebuildList();
+}
+
 void WorldBrowserScreen::RebuildList()
 {
     if (!list_)
@@ -602,13 +628,19 @@ std::shared_ptr<UIPanel> WorldBrowserScreen::BuildWorldRow(const WorldInfo& worl
         chip->addChild(chipLabel);
     }
 
-    auto owner = std::make_shared<UILabel>();
-    owner->setText("by " + world.owner);
-    owner->setFont(BodyFont(UITheme::Body::Caption));
-    owner->setTextColor(UITheme::Muted);
-    owner->setPosition(infoX, kRowPadY + S(15.0f));
-    owner->setSize(infoWidth, S(14.0f));
-    row->addChild(owner);
+    // Ownership is not modelled on the server, so most worlds have none. A
+    // bare "by " with nothing after it reads as a bug rather than as absent
+    // data, so the line is simply left out when there is no owner to name.
+    if (!world.owner.empty())
+    {
+        auto owner = std::make_shared<UILabel>();
+        owner->setText("by " + world.owner);
+        owner->setFont(BodyFont(UITheme::Body::Caption));
+        owner->setTextColor(UITheme::Muted);
+        owner->setPosition(infoX, kRowPadY + S(15.0f));
+        owner->setSize(infoWidth, S(14.0f));
+        row->addChild(owner);
+    }
 
     auto description = std::make_shared<UILabel>();
     description->setText(world.description);

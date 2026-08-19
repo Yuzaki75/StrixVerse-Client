@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -34,6 +35,7 @@ public:
 
     void OnEnter() override;
     void OnKeyDown(int key, bool ctrl, bool shift) override;
+    void Update(float deltaTime) override;
 
 private:
     enum class Filter
@@ -59,6 +61,10 @@ private:
     void EnterTypedWorld();
 
     std::vector<WorldInfo> worlds_;
+
+    // Last catalogue revision drawn, so the list is rebuilt when the server's
+    // reply lands rather than every frame.
+    uint32_t worldsRevision_ = 0;
 
     std::shared_ptr<UIScrollPanel> list_;
     std::shared_ptr<UITextBox>     searchBox_;

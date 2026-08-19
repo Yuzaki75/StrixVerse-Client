@@ -9,6 +9,7 @@
 #include "PacketRegistry.h"
 #include "PingPacket.h"
 #include "PlayerDataPacket.h"
+#include "WorldListPacket.h"
 #include "PlayerMovePacket.h"
 #include "PlayerRemovePacket.h"
 #include "PlayerSpawnPacket.h"
@@ -21,6 +22,8 @@
 #include "ChunkLoadPacket.h"
 #include "WorldStatePacket.h"
 #include "../core/Logger.h"
+#include "../core/ServiceLocator.h"
+#include "../core/Engine.h"
 #include "../core/Version.h"
 
 #include <chrono>
@@ -293,6 +296,46 @@ bool NetworkManager::initialize()
                                          data->TileX, data->TileY));
             }));
 
+    m_dispatcher->addHandler(
+        Opcode::WorldList,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* list = static_cast<const WorldListPacket*>(packet.get());
+
+                if (!list->Valid)
+                {
+                    Logger::Warning("NetworkManager: ignoring a world list in an "
+                                    "unrecognised wire format.");
+                    return;
+                }
+
+                std::vector<WorldInfo> worlds;
+                worlds.reserve(list->Worlds.size());
+
+                for (const auto& entry : list->Worlds)
+                {
+                    WorldInfo info;
+                    info.name    = entry.Name;
+                    info.players = static_cast<int>(entry.Players);
+
+                    // Type, owner, description and capacity are not modelled on
+                    // the server at all, so they are left empty rather than
+                    // invented - the browser already renders a world without
+                    // them.
+                    worlds.push_back(std::move(info));
+                }
+
+                // Reached through the Engine, which owns it - WorldManager is
+                // not itself in the ServiceLocator, so looking it up there
+                // silently returned null and the catalogue went nowhere.
+                if (auto engine = ServiceLocator::Get<Engine>())
+                {
+                    if (WorldManager* worldManager = engine->GetWorldManager())
+                        worldManager->SetAvailableWorlds(std::move(worlds));
+                }
+            }));
+
     // Inventory, kept here for the same reason as the roster: the reply to the
     // request can land while a screen change is in flight.
     m_dispatcher->addHandler(
@@ -512,6 +555,14 @@ bool NetworkManager::sendWorldJoin(const std::string& worldName)
     packet->SpawnY    = 0.0f;
 
     return sendPacket(packet);
+}
+
+bool NetworkManager::sendWorldListRequest()
+{
+    if (!isConnected())
+        return false;
+
+    return sendPacket(std::make_shared<WorldListRequestPacket>());
 }
 
 bool NetworkManager::sendInventoryRequest()

@@ -49,7 +49,6 @@ private:
 
     void BuildLayout();
     void BuildSteps(float centreX, float& y);
-    void BuildBranchCard(float centreX, float y);
     void BuildFailureCard(float centreX, float y);
 
     // Returns false to drive the failure path. This is the seam for the real
@@ -69,7 +68,6 @@ private:
     std::shared_ptr<UILabel> headlineLabel_;
     std::shared_ptr<UILabel> statusLabel_;
 
-    std::shared_ptr<UIPanel> branchCard_;
     std::shared_ptr<UIPanel> failureCard_;
     std::shared_ptr<UILabel> failureReason_;
 

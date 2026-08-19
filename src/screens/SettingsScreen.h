@@ -1,6 +1,8 @@
 #pragma once
 
+#include <functional>
 #include <memory>
+#include <string>
 
 #include "Screen.h"
 
@@ -26,6 +28,33 @@ public:
 private:
     void OnBackButtonClicked();
 
+    // --- Settings rows -----------------------------------------------------
+    // Built from buttons and labels only. The UI framework has no slider and
+    // no checkbox, and inventing both to expose four values would be a larger
+    // job than the settings themselves; stepper and toggle buttons say the
+    // same thing with widgets that already work and can be replaced later
+    // without touching the wiring underneath.
+    void BuildSettingsRows(float x, float y, float width);
+
+    // One labelled row: caption on the left, a control group on the right.
+    // Returns the y for the next row.
+    float BuildStepperRow(float x, float y, float width, const std::string& caption,
+                          const std::shared_ptr<UILabel>& value,
+                          const std::function<void()>& onDown,
+                          const std::function<void()>& onUp);
+    float BuildToggleRow(float x, float y, float width, const std::string& caption,
+                         const std::shared_ptr<UIButton>& toggle);
+
+    // Pushes the current config values into the row labels.
+    // Moves through kResolutions by one step in either direction.
+    void StepResolution(int direction);
+
+    void RefreshSettingValues();
+
+    // Config is written on every change and saved immediately, so a crash
+    // between here and exit cannot lose the setting.
+    void ApplyAndSave();
+
     // Leaves the world and forgets it, so the next sign-in starts at World
     // Selection instead of offering to continue into it.
     void OnLeaveWorldClicked();
@@ -33,4 +62,14 @@ private:
     std::shared_ptr<UILabel>  titleLabel_;
     std::shared_ptr<UIButton> backButton_;
     std::shared_ptr<UIButton> leaveButton_;
+
+    std::shared_ptr<UILabel>  volumeValue_;
+    std::shared_ptr<UILabel>  resolutionValue_;
+    std::shared_ptr<UIButton> fullscreenToggle_;
+    std::shared_ptr<UIButton> vsyncToggle_;
+
+    // Index into the offered resolutions, or -1 when the configured size is
+    // not one of them - in which case it is shown but stepping starts from the
+    // nearest entry rather than snapping silently.
+    int resolutionIndex_ = -1;
 };

@@ -44,6 +44,13 @@ enum class Opcode : uint16_t
     WorldJoin = 20,
     WorldLeave,
     WorldState,
+
+    // World catalogue. WorldBrowser could never list anything: it read a
+    // catalogue no packet ever filled, so its empty state ("No world list from
+    // the server") was the only state it had, and the screen worked solely as
+    // a text box you typed a name into.
+    WorldListRequest = 23,   // client -> server, no body
+    WorldList        = 24,   // server -> client, the worlds it has
     EntityUpdate = 25,
     EntitySpawn  = 26,
     EntityRemove = 27,

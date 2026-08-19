@@ -48,6 +48,12 @@ namespace StrixVerse
             }
         }
 
+        Tile::Tile(Type type, std::uint8_t serverId)
+            : Tile(type)
+        {
+            m_ServerId = serverId;
+        }
+
         Tile::~Tile() = default;
 
     } // namespace World

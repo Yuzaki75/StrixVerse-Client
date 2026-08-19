@@ -206,9 +206,12 @@ namespace
 {
     // Server foreground tile id -> the client's five-way Tile::Type.
     //
-    // The ids are WorldGenerator.cpp's; the client has no matching art for
-    // wood, leaves, bedrock or the ores, so those collapse onto the nearest
-    // type it can draw. Air is the one id with no tile at all: a null tile is
+    // The ids are WorldGenerator.cpp's. This mapping is no longer what decides
+    // how a tile looks - the id is carried onto the Tile and TileRendererSystem
+    // picks the sprite from it - so what remains here is the coarse grouping
+    // used for the flat-colour fallback when an id has no art, and for
+    // anything that reasons about a tile's kind rather than its identity.
+    // Air is the one id with no tile at all: a null tile is
     // skipped by TileRendererSystem and treated as passable by
     // CollisionSystem, which is exactly what air should be.
     //
@@ -528,7 +531,7 @@ void GameScreen::ApplyPendingTileEdits()
         }
 
         world_->SetTileAt(static_cast<int>(edit.tileX), localRowY, 0,
-                          std::make_shared<StrixVerse::World::Tile>(type));
+                          std::make_shared<StrixVerse::World::Tile>(type, edit.tileId));
     }
 }
 
@@ -656,7 +659,8 @@ void GameScreen::BuildWorldFromServerTerrain()
                 }
 
                 world_->SetTileAt(worldX, worldY, 0,
-                                  std::make_shared<StrixVerse::World::Tile>(type));
+                                  std::make_shared<StrixVerse::World::Tile>(
+                                      type, chunk.tiles[index]));
                 ++solid;
             }
         }

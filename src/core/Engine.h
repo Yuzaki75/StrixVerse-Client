@@ -108,6 +108,11 @@ public:
     Camera2D& GetCamera() { return m_Camera; }
     const Camera2D& GetCamera() const { return m_Camera; }
 
+    // The live configuration. Settings edits it directly and saves; nothing
+    // else should write to it while a screen is open.
+    Config* GetConfig() { return m_Config; }
+    const Config* GetConfig() const { return m_Config; }
+
     Window* GetWindow() { return m_Window; }
     const Window* GetWindow() const { return m_Window; }
 

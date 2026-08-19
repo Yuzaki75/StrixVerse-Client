@@ -56,37 +56,13 @@ namespace StrixVerse
                 m_TileTextures[type] = CreateTileTexture(type);
             }
 
-            // Vertical slice: one real sprite alongside four generated colours.
-            //
-            // The art the server ships is 32x32, named by tile id, and matches
-            // kTileSize exactly. Before keying the whole renderer on tile id --
-            // which means carrying that id through the world build instead of
-            // collapsing it onto five types -- this proves the parts that
-            // actually carry risk: that AssetManager loads and caches the file,
-            // that the blend state suits finished art, and that the UVs are the
-            // right way up after the loader stopped flipping images.
-            //
-            // If dirt draws correctly next to flat-coloured stone, the path is
-            // proven and the rest is mechanical. If it does not, this is one
-            // line to remove.
-            if (auto assets = ServiceLocator::Get<AssetManager>())
-            {
-                // LoadTexture, not GetTexture: the latter only consults the
-                // cache and returns null for anything not already loaded.
-                // Mipmaps off: these are 32x32 pixel art drawn at 1:1, and
-                // minification filtering is what turns crisp pixels to mush.
-                if (auto sprite = assets->LoadTexture("assets/tiles/001_dirt.png", false, false))
-                {
-                    m_TileTextures[StrixVerse::World::Tile::Type::Dirt] = std::move(sprite);
-                    LOG_INFO("TileRendererSystem: dirt is using the server sprite");
-                }
-                else
-                {
-                    LOG_WARN("TileRendererSystem: assets/tiles/001_dirt.png did not load; "
-                             "keeping the generated colour");
-                }
-            }
-
+            // Sprites are keyed on the server's tile id from here on. The
+            // vertical slice that loaded dirt alone proved what carried risk --
+            // that AssetManager loads and caches the file, that the blend state
+            // suits finished art, and that the UVs are the right way up -- so
+            // the rest was mechanical. Loading is lazy rather than up front:
+            // a world uses a handful of the eighteen, and there is no reason to
+            // read files for ores nobody has dug to.
             LOG_INFO("TileRendererSystem: initialised");
         }
 
@@ -116,6 +92,58 @@ namespace StrixVerse
             texture->Create(kTileTexturePixels, kTileTexturePixels, pixels.data(), 4, false, false);
 
             return texture;
+        }
+
+        Texture* TileRendererSystem::GetTileTextureForId(std::uint8_t serverId)
+        {
+            // Remembered, including misses: a null entry means "looked, found
+            // nothing", so a tile with no art costs one failed load and not one
+            // per frame.
+            if (const auto cached = m_TileSprites.find(serverId); cached != m_TileSprites.end())
+            {
+                return cached->second.get();
+            }
+
+            // The art ships named by the id it belongs to, so this table is the
+            // filenames rather than a second opinion about what a tile is.
+            // 14 is absent from the set; anything not listed falls back to the
+            // flat colour for its Type.
+            static const std::unordered_map<std::uint8_t, const char*> kSpriteForId = {
+                {1,  "001_dirt"},        {2,  "002_stone"},      {3,  "003_grass"},
+                {4,  "004_wood"},        {5,  "005_leaves"},     {6,  "006_bedrock"},
+                {7,  "007_water"},       {8,  "008_torch"},      {9,  "009_chest"},
+                {10, "010_door"},        {11, "011_copper_ore"}, {12, "012_lantern"},
+                {13, "013_lava"},        {15, "015_coal_ore"},   {16, "016_iron_ore"},
+                {17, "017_gold_ore"},    {18, "018_diamond_ore"},{19, "019_sapling"},
+            };
+
+            const auto named = kSpriteForId.find(serverId);
+            if (named == kSpriteForId.end())
+            {
+                m_TileSprites[serverId] = nullptr;
+                return nullptr;
+            }
+
+            std::shared_ptr<Texture> sprite;
+
+            if (auto assets = ServiceLocator::Get<AssetManager>())
+            {
+                // LoadTexture, not GetTexture: the latter only consults the
+                // cache. Mipmaps off, because these are 32x32 pixel art drawn
+                // at 1:1 and minification filtering turns crisp pixels to mush.
+                sprite = assets->LoadTexture(std::string("assets/tiles/") + named->second + ".png",
+                                             false, false);
+            }
+
+            if (!sprite)
+            {
+                LOG_WARN(std::string("TileRendererSystem: assets/tiles/") + named->second +
+                         ".png did not load; that tile keeps its flat colour");
+            }
+
+            Texture* raw = sprite.get();
+            m_TileSprites[serverId] = std::move(sprite);
+            return raw;
         }
 
         Texture *TileRendererSystem::GetTileTexture(StrixVerse::World::Tile::Type type)
@@ -181,7 +209,11 @@ namespace StrixVerse
                         if (!tile)
                             continue;
 
-                        Texture *texture = GetTileTexture(tile->GetType());
+                        // The id decides the sprite; the Type is only the
+                        // fallback colour for an id with no art.
+                        Texture *texture = GetTileTextureForId(tile->GetServerId());
+                        if (!texture)
+                            texture = GetTileTexture(tile->GetType());
                         if (!texture)
                             continue;
 

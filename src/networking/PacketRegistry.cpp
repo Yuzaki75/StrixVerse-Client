@@ -11,6 +11,7 @@
 #include "LoginSuccessPacket.h"
 #include "PingPacket.h"
 #include "PlayerDataPacket.h"
+#include "WorldListPacket.h"
 #include "PlayerMovePacket.h"
 #include "PlayerRemovePacket.h"
 #include "PlayerSpawnPacket.h"
@@ -88,6 +89,7 @@ void PacketRegistry::registerAllPacketTypes()
     add(Opcode::PlayerMove,   [] { return std::make_shared<PlayerMovePacket>(); });
     add(Opcode::PlayerRemove, [] { return std::make_shared<PlayerRemovePacket>(); });
     add(Opcode::PlayerData,   [] { return std::make_shared<PlayerDataPacket>(); });
+    add(Opcode::WorldList,    [] { return std::make_shared<WorldListPacket>(); });
 
     // Inventory. InventoryUpdate is inbound only - the server disconnects a
     // client that sends one - but it still needs an entry here to be decoded.

@@ -6,11 +6,11 @@ build/
 bin/
 lib/
 out/
-
-# Produced by package.ps1: the shippable client plus the VC++ runtime. It is
-# ~10 MB of copied binaries rebuilt from the tree on demand, so it does not
-# belong in history.
 dist/
+
+# =====================================
+# CMake
+# =====================================
 
 CMakeFiles/
 CMakeCache.txt
@@ -33,13 +33,13 @@ Testing/
 *.sln.docstates
 
 # =====================================
-# CMake
+# CMake / Presets
 # =====================================
 
 CMakeUserPresets.json
 
 # =====================================
-# Generated Files
+# Generated Runtime Files
 # =====================================
 
 logs/
@@ -47,15 +47,16 @@ cache/
 screenshots/
 saves/
 temp/
+tmp/
 
 # =====================================
-# Assets (Generated)
+# Generated Asset Cache
 # =====================================
 
 assets/cache/
 
 # =====================================
-# Compiler
+# Compiler Output
 # =====================================
 
 *.obj
@@ -70,20 +71,20 @@ assets/cache/
 *.exe
 
 # =====================================
-# OpenGL
+# OpenGL / Shader Compilation
 # =====================================
 
 *.spv
 
 # =====================================
-# Editor
+# IDE
 # =====================================
 
 .vscode/
 .idea/
 
 # =====================================
-# OS
+# Operating System
 # =====================================
 
 Thumbs.db
@@ -97,7 +98,7 @@ Desktop.ini
 *.log
 
 # =====================================
-# Backup
+# Backup / Temporary Files
 # =====================================
 
 *.bak
