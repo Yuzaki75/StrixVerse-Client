@@ -33,6 +33,7 @@ public:
     void OnExit() override;
     void Update(float deltaTime) override;
     void OnKeyDown(int key, bool ctrl, bool shift) override;
+    void OnMouseWheel(float x, float y, float delta) override;
 
 private:
     void InitializeUI();
@@ -51,6 +52,10 @@ private:
     // True while a UI element holds focus or the game is paused, so world edits
     // are suppressed for the same reason movement already is.
     bool GameplayInputBlocked() const;
+
+    // True when a HUD / chrome control is under the cursor, so a click on the
+    // hotbar or chat does not also punch the tile behind it.
+    bool UiConsumesPointer(float x, float y) const;
 
     // --- Pause -------------------------------------------------------------
     // An overlay, not a screen change. Escape used to call

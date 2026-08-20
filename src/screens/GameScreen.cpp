@@ -27,7 +27,9 @@
 #include "../networking/PlayerRemovePacket.h"
 #include "../networking/PlayerSpawnPacket.h"
 #include "../ui/UIButton.h"
+#include "../ui/UIElement.h"
 #include "../ui/UILabel.h"
+#include "../ui/UIManager.h"
 #include "../ui/UIPanel.h"
 #include "../ui/UIScale.h"
 #include "../ui/UITheme.h"
@@ -390,9 +392,15 @@ bool GameScreen::GameplayInputBlocked() const
     return uiManager && uiManager->getFocusedElement() != nullptr;
 }
 
+bool GameScreen::UiConsumesPointer(float x, float y) const
+{
+    auto uiManager = ServiceLocator::Get<UIManager>();
+    return uiManager && uiManager->getElementAt(x, y) != nullptr;
+}
+
 void GameScreen::OnMouseDown(float x, float y)
 {
-    if (!engine_ || GameplayInputBlocked())
+    if (!engine_ || GameplayInputBlocked() || UiConsumesPointer(x, y))
         return;
 
     int32_t tileX = 0;
@@ -414,7 +422,7 @@ void GameScreen::OnMouseDown(float x, float y)
 
 void GameScreen::OnRightMouseDown(float x, float y)
 {
-    if (!engine_ || GameplayInputBlocked())
+    if (!engine_ || GameplayInputBlocked() || UiConsumesPointer(x, y))
         return;
 
     int32_t tileX = 0;
@@ -1089,7 +1097,34 @@ void GameScreen::OnKeyDown(int key, bool, bool)
     // consumed an Escape to clear field focus, so the two-stage behaviour is
     // preserved: Escape while typing abandons the message, Escape again pauses.
     if (key == UIKey::Escape)
+    {
         SetPaused(!paused_);
+        return;
+    }
+
+    if (!hud_ || paused_)
+        return;
+
+    // 1-9 select slots 0-8; 0 selects the last slot, same as a typical hotbar.
+    if (key == UIKey::Digit0)
+    {
+        hud_->SetSelectedSlot(9);
+        return;
+    }
+
+    if (key >= UIKey::Digit1 && key <= UIKey::Digit9)
+        hud_->SetSelectedSlot(static_cast<uint8_t>(key - UIKey::Digit1));
+}
+
+void GameScreen::OnMouseWheel(float, float, float delta)
+{
+    if (!hud_ || paused_ || GameplayInputBlocked())
+        return;
+
+    if (delta > 0.0f)
+        hud_->CycleSelectedSlot(-1);
+    else if (delta < 0.0f)
+        hud_->CycleSelectedSlot(1);
 }
 
 void GameScreen::SubmitChat(const std::string& message)
