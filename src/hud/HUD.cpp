@@ -235,6 +235,7 @@ void HUD::CreateHealthSection()
     m_HealthPanel->setSize(width, height);
     m_HealthPanel->setPosition(S(20.0f), S(20.0f));
     StyleStatPanel(m_HealthPanel);
+    m_HealthPanel->setBlocksInput(true);
     m_UIManager->addElement(m_HealthPanel);
 
     auto caption = std::make_shared<UILabel>();
@@ -274,6 +275,7 @@ void HUD::CreateLevelSection()
     m_LevelPanel->setSize(width, height);
     m_LevelPanel->setPosition(S(20.0f), S(66.0f));
     StyleStatPanel(m_LevelPanel);
+    m_LevelPanel->setBlocksInput(true);
     m_UIManager->addElement(m_LevelPanel);
 
     m_LevelLabel = std::make_shared<UILabel>();
@@ -317,6 +319,7 @@ void HUD::CreateChatSection()
     m_ChatBackground->setBackgroundColor(UITheme::Hex(0x0E121E, 0.66f));
     m_ChatBackground->setBorder(UITheme::SubtleBorder, UITheme::BorderThin);
     m_ChatBackground->setBorderRadius(UITheme::RadiusPanel);
+    m_ChatBackground->setBlocksInput(true);
     m_UIManager->addElement(m_ChatBackground);
 
     Font* chatFont = HudFont(m_Engine, UIFonts::Typeface::Body, UITheme::Body::Caption);
@@ -412,6 +415,7 @@ void HUD::CreateInventorySection()
     m_InventoryBar->setBackgroundColor(UITheme::Hex(0x0E121E, 0.66f));
     m_InventoryBar->setBorder(UITheme::SubtleBorder, UITheme::BorderThin);
     m_InventoryBar->setBorderRadius(UITheme::RadiusPanel);
+    m_InventoryBar->setBlocksInput(true);
     m_UIManager->addElement(m_InventoryBar);
 
     Font* slotFont = HudFont(m_Engine, UIFonts::Typeface::Data, UITheme::Data::Small);
@@ -451,12 +455,30 @@ void HUD::CreateInventorySection()
         count->setSize(slotSize - S(3.0f), slotSize - S(2.0f));
         slot->addChild(count);
 
-        // Click target. Transparent, sized to the slot, drawn last so it sits
-        // above the labels and receives the click instead of them.
+        // Artwork sits above the slot background and below the click target.
+        auto icon = std::make_shared<UIImage>();
+        const float iconInset = S(4.0f);
+        icon->setPosition(iconInset, iconInset);
+        icon->setSize(slotSize - iconInset * 2.0f, slotSize - iconInset * 2.0f);
+        icon->setVisible(false);
+        slot->addChild(icon);
+
+        auto hint = std::make_shared<UILabel>();
+        hint->setFont(slotFont);
+        hint->setText(i == 9 ? "0" : std::format("{}", i + 1));
+        hint->setTextColor(UITheme::Muted);
+        hint->setAlignment(UILabel::Alignment::Left);
+        hint->setVerticalAlignment(UILabel::VerticalAlignment::Top);
+        hint->setPosition(S(2.0f), S(1.0f));
+        hint->setSize(slotSize, S(12.0f));
+        slot->addChild(hint);
+
+        // Click target last so it receives the press.
         auto hit = std::make_shared<UIButton>();
         hit->setPosition(0.0f, 0.0f);
         hit->setSize(slotSize, slotSize);
         hit->setText("");
+        hit->setFocusable(false);
         const Color invisible(0.0f, 0.0f, 0.0f, 0.0f);
         hit->setNormalColors(invisible, invisible, invisible);
         hit->setHoverColors(UITheme::WithAlpha(UITheme::Accent, 0.12f),
@@ -468,15 +490,6 @@ void HUD::CreateInventorySection()
         hit->setOnClick([this, slotIndex]() { SetSelectedSlot(slotIndex); });
         slot->addChild(hit);
 
-        // Artwork sits above the slot background and below the click target,
-        // so the icon draws over the panel but the button still takes input.
-        auto icon = std::make_shared<UIImage>();
-        const float iconInset = S(4.0f);
-        icon->setPosition(iconInset, iconInset);
-        icon->setSize(slotSize - iconInset * 2.0f, slotSize - iconInset * 2.0f);
-        icon->setVisible(false);
-        slot->addChild(icon);
-
         m_InventorySlots.push_back(slot);
         m_InventoryLabels.push_back(label);
         m_InventoryCounts.push_back(count);
@@ -484,15 +497,37 @@ void HUD::CreateInventorySection()
         m_SlotButtons.push_back(hit);
     }
 
-    // The two permanent tools. Written straight into the labels rather than
-    // routed through SetInventory, because they are not inventory: they are
-    // always present and the server knows nothing about them.
-    if (m_InventoryLabels.size() > kWrenchSlot)
+    // Tool icons replace the old PUNCH/WRENCH labels, which overflowed the slot.
+    if (auto assets = ServiceLocator::Get<AssetManager>())
     {
-        m_InventoryLabels[kPunchSlot]->setText("PUNCH");
-        m_InventoryLabels[kPunchSlot]->setTextColor(UITheme::Text);
-        m_InventoryLabels[kWrenchSlot]->setText("WRENCH");
-        m_InventoryLabels[kWrenchSlot]->setTextColor(UITheme::Accent);
+        if (m_InventoryIcons.size() > kWrenchSlot)
+        {
+            if (auto punch = assets->LoadTexture("assets/ui/icons/punch.png", false, false))
+            {
+                m_InventoryIcons[kPunchSlot]->setTexture(std::move(punch));
+                m_InventoryIcons[kPunchSlot]->setVisible(true);
+                if (m_InventoryLabels[kPunchSlot])
+                    m_InventoryLabels[kPunchSlot]->setText("");
+            }
+            else if (m_InventoryLabels[kPunchSlot])
+            {
+                m_InventoryLabels[kPunchSlot]->setText("HIT");
+                m_InventoryLabels[kPunchSlot]->setTextColor(UITheme::Text);
+            }
+
+            if (auto wrench = assets->LoadTexture("assets/ui/icons/wrench.png", false, false))
+            {
+                m_InventoryIcons[kWrenchSlot]->setTexture(std::move(wrench));
+                m_InventoryIcons[kWrenchSlot]->setVisible(true);
+                if (m_InventoryLabels[kWrenchSlot])
+                    m_InventoryLabels[kWrenchSlot]->setText("");
+            }
+            else if (m_InventoryLabels[kWrenchSlot])
+            {
+                m_InventoryLabels[kWrenchSlot]->setText("KEY");
+                m_InventoryLabels[kWrenchSlot]->setTextColor(UITheme::Accent);
+            }
+        }
     }
 
     RefreshSlotHighlight();
@@ -520,7 +555,21 @@ std::string HUD::IconPathForItem(uint16_t itemId)
     case 1009: return "assets/items/1009_copper_seed.png";
     case 1011: return "assets/items/1011_lantern_seed.png";
 
-    default:   return {};
+    case 3:  return "assets/tiles/003_grass.png";
+    case 4:  return "assets/tiles/004_wood.png";
+    case 5:  return "assets/tiles/005_leaves.png";
+    case 7:  return "assets/tiles/007_water.png";
+    case 8:  return "assets/tiles/008_torch.png";
+    case 9:  return "assets/tiles/009_chest.png";
+    case 10: return "assets/tiles/010_door.png";
+    case 15: return "assets/tiles/015_coal_ore.png";
+    case 16: return "assets/tiles/016_iron_ore.png";
+    case 17: return "assets/tiles/017_gold_ore.png";
+    case 18: return "assets/tiles/018_diamond_ore.png";
+    case 19: return "assets/tiles/019_sapling.png";
+
+    default:
+        return std::format("assets/items/{}.png", itemId);
     }
 }
 
@@ -534,6 +583,19 @@ void HUD::SetSelectedSlot(uint8_t slot)
 
     if (m_OnSlotSelected)
         m_OnSlotSelected(slot);
+}
+
+void HUD::CycleSelectedSlot(int delta)
+{
+    if (m_InventorySlots.empty() || delta == 0)
+        return;
+
+    const int count = static_cast<int>(m_InventorySlots.size());
+    int slot = (static_cast<int>(m_SelectedSlot) + delta) % count;
+    if (slot < 0)
+        slot += count;
+
+    SetSelectedSlot(static_cast<uint8_t>(slot));
 }
 
 void HUD::RefreshSlotHighlight()
@@ -646,6 +708,7 @@ void HUD::CreateNotificationSection()
     m_NotificationPanel->setBorder(UITheme::WithAlpha(UITheme::Accent, 0.35f), UITheme::BorderThin);
     m_NotificationPanel->setBorderRadius(UITheme::RadiusPanel);
     m_NotificationPanel->setVisible(false);
+    m_NotificationPanel->setBlocksInput(true);
     m_UIManager->addElement(m_NotificationPanel);
 
     m_NotificationLabel = std::make_shared<UILabel>();
