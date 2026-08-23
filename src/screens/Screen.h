@@ -66,6 +66,10 @@ public:
     // made a right-click read as a left-click whenever both were pressed.
     virtual void OnRightMouseDown(float x, float y);
 
+    // Mouse wheel. Positive delta is wheel-up. The UI gets the event first;
+    // screens use this for things the UI does not own (the hotbar).
+    virtual void OnMouseWheel(float x, float y, float delta);
+
     // True while the screen wants raw key/mouse notifications even when a UI
     // element is focused. Only the splash screen needs this.
     // Mouse wheel, in canvas coordinates. Only delivered when the pointer is

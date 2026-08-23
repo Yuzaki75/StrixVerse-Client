@@ -98,6 +98,9 @@ public:
     uint8_t GetSelectedSlot() const { return m_SelectedSlot; }
     void    SetSelectedSlot(uint8_t slot);
 
+    // Wraps around the bar. Positive delta moves right (slot 0 -> 1).
+    void CycleSelectedSlot(int delta);
+
     Tool GetSelectedTool() const
     {
         if (m_SelectedSlot == kPunchSlot)  return Tool::Punch;

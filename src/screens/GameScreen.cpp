@@ -28,7 +28,9 @@
 #include "../networking/PlayerRemovePacket.h"
 #include "../networking/PlayerSpawnPacket.h"
 #include "../ui/UIButton.h"
+#include "../ui/UIElement.h"
 #include "../ui/UILabel.h"
+#include "../ui/UIManager.h"
 #include "../ui/UIPanel.h"
 #include "../ui/UIScale.h"
 #include "../ui/UITheme.h"
@@ -535,39 +537,6 @@ bool GameScreen::WorldPixelToCanvas(float worldX, float worldY,
     outX = screenX / viewport.x * visible.z + visible.x;
     outY = screenY / viewport.y * visible.w + visible.y;
     return true;
-}
-
-void GameScreen::OnScroll(float canvasX, float canvasY, float delta)
-{
-    if (delta == 0.0f || GameplayInputBlocked())
-        return;
-
-    auto componentManager = ServiceLocator::Get<StrixVerse::ECS::ComponentManager>();
-    if (!componentManager || cameraEntity_ == StrixVerse::ECS::NULL_ENTITY)
-        return;
-
-    auto* cameraComp =
-        componentManager->getComponent<StrixVerse::ECS::Camera2DComponent>(cameraEntity_);
-    if (!cameraComp)
-        return;
-
-    // The zoom lives on the component rather than on Camera2D directly, because
-    // Camera2DSystem writes the camera from the component every frame and would
-    // overwrite anything set on the camera itself. It already divides the
-    // viewport by the zoom when clamping to the world bounds, so zooming out
-    // near an edge stays inside the world without anything further here.
-    const float previous = cameraComp->zoom > 0.0f ? cameraComp->zoom : 1.0f;
-
-    float next = delta > 0.0f ? previous * kZoomStep : previous / kZoomStep;
-    next = std::clamp(next, kMinZoom, kMaxZoom);
-
-    if (next == previous)
-        return;
-
-    cameraComp->zoom = next;
-
-    (void)canvasX;
-    (void)canvasY;
 }
 
 bool GameScreen::CanvasToServerTile(float canvasX, float canvasY,
@@ -1127,9 +1096,15 @@ bool GameScreen::GameplayInputBlocked() const
     return uiManager && uiManager->isTextInputFocused();
 }
 
+bool GameScreen::UiConsumesPointer(float x, float y) const
+{
+    auto uiManager = ServiceLocator::Get<UIManager>();
+    return uiManager && uiManager->getElementAt(x, y) != nullptr;
+}
+
 void GameScreen::OnMouseDown(float x, float y)
 {
-    if (!engine_ || GameplayInputBlocked())
+    if (!engine_ || GameplayInputBlocked() || UiConsumesPointer(x, y))
         return;
 
     int32_t tileX = 0;
@@ -1202,7 +1177,7 @@ void GameScreen::OnMouseDown(float x, float y)
 
 void GameScreen::OnRightMouseDown(float x, float y)
 {
-    if (!engine_ || GameplayInputBlocked())
+    if (!engine_ || GameplayInputBlocked() || UiConsumesPointer(x, y))
         return;
 
     int32_t tileX = 0;
@@ -2545,6 +2520,19 @@ void GameScreen::OnKeyDown(int key, bool, bool)
         else
             SetPaused(true);
     }
+
+    if (!hud_ || paused_)
+        return;
+
+    // 1-9 select slots 0-8; 0 selects the last slot, same as a typical hotbar.
+    if (key == UIKey::Digit0)
+    {
+        hud_->SetSelectedSlot(9);
+        return;
+    }
+
+    if (key >= UIKey::Digit1 && key <= UIKey::Digit9)
+        hud_->SetSelectedSlot(static_cast<uint8_t>(key - UIKey::Digit1));
 }
 
 void GameScreen::HandleGameplayKeys()
@@ -2632,6 +2620,49 @@ void GameScreen::HandleGameplayKeys()
     prevInventoryKey_  = inventory;
     prevCharacterKey_  = character;
     prevInteractKey_   = interact;
+}
+
+void GameScreen::OnMouseWheel(float, float, float delta)
+{
+    if (!hud_ || paused_ || GameplayInputBlocked())
+        return;
+
+    // Shift or ctrl held: the wheel zooms the camera instead of cycling the
+    // hotbar. Both features wanted the wheel; this is how both get it without
+    // a notch doing two things at once.
+    const bool* keys    = SDL_GetKeyboardState(nullptr);
+    const bool  zoomHeld = keys[SDL_SCANCODE_LSHIFT] != 0 || keys[SDL_SCANCODE_RSHIFT] != 0 ||
+                           keys[SDL_SCANCODE_LCTRL]  != 0 || keys[SDL_SCANCODE_RCTRL]  != 0;
+
+    if (zoomHeld && delta != 0.0f)
+    {
+        auto componentManager = ServiceLocator::Get<StrixVerse::ECS::ComponentManager>();
+        if (!componentManager || cameraEntity_ == StrixVerse::ECS::NULL_ENTITY)
+            return;
+
+        auto* cameraComp =
+            componentManager->getComponent<StrixVerse::ECS::Camera2DComponent>(cameraEntity_);
+        if (!cameraComp)
+            return;
+
+        // The zoom lives on the component rather than on Camera2D directly,
+        // because Camera2DSystem writes the camera from the component every
+        // frame and would overwrite anything set on the camera itself.
+        const float previous = cameraComp->zoom > 0.0f ? cameraComp->zoom : 1.0f;
+
+        float next = delta > 0.0f ? previous * kZoomStep : previous / kZoomStep;
+        next       = std::clamp(next, kMinZoom, kMaxZoom);
+
+        if (next != previous)
+            cameraComp->zoom = next;
+
+        return;
+    }
+
+    if (delta > 0.0f)
+        hud_->CycleSelectedSlot(-1);
+    else if (delta < 0.0f)
+        hud_->CycleSelectedSlot(1);
 }
 
 void GameScreen::SubmitChat(const std::string& message)

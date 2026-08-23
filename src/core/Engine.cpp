@@ -70,6 +70,26 @@ namespace
         case SDLK_RETURN:
         case SDLK_KP_ENTER:  return UIKey::Enter;
         case SDLK_ESCAPE:    return UIKey::Escape;
+        case SDLK_0:
+        case SDLK_KP_0:      return UIKey::Digit0;
+        case SDLK_1:
+        case SDLK_KP_1:      return UIKey::Digit1;
+        case SDLK_2:
+        case SDLK_KP_2:      return UIKey::Digit2;
+        case SDLK_3:
+        case SDLK_KP_3:      return UIKey::Digit3;
+        case SDLK_4:
+        case SDLK_KP_4:      return UIKey::Digit4;
+        case SDLK_5:
+        case SDLK_KP_5:      return UIKey::Digit5;
+        case SDLK_6:
+        case SDLK_KP_6:      return UIKey::Digit6;
+        case SDLK_7:
+        case SDLK_KP_7:      return UIKey::Digit7;
+        case SDLK_8:
+        case SDLK_KP_8:      return UIKey::Digit8;
+        case SDLK_9:
+        case SDLK_KP_9:      return UIKey::Digit9;
         default:             return UIKey::None;
         }
     }
@@ -438,10 +458,12 @@ void Engine::ProcessEvents()
             {
                 m_UIManager->handleScroll(canvas.x, canvas.y, event.wheel.y);
             }
-            else if (m_CurrentScreen)
-            {
-                m_CurrentScreen->OnScroll(canvas.x, canvas.y, event.wheel.y);
-            }
+
+            // Hotbar cycling lives on the gameplay screen, not on a widget;
+            // zoom rides along there too, behind a shift/ctrl modifier.
+            const bool typing = m_UIManager && m_UIManager->getFocusedElement() != nullptr;
+            if (m_CurrentScreen && !typing)
+                m_CurrentScreen->OnMouseWheel(canvas.x, canvas.y, event.wheel.y);
             break;
         }
 

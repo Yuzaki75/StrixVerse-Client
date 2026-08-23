@@ -203,7 +203,11 @@ void UIElement::onMouseMove(float, float) {}
 void UIElement::onMouseEnter() {}
 void UIElement::onMouseLeave() {}
 void UIElement::onClick() {}
-void UIElement::onScroll(float) {}
+void UIElement::onScroll(float delta)
+{
+    if (onScroll_)
+        onScroll_(delta);
+}
 void UIElement::onFocusGained() {}
 void UIElement::onFocusLost() {}
 void UIElement::onTextInput(const std::string&) {}

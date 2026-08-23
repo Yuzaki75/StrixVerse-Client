@@ -26,7 +26,17 @@ namespace UIKey
         End,
         Tab,
         Enter,
-        Escape
+        Escape,
+        Digit0,
+        Digit1,
+        Digit2,
+        Digit3,
+        Digit4,
+        Digit5,
+        Digit6,
+        Digit7,
+        Digit8,
+        Digit9
     };
 }
 
@@ -144,6 +154,9 @@ public:
     virtual void onMouseLeave();
     virtual void onClick();
     virtual void onScroll(float delta);
+
+    // Optional scroll callback so a panel can react without a subclass.
+    void setOnScroll(std::function<void(float)> callback) { onScroll_ = std::move(callback); }
     virtual void onFocusGained();
     virtual void onFocusLost();
     virtual void onTextInput(const std::string& utf8);
@@ -186,4 +199,6 @@ protected:
     UIElement* parent_ = nullptr;
 
     std::vector<std::shared_ptr<UIElement>> children_;
+
+    std::function<void(float)> onScroll_;
 };

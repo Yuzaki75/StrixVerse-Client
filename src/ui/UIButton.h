@@ -88,7 +88,11 @@ public:
 
     // --- UIElement --------------------------------------------------------
     bool wantsInput() const override { return true; }
-    bool isFocusable() const override { return enabled_; }
+    bool isFocusable() const override { return enabled_ && focusable_; }
+
+    // Hotbar slots want clicks but must not steal keyboard focus, or WASD
+    // stops working after the player picks a slot.
+    void setFocusable(bool focusable) { focusable_ = focusable; }
 
     void onMouseEnter() override;
     void onMouseLeave() override;
@@ -129,6 +133,7 @@ private:
     bool hovered_ = false;
     bool pressed_ = false;
     bool focused_ = false;
+    bool focusable_ = true;
 
     std::function<void()> onClick_;
 };
