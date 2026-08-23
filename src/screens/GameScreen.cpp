@@ -36,6 +36,7 @@
 #include <SDL3/SDL.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdlib>
 #include <format>
@@ -443,6 +444,39 @@ namespace
         case 19: outType = Type::Grass;  return true;  // sapling
 
         default: outType = Type::Stone;  return true;  // ores and anything new
+        }
+    }
+
+    // Server ids a body walks through. Every tile defaults to solid, which
+    // turned the spawn doorway into a wall: the generator raises the main door
+    // as "a walkable door flanked by cut stone", and a player born behind it
+    // could not reach the [ E ] Leave prompt standing in their own exit. Torch
+    // and sapling are the same class of thing - props that occupy a tile for
+    // drawing but not for collision. Water stays solid deliberately: lava is
+    // something you stand on, per Tile.cpp's note.
+    // The gameplay backdrop pool. The same eight scenes the loading screen
+    // offers, so the picture that loaded is the sky you play under.
+    constexpr std::array<const char*, 8> kBackdropArtwork = {
+        "assets/ui/world_loading/nature_1/origbig.png",
+        "assets/ui/world_loading/nature_2/origbig.png",
+        "assets/ui/world_loading/nature_3/origbig.png",
+        "assets/ui/world_loading/nature_4/origbig.png",
+        "assets/ui/world_loading/nature_5/origbig.png",
+        "assets/ui/world_loading/nature_6/origbig.png",
+        "assets/ui/world_loading/nature_7/origbig.png",
+        "assets/ui/world_loading/nature_8/origbig.png",
+    };
+
+    bool ServerTileIsWalkable(std::uint8_t id)
+    {
+        switch (id)
+        {
+        case 8:   // torch
+        case 19:  // sapling
+        case 20:  // main door
+            return true;
+        default:
+            return false;
         }
     }
 } // namespace
@@ -1117,17 +1151,39 @@ void GameScreen::OnMouseDown(float x, float y)
         LOG_INFO(std::format("GameScreen: wrench on tile {},{} (server id {})",
                              tileX, tileY, static_cast<int>(ServerIdAt(tileX, tileY))));
 
-        if (IsStrixCoreAt(tileX, tileY))
+        // The Core is found the way the E prompt finds it - nearest within a
+        // tile of the click, not under the pixel. The server refuses a claim
+        // whose coordinates are not exactly the world's recorded Core and says
+        // nothing when it does, so an off-by-one click used to vanish without
+        // a trace instead of claiming anything.
+        int32_t coreX = tileX;
+        int32_t coreY = tileY;
+        bool    foundCore = false;
+
+        for (int dy = -1; dy <= 1 && !foundCore; ++dy)
+        {
+            for (int dx = -1; dx <= 1 && !foundCore; ++dx)
+            {
+                if (IsStrixCoreAt(tileX + dx, tileY + dy))
+                {
+                    coreX     = tileX + dx;
+                    coreY     = tileY + dy;
+                    foundCore = true;
+                }
+            }
+        }
+
+        if (foundCore)
         {
             // An unclaimed Core is claimed; a claimed one opens management.
             // Which of the two this is comes from the tile the server sent us,
             // and asking the wrong one is harmless: the server answers a claim
             // on an owned world with "already belongs to someone else" and an
             // interact on an unowned one with "no Core here".
-            if (ServerIdAt(tileX, tileY) == kStrixCoreUnclaimedTile)
-                engine_->getNetworkManager().sendClaimStrixCore(tileX, tileY);
+            if (ServerIdAt(coreX, coreY) == kStrixCoreUnclaimedTile)
+                engine_->getNetworkManager().sendClaimStrixCore(coreX, coreY);
             else
-                engine_->getNetworkManager().sendInteractStrixCore(tileX, tileY);
+                engine_->getNetworkManager().sendInteractStrixCore(coreX, coreY);
 
             return;
         }
@@ -1520,7 +1576,12 @@ void GameScreen::ApplyPendingTileEdits()
         }
 
         world_->SetTileAt(static_cast<int>(edit.tileX), localRowY, 0,
-                          std::make_shared<StrixVerse::World::Tile>(type, edit.tileId));
+                          [&]() {
+                              auto tile = std::make_shared<StrixVerse::World::Tile>(
+                                  type, edit.tileId);
+                              tile->SetSolid(!ServerTileIsWalkable(edit.tileId));
+                              return tile;
+                          }());
 
         // Confirmed placement, ours or anyone's.
         PlaySfx("place");
@@ -1651,8 +1712,12 @@ void GameScreen::BuildWorldFromServerTerrain()
                 }
 
                 world_->SetTileAt(worldX, worldY, 0,
-                                  std::make_shared<StrixVerse::World::Tile>(
-                                      type, chunk.tiles[index]));
+                                  [&]() {
+                                      auto tile = std::make_shared<StrixVerse::World::Tile>(
+                                          type, chunk.tiles[index]);
+                                      tile->SetSolid(!ServerTileIsWalkable(chunk.tiles[index]));
+                                      return tile;
+                                  }());
                 ++solid;
             }
         }
@@ -1848,6 +1913,24 @@ void GameScreen::InitializeActors()
         return;
     }
 
+    // The gameplay backdrop, picked exactly the way the loading screen picks
+    // its artwork - same pool, same name hash - so joining a world continues
+    // into the scene that just loaded. Missing art is not fatal: RenderBackground
+    // falls back to the plain gradient.
+    const std::string worldName =
+        engine_ ? engine_->GetSelectedWorldName() : std::string();
+
+    std::size_t artworkIndex = 0;
+    for (char c : worldName)
+        artworkIndex = artworkIndex * 31 + static_cast<std::size_t>(static_cast<unsigned char>(c));
+    artworkIndex %= kBackdropArtwork.size();
+
+    worldBackdrop_ =
+        assets->LoadTexture(kBackdropArtwork[artworkIndex]);
+    if (!worldBackdrop_)
+        LOG_WARN(std::format("GameScreen: backdrop '{}' unavailable; the sky is the plain gradient",
+                             kBackdropArtwork[artworkIndex]));
+
     // Where to put the player.
     //
     // The server is the only thing that knows this, and it now says so in
@@ -1986,6 +2069,7 @@ void GameScreen::DestroyActors()
     }
 
     playerTexture_.reset();
+    worldBackdrop_.reset();
 }
 
 void GameScreen::Update(float deltaTime)
@@ -2115,6 +2199,152 @@ void GameScreen::Update(float deltaTime)
 
         worldManagerPanel_->Refresh();
     }
+}
+
+void GameScreen::RenderBackground() const
+{
+    auto batch = ServiceLocator::Get<SpriteBatch>();
+    if (!batch || !playerTexture_ || !engine_)
+        return;
+
+    // The same visible-rect math TileRendererSystem uses, so the sky exactly
+    // underwrites the tiles no matter where the camera is or how far out it
+    // is zoomed - plus a tile of margin on every side, for the same reason.
+    const Camera2D& camera   = engine_->GetCamera();
+    const glm::vec2 viewport = camera.GetViewport();
+    const glm::vec2 centre   = camera.GetPosition();
+    const float     zoom     = camera.GetZoom() > 0.0f ? camera.GetZoom() : 1.0f;
+
+    const float halfWidth  = (viewport.x * 0.5f) / zoom + kTileSize;
+    const float halfHeight = (viewport.y * 0.5f) / zoom + kTileSize;
+
+    const float left  = centre.x - halfWidth;
+    const float right  = centre.x + halfWidth;
+    const float top    = centre.y - halfHeight;
+    const float bottom = centre.y + halfHeight;
+
+    const float worldHeightPx =
+        static_cast<float>(worldHeightInTiles_) * static_cast<float>(kTileSize);
+    if (right <= left || bottom <= top || worldHeightPx <= 0.0f)
+        return;
+
+    batch->Begin();
+
+    if (worldBackdrop_)
+    {
+        // Cover, preserving the artwork's aspect: sized off the taller of the
+        // two axes so no edge of the view can ever see past it.
+        const float imgW = static_cast<float>(worldBackdrop_->GetWidth());
+        const float imgH = static_cast<float>(worldBackdrop_->GetHeight());
+        if (imgW > 0.0f && imgH > 0.0f)
+        {
+            constexpr float kCover   = 1.6f;      // of the view height
+            constexpr float kParallax = 0.25f;    // moves at a quarter of the world
+
+            float drawH = (bottom - top) * kCover;
+            float drawW = drawH * (imgW / imgH);
+            if (drawW < right - left)
+            {
+                drawW = (right - left) * 1.1f;
+                drawH = drawW * (imgH / imgW);
+            }
+
+            // Parallax: the layer slides at kParallax of the camera's speed.
+            // Shifting the tile grid by centre * (1 - kParallax) is what makes
+            // that read - as the camera moves d, the grid moves d*(1-p) the
+            // other way, and the picture crosses the screen at d*p.
+            const float offsetX = centre.x * (1.0f - kParallax);
+            const float offsetY = centre.y * (1.0f - kParallax);
+
+            auto firstBefore = [](float viewEdge, float size, float shift) {
+                // Largest grid line at or before viewEdge, for tiles spaced
+                // `size` apart on an origin shifted by `shift`.
+                float x = viewEdge - shift;
+                x = std::floor(x / size) * size;
+                return x + shift;
+            };
+
+            // Pulled toward dusk so foreground tiles keep their contrast; the
+            // loading screen scrims its copy of the same art for the identical
+            // reason.
+            const Color tint(0.62f, 0.64f, 0.74f, 1.0f);
+
+            const float startX = firstBefore(left - drawW, drawW, offsetX);
+            const float startY = firstBefore(top - drawH, drawH, offsetY);
+
+            for (float y = startY; y < bottom; y += drawH)
+            {
+                for (float x = startX; x < right; x += drawW)
+                {
+                    batch->Draw(*worldBackdrop_, x, y, drawW, drawH,
+                                tint.r, tint.g, tint.b, tint.a);
+                }
+            }
+
+            // Depth darkening over the art. The surface sits in the upper
+            // third of most worlds, so from mid-height down the picture fades
+            // out and digging reads as getting darker rather than as the sky
+            // following you down.
+            constexpr int   kStripCount = 48;
+            const float     stripHeight = (bottom - top) / static_cast<float>(kStripCount);
+
+            for (int i = 0; i < kStripCount; ++i)
+            {
+                const float y     = top + stripHeight * static_cast<float>(i);
+                const float t     = std::clamp((y + stripHeight * 0.5f) / worldHeightPx,
+                                               0.0f, 1.0f);
+
+                float fade = (t - 0.40f) / (0.90f - 0.40f);
+                fade       = std::clamp(fade, 0.0f, 1.0f);
+                fade *= fade;   // ease-in, so the surface band stays clear
+
+                if (fade <= 0.0f)
+                    continue;
+
+                batch->Draw(*playerTexture_, left, y, right - left, stripHeight + 0.5f,
+                            0x07 / 255.0f, 0x06 / 255.0f, 0x0D / 255.0f, fade);
+            }
+
+            batch->End();
+            return;
+        }
+    }
+
+    // No artwork: the plain gradient stands alone, anchored to world height.
+    static const Color kSkyStops[] = {
+        UITheme::Hex(0x6FB6E8),   // open Aether sky
+        UITheme::Hex(0x3D5C94),   // thinning toward the horizon
+        UITheme::Hex(0x2A2350),   // dusk band of violet over the surface
+        UITheme::Hex(0x151024),   // shallow underground
+        UITheme::Hex(0x07060D),   // deep underground
+    };
+
+    auto skyAt = [&](float worldY) {
+        const float t       = std::clamp(worldY / worldHeightPx, 0.0f, 1.0f);
+        const float scaled  = t * static_cast<float>(std::size(kSkyStops) - 1);
+        const auto  index   = static_cast<std::size_t>(scaled);
+        const auto  next    = static_cast<std::size_t>(
+            std::min<float>(scaled + 1.0f, static_cast<float>(std::size(kSkyStops) - 1)));
+
+        return Color::Lerp(kSkyStops[index], kSkyStops[next],
+                           scaled - static_cast<float>(index));
+    };
+
+    constexpr int   kStripCount = 64;
+    const float     stripHeight = (bottom - top) / static_cast<float>(kStripCount);
+
+    for (int i = 0; i < kStripCount; ++i)
+    {
+        const float y     = top + stripHeight * static_cast<float>(i);
+        const Color color = skyAt(y + stripHeight * 0.5f);
+
+        // The half-pixel of overlap hides the seam a hard strip edge would
+        // leave at some zooms.
+        batch->Draw(*playerTexture_, left, y, right - left, stripHeight + 0.5f,
+                    color.r, color.g, color.b, color.a);
+    }
+
+    batch->End();
 }
 
 void GameScreen::RenderGame() const

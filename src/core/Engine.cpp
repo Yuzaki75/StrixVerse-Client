@@ -648,6 +648,9 @@ void Engine::Render()
     if (m_SpriteBatch)
         m_SpriteBatch->SetProjection(m_Camera.GetViewProjectionMatrix());
 
+    if (m_CurrentScreen)
+        m_CurrentScreen->RenderBackground();
+
     if (m_pSystemManager)
         m_pSystemManager->render();
 

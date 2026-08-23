@@ -50,6 +50,12 @@ public:
     // time this runs, so a particle lands on the tile it was emitted over.
     void RenderGame() const override;
 
+    // Sky drawn before the systems' render pass, so tiles and players sit on
+    // a gradient instead of the flat clear colour. Anchored to world height:
+    // daylight Aether blue at the top of the map shading down to near-black
+    // in the deep underground, whatever part of it the camera can see.
+    void RenderBackground() const override;
+
 private:
     void InitializeUI();
     void InitializeHUD();
@@ -409,6 +415,12 @@ private:
 
     // Shared by every player sprite; kept alive for the screen's lifetime.
     std::shared_ptr<Texture> playerTexture_;
+
+    // The world's sky: one of the loading-screen artworks, chosen by the same
+    // name hash so a world loads into the scene its loading screen showed.
+    // Drawn parallax-tiled behind the tiles in RenderBackground; null falls
+    // back to the plain gradient.
+    std::shared_ptr<Texture> worldBackdrop_;
 
     // Last inventory revision drawn, so the hotbar is rebuilt only on change.
     uint32_t inventoryRevision_ = 0;

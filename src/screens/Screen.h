@@ -49,6 +49,11 @@ public:
     // Extra drawing beneath the UI (the world, for gameplay screens).
     virtual void RenderGame() const {}
 
+    // Drawing beneath the world itself - sky, parallax, backdrop. Runs after
+    // the camera projection is set but before any system renders tiles, so
+    // whatever this draws sits behind everything in the world layer.
+    virtual void RenderBackground() const {}
+
     // --- Input -----------------------------------------------------------
     // Delivered after the UI has had its chance, so a screen-level "press any
     // key" never steals a keystroke from a focused text box.
