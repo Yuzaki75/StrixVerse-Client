@@ -1,5 +1,12 @@
 #include "Engine.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
+#include <chrono>
+#include <filesystem>
+#include <vector>
+
 #include "AssetManager.h"
 #include "Config.h"
 #include "Logger.h"
@@ -97,6 +104,7 @@ bool Engine::Initialize(Window* window, Config* config)
     m_Audio.SetMusicVolume(m_Config
                                ? static_cast<float>(m_Config->GetMusicVolume()) / 100.0f
                                : 0.7f);
+    m_Audio.SetSfxVolume(m_Config ? m_Config->GetSfxVolume() : 1.0f);
 
     Timer::Initialize();
 
@@ -305,6 +313,7 @@ void Engine::Run()
         const float deltaTime = std::min(Timer::GetDeltaTime(), 0.1f);
 
         ProcessEvents();
+        PollScreenshotKey();
         Update(deltaTime);
         Render();
 
@@ -379,9 +388,20 @@ void Engine::ProcessEvents()
             if (isLeft && m_UIManager)
                 m_UIManager->handleMouseDown(canvas.x, canvas.y);
 
+            // A click that landed on the UI is not also a click on the world.
+            // Both dispatches used to run for every press, so pressing a hotbar
+            // slot selected the item *and* swung the tool at the tile behind
+            // the HUD - a hidden block break, and the reason a wrench click on
+            // the hotbar was logged as an interaction with a distant tile.
+            //
+            // Tested against the point rather than against whether the UI acted
+            // on it, because the UI takes only left clicks: a right click over
+            // the chat panel is still not a right click on the world.
+            const bool overUI = m_UIManager && m_UIManager->isPointOverElement(canvas.x, canvas.y);
+
             // Routed by the button that actually fired the event, so the
             // screen never has to guess which one it was.
-            if (m_CurrentScreen)
+            if (m_CurrentScreen && (!overUI || m_CurrentScreen->WantsRawInput()))
             {
                 if (isLeft)
                     m_CurrentScreen->OnMouseDown(canvas.x, canvas.y);
@@ -409,8 +429,19 @@ void Engine::ProcessEvents()
             SDL_GetMouseState(&mouseX, &mouseY);
 
             const glm::vec2 canvas = m_UIScale.ToCanvas(mouseX, mouseY);
-            if (m_UIManager)
+
+            // The UI gets the wheel when the pointer is over it, and the screen
+            // gets it otherwise. Splitting on position rather than on whether
+            // the UI did anything with it keeps scrolling the chat log from
+            // also zooming the world behind it.
+            if (m_UIManager && m_UIManager->isPointOverElement(canvas.x, canvas.y))
+            {
                 m_UIManager->handleScroll(canvas.x, canvas.y, event.wheel.y);
+            }
+            else if (m_CurrentScreen)
+            {
+                m_CurrentScreen->OnScroll(canvas.x, canvas.y, event.wheel.y);
+            }
             break;
         }
 
@@ -430,7 +461,7 @@ void Engine::ProcessEvents()
             const bool       shift = (mods & SDL_KMOD_SHIFT) != 0;
             const int        key   = TranslateKey(event.key.key);
 
-            const bool uiConsumes = m_UIManager && m_UIManager->getFocusedElement() != nullptr;
+            const bool uiConsumes = m_UIManager && m_UIManager->isTextInputFocused();
 
             if (key != UIKey::None && m_UIManager)
                 m_UIManager->handleKeyDown(key, ctrl, shift);
@@ -647,7 +678,95 @@ void Engine::Render()
         m_UIRenderer->End();
     }
 
+    // Before the swap: this is the only moment the finished frame is still
+    // readable. After EndFrame the back buffer's contents are undefined.
+    if (m_ScreenshotRequested)
+    {
+        m_ScreenshotRequested = false;
+        CaptureScreenshot();
+    }
+
     m_Window->EndFrame();
+}
+
+void Engine::PollScreenshotKey()
+{
+    const bool* keys = SDL_GetKeyboardState(nullptr);
+    if (!keys)
+        return;
+
+    const bool down = keys[SDL_SCANCODE_F12] != 0;
+
+    // Edge-detected. A held key would otherwise write one file per frame, and
+    // at sixty frames a second that fills a directory before you let go.
+    if (down && !m_PrevScreenshotKey)
+        m_ScreenshotRequested = true;
+
+    m_PrevScreenshotKey = down;
+}
+
+void Engine::CaptureScreenshot()
+{
+    const int width  = m_UIScale.GetFramebufferWidth();
+    const int height = m_UIScale.GetFramebufferHeight();
+
+    if (width <= 0 || height <= 0)
+    {
+        Logger::Warning("Engine: cannot screenshot a zero-sized framebuffer");
+        return;
+    }
+
+    std::vector<unsigned char> pixels(static_cast<std::size_t>(width) * height * 4);
+
+    // Tightly packed rows. The default is 4-byte alignment, which silently
+    // shears the image whenever the row length is not a multiple of four -- a
+    // 1279-pixel-wide window would come out skewed rather than failing.
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    // OpenGL's origin is bottom-left and every image format here is top-down,
+    // so the rows come back upside down. The same trap the asset loader
+    // documents against stbi_set_flip_vertically_on_load, in the other
+    // direction.
+    const std::size_t stride = static_cast<std::size_t>(width) * 4;
+    std::vector<unsigned char> row(stride);
+    for (int y = 0; y < height / 2; ++y)
+    {
+        unsigned char* top    = pixels.data() + static_cast<std::size_t>(y) * stride;
+        unsigned char* bottom = pixels.data() +
+                                static_cast<std::size_t>(height - 1 - y) * stride;
+        std::copy(top, top + stride, row.begin());
+        std::copy(bottom, bottom + stride, top);
+        std::copy(row.begin(), row.end(), bottom);
+    }
+
+    std::error_code ec;
+    std::filesystem::create_directories("screenshots", ec);
+
+    const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::tm tm{};
+#if defined(_WIN32)
+    localtime_s(&tm, &now);
+#else
+    localtime_r(&now, &tm);
+#endif
+
+    char stamp[32] = {};
+    std::strftime(stamp, sizeof(stamp), "%Y%m%d-%H%M%S", &tm);
+
+    const std::string path = std::string("screenshots/strixverse-") + stamp + ".png";
+
+    if (stbi_write_png(path.c_str(), width, height, 4, pixels.data(),
+                       static_cast<int>(stride)) == 0)
+    {
+        Logger::Error("Engine: failed to write " + path);
+        return;
+    }
+
+    // Absolute, because the working directory is not obvious from a shortcut
+    // and a screenshot nobody can find is not a screenshot.
+    Logger::Info("Engine: screenshot written to " +
+                 std::filesystem::absolute(path, ec).string());
 }
 
 void Engine::Shutdown()

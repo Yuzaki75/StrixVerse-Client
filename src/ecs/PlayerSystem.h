@@ -37,6 +37,17 @@ namespace StrixVerse
             void SetGravityEnabled(bool enabled) { m_GravityEnabled = enabled; }
             bool IsGravityEnabled() const { return m_GravityEnabled; }
 
+            // Jumps triggered since the last consume: incremented where the
+            // jump impulse is actually written (key edge AND grounded), so a
+            // held key or a jump refused mid-air counts zero. Single game
+            // thread, so no synchronisation.
+            int ConsumeJumpCount()
+            {
+                const int jumps = m_JumpsPending;
+                m_JumpsPending = 0;
+                return jumps;
+            }
+
         private:
             float m_MoveSpeed = 100.0f;      // pixels per second, horizontal
 
@@ -63,6 +74,9 @@ namespace StrixVerse
             // recycled index can carry one stale frame, which at worst costs a
             // single edge and is not worth a specialisation.
             std::unordered_map<uint32_t, bool> m_JumpHeld;
+
+            // Jumps taken but not yet consumed by ConsumeJumpCount().
+            int m_JumpsPending = 0;
         };
     }
 }

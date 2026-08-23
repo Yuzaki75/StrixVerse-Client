@@ -24,8 +24,13 @@ namespace StrixVerse
             // While a text field holds focus the keyboard belongs to it. This
             // system reads the hardware state directly and would otherwise walk
             // the player around as the message is typed.
+            //
+            // Specifically a *text* field, not any focused element. Buttons are
+            // focusable so the keyboard can reach them, and clicking one used
+            // to freeze the player where they stood until they clicked
+            // somewhere blank - selecting a hotbar slot stopped you walking.
             auto uiManager = ServiceLocator::Get<UIManager>();
-            const bool typing = uiManager && uiManager->getFocusedElement() != nullptr;
+            const bool typing = uiManager && uiManager->isTextInputFocused();
 
             // Pause joins the same condition rather than being applied after
             // the fact. Clearing the component from GameScreen::Update did not

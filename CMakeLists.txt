@@ -53,6 +53,12 @@ set(SOURCES
     # Entry
     src/main.cpp
 
+    # --------------------------------------------------
+    # FX
+    # --------------------------------------------------
+
+    src/fx/ParticleSystem.cpp
+
     # Third Party
     third_party/glad/src/glad.c
 
@@ -81,6 +87,7 @@ set(SOURCES
     # Graphics
     # --------------------------------------------------
 
+    src/graphics/Animation.cpp
     src/graphics/Camera2D.cpp
     src/graphics/Color.cpp
     src/graphics/Font.cpp
@@ -174,6 +181,16 @@ set(SOURCES
     # --------------------------------------------------
 
     src/hud/HUD.cpp
+    src/hud/WorldManagerPanel.cpp
+    src/hud/PlayerListPanel.cpp
+    src/hud/InventoryPanel.cpp
+    src/hud/CharacterPanel.cpp
+    src/hud/BuffDisplay.cpp
+    src/hud/PauseOverlay.cpp
+    src/hud/VaultPanel.cpp
+    src/hud/GatePanel.cpp
+    src/hud/StabilizerPanel.cpp
+    src/hud/MemoryCrystalPanel.cpp
 )
 
 # --------------------------------------------------
@@ -203,12 +220,15 @@ set(HEADERS
     src/core/world/Tile.h
     src/core/world/World.h
 
+    src/fx/ParticleSystem.h
+
     src/core/WorldManager.h
 
     # --------------------------------------------------
     # Graphics
     # --------------------------------------------------
 
+    src/graphics/Animation.h
     src/graphics/Camera2D.h
     src/graphics/Color.h
     src/graphics/Font.h
@@ -337,6 +357,16 @@ set(HEADERS
     src/audio/AudioManager.h
 
     src/hud/HUD.h
+    src/hud/WorldManagerPanel.h
+    src/hud/PlayerListPanel.h
+    src/hud/InventoryPanel.h
+    src/hud/CharacterPanel.h
+    src/hud/BuffDisplay.h
+    src/hud/PauseOverlay.h
+    src/hud/VaultPanel.h
+    src/hud/GatePanel.h
+    src/hud/StabilizerPanel.h
+    src/hud/MemoryCrystalPanel.h
 )
 
 # --------------------------------------------------

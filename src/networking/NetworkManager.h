@@ -1,7 +1,10 @@
 #ifndef NETWORK_MANAGER_H
 #define NETWORK_MANAGER_H
 
+#include <atomic>
 #include <cstdint>
+#include <deque>
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -72,6 +75,11 @@ public:
     // which the world browser reads - it had a setter and no source, so the
     // browser could only ever show its empty state.
     bool sendWorldListRequest();
+
+    // Asks the server to claim the Strix Core at this tile. The server decides
+    // whether there is one there, whether it is reachable, and whether it is
+    // still unclaimed.
+    bool sendClaimStrixCore(int32_t tileX, int32_t tileY);
 
     // Leaves the current world. The session stays open, so the player returns
     // to World Selection rather than being disconnected.
@@ -180,6 +188,102 @@ public:
         float    tileY       = 0.0f;
     };
 
+    // --- Strix Core -------------------------------------------------------
+    // The Core of the world this client is in, as last reported. `known` stays
+    // false until the server says something about one, so nothing draws a Core
+    // that may not exist.
+    struct CoreState
+    {
+        bool        known         = false;
+        int32_t     tileX         = 0;
+        int32_t     tileY         = 0;
+        int32_t     level         = 0;     // 0 unclaimed, 1..4 claimed
+        bool        protectionOn  = false;
+        bool        viewerIsOwner = false; // about this client, not the Core
+        std::string ownerName;
+    };
+
+    const CoreState& getCoreState() const { return m_Core; }
+    uint32_t getCoreRevision() const { return m_CoreRevision; }
+
+    // --- World management -------------------------------------------------
+    //
+    // What the server says about the world this client is standing in, and
+    // what this client may do in it. Every field is filled from WorldInfo; none
+    // of it is worked out here. The panel reads these to decide which controls
+    // to show, which is not the same as deciding whether they are allowed - the
+    // server re-checks every request on arrival regardless of what was shown.
+    struct WorldManageState
+    {
+        bool        valid         = false;   // false until the first WorldInfo
+        std::string worldName;
+        std::string ownerName;               // empty while unclaimed
+
+        int32_t     coreLevel     = 0;
+        int32_t     coreX         = 0;
+        int32_t     coreY         = 0;
+
+        bool        protectionOn  = false;
+        bool        allowBuilding = false;
+        bool        allowBreaking = false;
+        bool        allowVisitors = false;
+
+        uint16_t    memberCount   = 0;
+
+        uint8_t     viewerRole    = 0;       // WorldRole, as the server resolved it
+        bool        canManage     = false;
+        bool        isOwner       = false;
+    };
+
+    struct WorldRosterEntry
+    {
+        std::string username;
+        uint8_t     role = 0;                // members only; unused for bans
+    };
+
+    const WorldManageState& getWorldManageState() const { return m_WorldManage; }
+    uint32_t getWorldInfoRevision() const { return m_WorldInfoRevision; }
+
+    // Bumped when the server confirms the player has left a world.
+    //
+    // The server answers WorldLeave only on success and stays silent on
+    // refusal -- it refuses when the player is not actually standing at the
+    // door. So a screen watches this counter rather than assuming the press
+    // worked: silence correctly means nothing happened.
+    uint32_t getWorldLeftRevision() const { return m_WorldLeftRevision; }
+
+    const std::vector<WorldRosterEntry>& getWorldMembers() const { return m_WorldMembers; }
+    const std::vector<WorldRosterEntry>& getWorldBans() const { return m_WorldBans; }
+    uint32_t getWorldMembersRevision() const { return m_WorldMembersRevision; }
+
+    // Asks the server to open management for the Core at this tile. The server
+    // decides whether there is a Core there, whether the player is close enough
+    // and what they may see; the panel opens when WorldInfo comes back, never
+    // on the click.
+    bool sendInteractStrixCore(int32_t tileX, int32_t tileY);
+
+    bool sendInviteWorldMember(const std::string& username, uint8_t role);
+    bool sendRemoveWorldMember(const std::string& username);
+    bool sendChangeWorldRole(const std::string& username, uint8_t role);
+    bool sendSetWorldSettings(bool protectionOn, bool allowBuilding,
+                              bool allowBreaking, bool allowVisitors);
+    bool sendBanWorldPlayer(const std::string& username, bool banned,
+                            const std::string& reason);
+
+    // --- Server notifications --------------------------------------------
+    //
+    // Notification packets carry short world-management notices (world saved,
+    // protection toggled, ...). They are routed to the registered handler, or
+    // queued when none is set yet - the packet can arrive while the loading
+    // screen is up, before the HUD that displays them exists. Nothing is lost
+    // either way.
+    void SetNotificationHandler(
+        std::function<void(const std::string& message, int severity)> handler);
+
+    // Takes one queued notification, oldest first. False when the queue is
+    // empty; `out` and `severity` are then untouched.
+    bool PopPendingNotification(std::string& out, int& severity);
+
     const CharacterStats& getCharacterStats() const { return m_Stats; }
 
     uint32_t getStatsRevision() const { return m_StatsRevision; }
@@ -240,6 +344,23 @@ public:
     // world it built is still current.
     uint32_t getTerrainRevision() const { return m_TerrainRevision; }
 
+    // --- Chunk loading progress -------------------------------------------
+    // How many ChunkLoad packets have been fully applied for the current
+    // world join, and how many the server announced. Nothing in the protocol
+    // carries an expected total today, so the expected count stays zero,
+    // which the loading screen treats as "unknown" and animates as an
+    // indeterminate bar.
+    uint32_t ChunksReceived() const { return m_ChunksReceived.load(std::memory_order_relaxed); }
+    uint32_t ChunksExpected() const { return m_ChunksExpected.load(std::memory_order_relaxed); }
+
+    // Clears both counters. Called when a world join begins, so the loading
+    // screen measures this join only and never inherits the previous one.
+    void ResetChunkProgress()
+    {
+        m_ChunksReceived.store(0, std::memory_order_relaxed);
+        m_ChunksExpected.store(0, std::memory_order_relaxed);
+    }
+
     // Packs a chunk coordinate into the terrain map's key.
     static uint64_t terrainKey(int32_t chunkX, int32_t chunkY)
     {
@@ -252,7 +373,10 @@ public:
     // locally: the server validates reach, rate and inventory, then broadcasts
     // the result. Applying optimistically would let a rejected edit leave a
     // hole only this player can see.
-    bool sendBlockBreak(int32_t tileX, int32_t tileY);
+    // `toolItemId` is the selected hotbar item's id and feeds the server's
+    // XP/durability handling; 0 (the default) means bare hands, so callers
+    // that do not track tools stay valid.
+    bool sendBlockBreak(int32_t tileX, int32_t tileY, uint16_t toolItemId = 0);
     bool sendBlockPlace(int32_t tileX, int32_t tileY, uint16_t itemId);
 
     // One accepted edit, as broadcast by the server.
@@ -281,10 +405,26 @@ public:
 private:
     void onPacketReceived(const std::shared_ptr<Packet>& packet);
 
+    // Delivers a notification to the handler, or queues it when there is none.
+    void pushNotification(const std::string& message, int severity);
+
     std::unique_ptr<Connection>       m_connection;
     std::unique_ptr<PacketDispatcher> m_dispatcher;
     std::unique_ptr<KeepAlive>        m_keepAlive;
     std::unique_ptr<PingManager>      m_pingManager;
+
+    std::function<void(const std::string& message, int severity)> m_NotificationHandler;
+
+    struct PendingNotification
+    {
+        std::string message;
+        int         severity = 0;
+    };
+
+    // Capped so a server that floods notifications cannot grow memory without
+    // bound; the oldest drops when the cap is passed.
+    static constexpr std::size_t kMaxPendingNotifications = 32;
+    std::deque<PendingNotification> m_PendingNotifications;
 
     std::string m_host;
     uint16_t    m_port = 0;
@@ -302,10 +442,27 @@ private:
     uint32_t                                   m_TerrainRevision = 0;
     std::vector<TileEdit>                      m_PendingTileEdits;
 
+    // Progress counters for the loading screen. Atomic because the protocol
+    // may one day announce an expected total from a handler running off the
+    // game thread; today both are touched only where packets are dispatched.
+    std::atomic<uint32_t> m_ChunksReceived{0};
+    std::atomic<uint32_t> m_ChunksExpected{0};
+
     // Applies an accepted edit to the stored chunk and queues it for the
     // world. Keeping the store in step means a later rebuild from m_Terrain
     // still reflects every edit.
     void recordTileEdit(int32_t tileX, int32_t tileY, uint8_t tileId);
+
+    CoreState      m_Core;
+    uint32_t       m_CoreRevision = 0;
+
+    WorldManageState              m_WorldManage;
+    uint32_t                      m_WorldInfoRevision = 0;
+    uint32_t                      m_WorldLeftRevision = 0;
+
+    std::vector<WorldRosterEntry> m_WorldMembers;
+    std::vector<WorldRosterEntry> m_WorldBans;
+    uint32_t                      m_WorldMembersRevision = 0;
 
     CharacterStats m_Stats;
     uint32_t       m_StatsRevision = 0;

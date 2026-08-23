@@ -131,6 +131,11 @@ void UIManager::handleMouseMove(float x, float y)
         hoveredElement_->onMouseMove(x, y);
 }
 
+bool UIManager::isPointOverElement(float x, float y)
+{
+    return getElementAt(x, y) != nullptr;
+}
+
 void UIManager::handleMouseDown(float x, float y)
 {
     lastMouseX_ = x;
@@ -235,6 +240,11 @@ void UIManager::render(UIRenderer& renderer)
         if (element && element->isVisible())
             element->render(renderer, 1.0f);
     }
+}
+
+bool UIManager::isTextInputFocused() const
+{
+    return focusedElement_ && focusedElement_->consumesTextInput();
 }
 
 void UIManager::setFocusedElement(const std::shared_ptr<UIElement>& element)

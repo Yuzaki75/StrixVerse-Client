@@ -115,6 +115,22 @@ namespace StrixVerse
                 {10, "010_door"},        {11, "011_copper_ore"}, {12, "012_lantern"},
                 {13, "013_lava"},        {15, "015_coal_ore"},   {16, "016_iron_ore"},
                 {17, "017_gold_ore"},    {18, "018_diamond_ore"},{19, "019_sapling"},
+                // The gate the world generator raises at spawn: a walkable
+                // door flanked by cut stone, with a neon lintel over a marble
+                // plinth. All four were already in every world's terrain and
+                // had no art, so they drew as flat colour.
+                {20, "020_main_door"},   {21, "021_castle_wall"},
+                {22, "022_marble"},      {23, "023_neon_trim"},
+
+                // The Strix Core, one sprite per level. The level is carried by
+                // the tile id because tile ids are the only per-tile thing the
+                // chunk format persists, so the art has to cover all five
+                // states rather than tint one image at draw time.
+                {24, "024_strix_core_unclaimed"},
+                {25, "025_strix_core_level_i"},
+                {26, "026_strix_core_level_ii"},
+                {27, "027_strix_core_level_iii"},
+                {28, "028_strix_core_level_iv"},
             };
 
             const auto named = kSpriteForId.find(serverId);

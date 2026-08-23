@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 
+#include "../graphics/Color.h"
+
 class Engine;
 class UIManager;
 class UILabel;
@@ -13,6 +15,7 @@ class UIPanel;
 class UIButton;
 class UIProgressBar;
 class UITextBox;
+class NetworkManager;
 
 /**
  * Heads-Up Display (HUD) for the game.
@@ -51,6 +54,17 @@ public:
 
     // Add a chat message
     void AddChatMessage(const std::string& message);
+
+    // Pushes a system notice onto the top-centre notification stack. This is
+    // the channel for join/left/connection events, kept out of the chat log
+    // so conversation and world events never blur together.
+    void AddNotification(const std::string& message);
+
+    // Routes server notifications into the stack: registers this HUD as the
+    // sink on the given NetworkManager and styles each notice by its severity.
+    // Called lazily from Update on the first frame, so GameScreen does not
+    // have to wire anything up; calling it explicitly is also fine.
+    void BindNotificationSource(NetworkManager* network);
 
     // --- Inventory ---------------------------------------------------------
     // One entry per occupied slot, in slot order. Passing an empty list draws
@@ -107,7 +121,7 @@ public:
 
     bool IsChatInputFocused() const;
 
-    // Show a temporary notification
+    // Show a temporary notification (routes onto the notification stack)
     void ShowNotification(const std::string& message, float duration = 3.0f);
 
 private:
@@ -161,18 +175,47 @@ private:
 
     // Sprite path for an item id, or empty if there is no art for it.
     static std::string IconPathForItem(uint16_t itemId);
+
+    // Draws one of the two permanent tool slots. Falls back to the tool's name
+    // if the artwork is missing, so the slot is never silently blank.
+    void SetToolSlot(std::size_t barSlot, const std::string& iconPath,
+                     const std::string& fallbackText, const Color& fallbackColor);
     std::vector<std::shared_ptr<UILabel>> m_InventoryCounts;
 
-    std::shared_ptr<UIPanel> m_NotificationPanel;
-    std::shared_ptr<UILabel> m_NotificationLabel;
-    float m_NotificationTimer;
-    std::string m_NotificationMessage;
-    bool m_NotificationActive;
+    // --- Notification stack ------------------------------------------------
+    // Top-centre system notices, visually distinct from chat: semi-transparent
+    // dark card with an Aether-blue/violet accent bar on its left edge. Each
+    // entry fades over the last half second of its life; more than five at
+    // once and the oldest drops.
+    struct Notification
+    {
+        std::shared_ptr<UIPanel> panel;
+        std::shared_ptr<UIPanel> accent;
+        std::shared_ptr<UILabel> label;
+
+        Color background{0.0f, 0.0f, 0.0f, 0.0f};
+        Color accentColor{0.0f, 0.0f, 0.0f, 0.0f};
+
+        float remaining = 0.0f;
+    };
+
+    static constexpr std::size_t kMaxNotifications = 5;
+
+    // Severity: 0 info, 1 warn, 2 success - matching NotificationPacket.
+    void AddNotification(const std::string& message, float duration, int severity);
+    void CloseNotification(std::size_t index);
+    void LayoutNotifications();
+
+    std::vector<Notification> m_Notifications;
+
+    // Set once this HUD has registered as the notification sink. Cleared in
+    // the destructor so a notice arriving between screen changes queues on
+    // the NetworkManager instead of calling into a destroyed HUD.
+    bool m_NotificationBound = false;
 
     // Helper methods to create and position elements
     void CreateHealthSection();
     void CreateLevelSection();
     void CreateChatSection();
     void CreateInventorySection();
-    void CreateNotificationSection();
 };

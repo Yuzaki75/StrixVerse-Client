@@ -1,0 +1,77 @@
+#pragma once
+
+#include <memory>
+#include <string>
+#include <vector>
+
+class Engine;
+class UIManager;
+class UIPanel;
+class UILabel;
+
+// -----------------------------------------------------------------------------
+// BuffDisplay
+//
+// A standing HUD element, not a toggle screen: one small row per active buff,
+// stacked in a column under the HUD's stat panels.
+//
+// The server is authoritative about what is active and when it expires. This
+// element only animates between packets - Update counts each bar down from
+// what the last packet said, so a bar moves smoothly instead of stepping once
+// per refresh - and SetBuffs is always the correction that wins.
+// -----------------------------------------------------------------------------
+class BuffDisplay
+{
+public:
+    struct BuffEntry
+    {
+        std::string id;
+        std::string name;
+
+        float remainingSeconds = 0.0f;
+        float totalSeconds     = 0.0f;
+    };
+
+    BuffDisplay(Engine* engine, UIManager* uiManager);
+    ~BuffDisplay();
+
+    BuffDisplay(const BuffDisplay&) = delete;
+    BuffDisplay& operator=(const BuffDisplay&) = delete;
+
+    // Built once against the UIManager, like every other HUD-adjacent overlay;
+    // hidden until the first non-empty buff list arrives.
+    void Build();
+
+    // Replaces the visible buff set. Rows are rebuilt because the count itself
+    // changed; Update never rebuilds, it only resizes bars.
+    void SetBuffs(const std::vector<BuffEntry>& buffs);
+
+    void Clear();
+
+    // Client-side countdown display only. dt in seconds.
+    void Update(float dt);
+
+private:
+    struct Row
+    {
+        std::shared_ptr<UIPanel> backing;
+        std::shared_ptr<UILabel> name;
+        std::shared_ptr<UIPanel> barBackground;
+        std::shared_ptr<UIPanel> barFill;
+    };
+
+    void BuildFrame();
+    void RebuildRows();
+    void ApplyBars() const;
+    void UpdateVisibility();
+
+    Engine*    engine_    = nullptr;
+    UIManager* uiManager_ = nullptr;
+
+    bool built_ = false;
+
+    std::vector<BuffEntry> buffs_;
+    std::vector<Row>       rows_;
+
+    std::shared_ptr<UIPanel> root_;
+};

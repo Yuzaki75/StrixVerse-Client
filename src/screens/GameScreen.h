@@ -11,7 +11,18 @@
 #include "../ecs/Entity.h"
 #include "../networking/PacketHandler.h"
 #include "../ecs/TileRendererSystem.h"
+#include "../fx/ParticleSystem.h"
 #include "../hud/HUD.h"
+#include "../hud/WorldManagerPanel.h"
+#include "../hud/PlayerListPanel.h"
+#include "../hud/InventoryPanel.h"
+#include "../hud/CharacterPanel.h"
+#include "../hud/BuffDisplay.h"
+#include "../hud/PauseOverlay.h"
+#include "../hud/VaultPanel.h"
+#include "../hud/GatePanel.h"
+#include "../hud/StabilizerPanel.h"
+#include "../hud/MemoryCrystalPanel.h"
 
 class UIButton;
 class UILabel;
@@ -34,10 +45,20 @@ public:
     void Update(float deltaTime) override;
     void OnKeyDown(int key, bool ctrl, bool shift) override;
 
+    // World-space extras drawn after the systems' render pass: gameplay
+    // particles. The camera projection is already on the SpriteBatch by the
+    // time this runs, so a particle lands on the tile it was emitted over.
+    void RenderGame() const override;
+
 private:
     void InitializeUI();
     void InitializeHUD();
     void InitializeWorld();
+
+    // The UI overlays that are not part of the HUD proper: pause, player
+    // list, inventory, character sheet and buff display. Built once in
+    // OnEnter against the UIManager and shown or hidden from there.
+    void InitializePanels();
 
     // Fills world_ from the chunks NetworkManager collected during the loading
     // screen. Does nothing if none arrived.
@@ -57,15 +78,98 @@ private:
     // RequestScreenChange(ScreenID::Settings), which runs OnExit and destroys
     // the HUD, the player entity, the camera and every remote player, then
     // rebuilds them all on the way back. The world stays live behind this.
-    void BuildPausePanel();
     void SetPaused(bool paused);
 
-    bool                       paused_ = false;
-    std::shared_ptr<UIPanel>   pausePanel_;
+    bool paused_ = false;
+
+    // --- Panel overlays ----------------------------------------------------
+    // One panel at a time: opening one closes the others. Escape closes the
+    // topmost, with pause last so a stack unwinds one layer per press.
+    void ClosePanelOverlays();
+
+    // True while any overlay that covers live terrain is up. One list, so the
+    // click gate, the key gate and the Escape ladder cannot drift apart.
+    bool AnyPanelOpen() const;
+
+    std::unique_ptr<PlayerListPanel> playerListPanel_;
+    std::unique_ptr<InventoryPanel>  inventoryPanel_;
+    std::unique_ptr<CharacterPanel>  characterPanel_;
+    std::unique_ptr<BuffDisplay>     buffDisplay_;
+    std::unique_ptr<PauseOverlay>    pauseOverlay_;
+
+    // Lost Technology interfaces, opened from the world with E rather than a
+    // key. Same lifecycle as the panels above.
+    std::unique_ptr<VaultPanel>         vaultPanel_;
+    std::unique_ptr<GatePanel>          gatePanel_;
+    std::unique_ptr<StabilizerPanel>    stabilizerPanel_;
+    std::unique_ptr<MemoryCrystalPanel> memoryCrystalPanel_;
+
+    // Cosmetic effects pool. Updated every frame and drawn in RenderGame;
+    // emission points land with Wave-2b.
+    StrixVerse::FX::ParticleSystem particles_;
+
+    // --- Gameplay keys -----------------------------------------------------
+    // Engine::TranslateKey maps only the twelve editing keys, so letters and
+    // Tab never reach OnKeyDown as anything but None. These bindings are
+    // polled from the hardware keyboard instead - the same source
+    // InputSystem reads - with edge detection here, which also makes them
+    // immune to key-repeat events that the event path never filters.
+    // Level-based hold-to-show falls out of the same read for free.
+    void HandleGameplayKeys();
+
+    bool prevInventoryKey_ = false;   // I
+    bool prevCharacterKey_ = false;   // C
+    bool prevPlayerListKey_ = false;  // Tab (hold to show)
+    bool prevInteractKey_  = false;   // E
+
+    // --- Interaction -------------------------------------------------------
+    // Scans the tiles around the player for something interactable (a Strix
+    // Core, the main door, or one of the Lost Technology devices) each frame,
+    // shows a prompt naming what it found when one is in range, and keeps the
+    // tile it found so pressing E acts on what the prompt is pointing at
+    // rather than on whatever is under the cursor.
+    void UpdateInteractPrompt();
+    void InteractWithTarget();
+
+    // What kind of thing the interact scan can act on.
+    enum class InteractTarget
+    {
+        None,
+        StrixCore,
+        MainDoor,
+        Vault,
+        Gate,
+        Stabilizer,
+        MemoryCrystal
+    };
+
+    std::shared_ptr<UIPanel> interactPromptPanel_;
+    std::shared_ptr<UILabel> interactPromptLabel_;
+
+    int32_t interactTileX_ = 0;
+    int32_t interactTileY_ = 0;
+
+    // What was found at interactTileX_/Y_, so pressing E routes on what the
+    // prompt is showing rather than re-reading the world.
+    InteractTarget interactTarget_ = InteractTarget::None;
+
+    // How far, in tiles, the scan reaches around the player.
+    static constexpr int kInteractRadius = 2;
 
     // Applies edits the server has accepted. Drained every frame so an edit
     // that lands mid-transition is not lost.
     void ApplyPendingTileEdits();
+
+    // True when a Strix Core stands on this tile, in the server's coordinate
+    // space. Any of its five ids: unclaimed, or claimed at levels I to IV.
+    // The server tile id stored at this position, or 0 for air or out of
+    // bounds. One place does the coordinate flip, so callers cannot disagree.
+    std::uint8_t ServerIdAt(int32_t tileX, int32_t tileY) const;
+
+    bool IsStrixCoreAt(int32_t tileX, int32_t tileY) const;
+
+    // What is interactable on this tile, if anything.
+    InteractTarget InteractTargetAt(int32_t tileX, int32_t tileY) const;
 
     // Wrench: reports whoever is standing on the given tile.
     void InspectPlayerAt(int32_t tileX, int32_t tileY);
@@ -74,6 +178,79 @@ private:
     // false if the click cannot be resolved (no player, no world).
     bool CanvasToServerTile(float canvasX, float canvasY,
                             int32_t& outTileX, int32_t& outTileY) const;
+
+    // --- Canvas <-> world pixels -------------------------------------------
+    // Both directions go through the live camera - its position, its zoom and
+    // its viewport - rather than assuming the player is in the middle of the
+    // screen at zoom 1. That assumption was wrong twice over: the camera clamps
+    // to the world bounds, so a player near an edge is off-centre, and the
+    // wheel now changes the zoom.
+    //
+    // The pair is here so the two can be checked against each other; a click
+    // that resolves to a tile and a bubble that floats over a head are the same
+    // conversion read in opposite directions.
+    bool CanvasToWorldPixel(float canvasX, float canvasY, float& outX, float& outY) const;
+    bool WorldPixelToCanvas(float worldX, float worldY, float& outX, float& outY) const;
+
+    // --- Zoom ---------------------------------------------------------------
+    void OnScroll(float canvasX, float canvasY, float delta) override;
+
+    // Multiplicative, so each notch feels the same at every zoom level; a fixed
+    // step crawls when zoomed out and lurches when zoomed in.
+    static constexpr float kZoomStep = 1.15f;
+    static constexpr float kMinZoom  = 0.6f;
+    static constexpr float kMaxZoom  = 2.5f;
+
+    // --- Chat bubbles -------------------------------------------------------
+    // What someone just said, over their head, for a few seconds. Held as UI
+    // elements rather than drawn in RenderGame because text goes through
+    // UIRenderer, which runs as its own pass over the design canvas - the world
+    // pass has the camera's projection and no way to draw a glyph.
+    struct ChatBubble
+    {
+        std::shared_ptr<UIPanel> panel;
+        std::shared_ptr<UILabel> label;
+        float remaining = 0.0f;
+    };
+
+    // Keyed by the speaker's network id, which is what chat carries. Entity is
+    // a handle class with no std::hash, and resolving the id to an entity every
+    // frame also handles a remote player who leaves mid-bubble.
+    std::unordered_map<uint64_t, ChatBubble> chatBubbles_;
+
+    // Our own messages are echoed locally and carry no sender id, so they need
+    // a key that cannot collide with a real one. Server system messages already
+    // arrive as id 0, which is why that is not it.
+    static constexpr uint64_t kLocalSpeakerId = ~static_cast<uint64_t>(0);
+
+    void ShowChatBubble(uint64_t speakerId, const std::string& message);
+    void UpdateChatBubbles(float deltaTime);
+
+    // --- Name tags ---------------------------------------------------------
+    // Who each body on screen is, floating over their head. Same positioning
+    // as a chat bubble and for the same reason - text goes through UIRenderer,
+    // which is a separate pass over the design canvas - but permanent rather
+    // than timed, and one per player rather than one per thing said.
+    //
+    // Keyed the same way as bubbles so both look a player up identically, and
+    // so a player who leaves loses their tag by the same code path.
+    std::unordered_map<uint64_t, std::shared_ptr<UILabel>> nameTags_;
+
+    void UpdateNameTags();
+
+    // The tag for a speaker, created on first use. Returns nullptr when the
+    // speaker has no body in this world - a server system message, say.
+    std::shared_ptr<UILabel> NameTagFor(uint64_t speakerId, const std::string& name);
+
+    // How far above the player's own top edge the tag sits, in canvas units.
+    // Bubbles clear this so the two never overlap.
+    static float NameTagOffset();
+
+    // The ECS entity a speaker id refers to, or NULL_ENTITY if they are gone.
+    StrixVerse::ECS::Entity EntityForSpeaker(uint64_t speakerId) const;
+
+    // How long a bubble stays up: a floor, plus reading time for its length.
+    static float BubbleLifetimeFor(const std::string& message);
 
     // The server's tile Y runs upward (higher Y is closer to the sky); the
     // screen's runs downward. Every conversion between the two goes through
@@ -158,22 +335,65 @@ private:
     float airbornePeakY_  = 0.0f;   // highest server tile Y reached
     float airborneLowY_   = 0.0f;   // lowest server tile Y reached
 
+    // --- Feedback ----------------------------------------------------------
+    // Sound and particle hooks. Every sfx call is safe by construction:
+    // AudioManager::PlaySfx logs once and returns false for a missing asset,
+    // so a hook costs nothing where the file does not exist.
+    void PlaySfx(const std::string& baseName);
+
+    // Picks a break sound from the broken tile's material id, falling back to
+    // the generic name when no material take exists.
+    void PlayBreakSfx(std::uint8_t brokenServerId);
+
+    // The selected hotbar item's id, for the break packet's tool field.
+    // Punch stays 0 (bare hands) and Wrench never reaches a break request.
+    std::uint16_t SelectedToolItemId() const;
+
+    // Violet/blue Aether burst over the Strix Core an interaction succeeded on.
+    void EmitCoreBurst();
+
+    // One ambient Aether mote every so often at a random point in view.
+    void UpdateAmbientAether(float deltaTime);
+
+    bool  wasConnected_ = false;    // for the connection-lost notification
+    float aetherTimer_  = 0.0f;
+
     // Moves the local player to where the server says it is.
     void ApplyServerCorrection(float tileX, float tileY);
 
     // Name for a player id, falling back to the id when it is not known.
     std::string DisplayNameFor(uint64_t entityId) const;
 
-    // Pushes NetworkManager's inventory into the HUD.
+    // Pushes NetworkManager's inventory into the HUD and the inventory panel.
     void RefreshInventory();
 
     // Pushes NetworkManager's character stats into the HUD.
     void RefreshStats();
 
+    // Pushes the roster (everyone in the world, including us) into the
+    // player list panel. Rebuilt per frame; the roster is small and has no
+    // revision to key a change test on.
+    void RefreshRoster();
+
+    // Pushes the character stats into the character panel, keyed on the same
+    // stats revision RefreshStats follows.
+    void RefreshCharacterPanel();
+    uint32_t characterPanelRevision_ = 0;
+
     std::shared_ptr<UILabel>  worldLabel_;
     std::shared_ptr<UIButton> settingsButton_;
 
     std::unique_ptr<HUD> hud_;
+
+    // The wrench panel. Built once with the rest of the UI and shown when the
+    // server answers an InteractStrixCore with a WorldInfo - never on the
+    // click, because whether this player may see anything is the server's call.
+    std::unique_ptr<WorldManagerPanel> worldManagerPanel_;
+
+    // Last world-info revision handed to the panel, so it repopulates on change
+    // rather than every frame, matching how the HUD follows stats and inventory.
+    uint32_t worldInfoRevision_ = 0;
+    uint32_t worldLeftRevision_ = 0;
 
     std::unique_ptr<StrixVerse::World::World> world_;
 

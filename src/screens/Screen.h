@@ -63,6 +63,14 @@ public:
 
     // True while the screen wants raw key/mouse notifications even when a UI
     // element is focused. Only the splash screen needs this.
+    // Mouse wheel, in canvas coordinates. Only delivered when the pointer is
+    // not over a UI element, so scrolling the chat log never also zooms the
+    // world. delta is SDL's wheel y: positive away from the user.
+    virtual void OnScroll(float canvasX, float canvasY, float delta)
+    {
+        (void)canvasX; (void)canvasY; (void)delta;
+    }
+
     virtual bool WantsRawInput() const { return false; }
 
     // --- Navigation -------------------------------------------------------

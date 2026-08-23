@@ -51,6 +51,37 @@ enum class Opcode : uint16_t
     // a text box you typed a name into.
     WorldListRequest = 23,   // client -> server, no body
     WorldList        = 24,   // server -> client, the worlds it has
+
+    // ---- Strix Core -----------------------------------------------------
+    //
+    // 100 upward, clear of everything else: the highest opcode any other
+    // system uses is 90, so this block leaves the gaps in the ranges above
+    // free for the systems they belong to.
+    // Numbering follows the design's 100-112 block exactly. StrixCoreUpdated
+    // sat on 101 through slice 3 and moved to 111 to free 101 for
+    // InteractStrixCore; both sides carry a format-version byte, so the move
+    // was mechanical then and would only have got more expensive later.
+    ClaimStrixCore      = 100,  // C->S: claim the Core I am looking at
+    InteractStrixCore   = 101,  // C->S: open management for this Core
+    WorldInfo           = 102,  // S->C: the world, and what the caller may do in it
+    WorldMembers        = 103,  // S->C: who belongs to it, and as what
+    InviteWorldMember   = 104,  // C->S: add someone by username
+    RemoveWorldMember   = 105,  // C->S
+    ChangeWorldRole     = 106,  // C->S: promote or demote
+    SetWorldSettings    = 107,  // C->S: protection and the allow_* toggles
+    BanWorldPlayer      = 109,  // C->S: ban or unban, by username
+    StrixCoreUpdated    = 111,  // S->C: the Core's state changed
+
+    // SERVER: implement -- a HUD notification for world-management events
+    // (world saved, protection enabled/disabled, membership changes). Payload:
+    // string Message (uint32 little-endian length + raw characters, capped at
+    // MaxChatMessageLength), then uint8 Severity: 0 info, 1 warn, 2 success.
+    Notification        = 112,
+
+    // 108 SetWorldSpawn and 110 TransferWorldOwner are reserved by the design
+    // and deliberately unimplemented; the gaps are left so they land on their
+    // own numbers when they arrive. 112 was the design's WorldNotification
+    // slot and is now taken by Notification above.
     EntityUpdate = 25,
     EntitySpawn  = 26,
     EntityRemove = 27,

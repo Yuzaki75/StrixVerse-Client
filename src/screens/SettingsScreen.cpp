@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <iterator>
 #include <string>
 
@@ -199,6 +200,7 @@ namespace
     };
 
     constexpr int kVolumeStep = 10;
+    constexpr float kSfxVolumeStep = 0.10f;
 }
 
 void SettingsScreen::BuildSettingsRows(float x, float y, float width)
@@ -243,6 +245,21 @@ void SettingsScreen::BuildSettingsRows(float x, float y, float width)
             Config* c = engine_ ? engine_->GetConfig() : nullptr;
             if (!c) return;
             c->SetMusicVolume(std::min(100, c->GetMusicVolume() + kVolumeStep));
+            ApplyAndSave();
+        });
+
+    sfxValue_ = std::make_shared<UILabel>();
+    rowY = BuildStepperRow(x, rowY, width, "SFX VOLUME", sfxValue_,
+        [this]() {
+            Config* c = engine_ ? engine_->GetConfig() : nullptr;
+            if (!c) return;
+            c->SetSfxVolume(c->GetSfxVolume() - kSfxVolumeStep);
+            ApplyAndSave();
+        },
+        [this]() {
+            Config* c = engine_ ? engine_->GetConfig() : nullptr;
+            if (!c) return;
+            c->SetSfxVolume(c->GetSfxVolume() + kSfxVolumeStep);
             ApplyAndSave();
         });
 
@@ -401,6 +418,9 @@ void SettingsScreen::RefreshSettingValues()
     if (volumeValue_)
         volumeValue_->setText(std::to_string(config->GetMusicVolume()) + "%");
 
+    if (sfxValue_)
+        sfxValue_->setText(std::to_string(std::lround(config->GetSfxVolume() * 100.0f)) + "%");
+
     if (resolutionValue_)
         resolutionValue_->setText(std::to_string(config->GetWidth()) + " x " +
                                   std::to_string(config->GetHeight()));
@@ -430,11 +450,14 @@ void SettingsScreen::ApplyAndSave()
     if (!config)
         return;
 
-    // Music is the one setting that can be heard changing, so it is applied
+    // Music and sound effects can be heard changing, so they are applied
     // straight away rather than on the next launch.
     if (engine_)
+    {
         engine_->GetAudio().SetMusicVolume(
             static_cast<float>(config->GetMusicVolume()) / 100.0f);
+        engine_->GetAudio().SetSfxVolume(config->GetSfxVolume());
+    }
 
     RefreshSettingValues();
 

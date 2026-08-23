@@ -41,6 +41,17 @@ public:
     // state leaks across a screen change.
     void clearAllElements();
 
+    // True when a visible UI element sits under this canvas point.
+    //
+    // Clicks used to reach both the UI and the screen, so selecting a hotbar
+    // slot also swung the tool at whatever tile happened to be behind the HUD.
+    //
+    // "Over an element" means over something that answers wantsInput(), which
+    // is buttons and anything given setBlocksInput(true) - not every panel.
+    // A bare UIPanel is scenery and deliberately lets the click through, so a
+    // decorative frame drawn over the world does not create a dead zone in it.
+    bool isPointOverElement(float x, float y);
+
     // --- Input -----------------------------------------------------------
     void handleMouseMove(float x, float y);
     void handleMouseDown(float x, float y);
@@ -56,6 +67,11 @@ public:
     // --- Focus -----------------------------------------------------------
     void setFocusedElement(const std::shared_ptr<UIElement>& element);
     std::shared_ptr<UIElement> getFocusedElement() const { return focusedElement_; }
+
+    // True when a focused element is taking the keyboard - a text field with a
+    // caret in it. Gameplay gates on this rather than on focus itself, because
+    // a focused button still leaves the player free to move and build.
+    bool isTextInputFocused() const;
     void clearFocus();
 
     // Moves focus along the visual order; wraps at either end.

@@ -9,9 +9,12 @@
 #include "LoginFailedPacket.h"
 #include "LoginPacket.h"
 #include "LoginSuccessPacket.h"
+#include "NotificationPacket.h"
 #include "PingPacket.h"
 #include "PlayerDataPacket.h"
 #include "WorldListPacket.h"
+#include "StrixCorePacket.h"
+#include "WorldManagePackets.h"
 #include "PlayerMovePacket.h"
 #include "PlayerRemovePacket.h"
 #include "PlayerSpawnPacket.h"
@@ -20,8 +23,10 @@
 #include "WorldJoinPacket.h"
 #include "BlockBreakPacket.h"
 #include "BlockPlacePacket.h"
+#include "TileChangePacket.h"
 #include "ChunkLoadPacket.h"
 #include "WorldStatePacket.h"
+#include "WorldLeavePacket.h"
 
 std::unordered_map<Opcode, PacketRegistry::CreatorFunc>& PacketRegistry::getMap()
 {
@@ -75,6 +80,10 @@ void PacketRegistry::registerAllPacketTypes()
     // World entry
     add(Opcode::WorldJoin,  [] { return std::make_shared<WorldJoinPacket>(); });
     add(Opcode::WorldState, [] { return std::make_shared<WorldStatePacket>(); });
+    // Both ways: the client asks to leave, and the server sends the same type
+    // back to confirm. Without the registration the confirmation could never be
+    // constructed and the handler for it would never run.
+    add(Opcode::WorldLeave, [] { return std::make_shared<WorldLeavePacket>(); });
 
     // Terrain. ChunkLoad is inbound only; the client never sends terrain.
     add(Opcode::ChunkLoad,  [] { return std::make_shared<ChunkLoadPacket>(); });
@@ -84,12 +93,20 @@ void PacketRegistry::registerAllPacketTypes()
     add(Opcode::BlockBreak, [] { return std::make_shared<BlockBreakPacket>(); });
     add(Opcode::BlockPlace, [] { return std::make_shared<BlockPlacePacket>(); });
 
+    // Inbound only: everything the world changes on its own, which block
+    // place and break do not cover -- a seed sprouting, a plant maturing.
+    add(Opcode::TileChange, [] { return std::make_shared<TileChangePacket>(); });
+
     // Player replication
     add(Opcode::PlayerSpawn,  [] { return std::make_shared<PlayerSpawnPacket>(); });
     add(Opcode::PlayerMove,   [] { return std::make_shared<PlayerMovePacket>(); });
     add(Opcode::PlayerRemove, [] { return std::make_shared<PlayerRemovePacket>(); });
     add(Opcode::PlayerData,   [] { return std::make_shared<PlayerDataPacket>(); });
     add(Opcode::WorldList,    [] { return std::make_shared<WorldListPacket>(); });
+    add(Opcode::StrixCoreUpdated, [] { return std::make_shared<StrixCoreUpdatedPacket>(); });
+    add(Opcode::WorldInfo,    [] { return std::make_shared<WorldInfoPacket>(); });
+    add(Opcode::WorldMembers, [] { return std::make_shared<WorldMembersPacket>(); });
+    add(Opcode::Notification, [] { return std::make_shared<NotificationPacket>(); });
 
     // Inventory. InventoryUpdate is inbound only - the server disconnects a
     // client that sends one - but it still needs an entry here to be decoded.

@@ -20,6 +20,7 @@
 #include <format>
 #include <numbers>
 #include <random>
+#include <string>
 
 namespace
 {
@@ -34,26 +35,38 @@ namespace
     // continuing with the local world.
     constexpr float kWorldConfirmTimeout = 6.0f;
 
+    // How long the terrain stage waits for chunks before giving up on the
+    // server and continuing with whatever arrived.
+    constexpr float kChunkTimeout = 15.0f;
+
+    // The server sends every chunk in one burst right after WorldState. When
+    // no expected total is known, this much silence after at least one chunk
+    // means the burst is over.
+    constexpr float kChunkIdleTimeout = 1.5f;
+
+    // Shortest total time on screen, so a fast load does not just flash by.
+    constexpr float kMinTotalTime = 0.5f;
+
     constexpr std::array<const char*, 6> kLoadingTips = {
-        "World Locks protect your build. Always lock your world before going offline!",
-        "Plant Crystal Seeds near water tiles for faster growth.",
-        "Check the Marketplace daily - rare items often appear at discount.",
-        "Completing quests grants bonus XP, Coins, and crafting recipes.",
-        "Gems can only be obtained via official packs or seasonal events.",
-        "Join a Guild to unlock co-op dungeon access and guild rewards.",
+        "Select a block from your hotbar and click a tile to build - every "
+        "placement is stored server-side.",
+        "Claim the Strix Core to protect your world and manage who may visit.",
+        "Aether technology keeps the Strix Core running - raise its level to "
+        "strengthen your world.",
+        "World owners can toggle building, breaking and visitor access in the "
+        "world settings.",
+        "Press Enter to open chat, then press Enter again to send.",
+        "Broken blocks regrow on protected worlds - building near your Core is "
+        "always safe.",
     };
 
-    struct StageDefinition
-    {
-        const char* label;
-        float       minimumDuration;   // Keeps fast stages legible.
-    };
-
-    constexpr StageDefinition kStages[] = {
-        {"World tiles",    0.45f},
-        {"Entity data",    0.35f},
-        {"Player session", 0.30f},
-        {"Crystal shards", 0.40f},
+    // Milestone names, in the order they complete. There are no timed stages:
+    // each one finishes when the thing it names has actually happened.
+    constexpr std::size_t kStageCount = 3;
+    constexpr std::array<const char*, kStageCount> kStageLabels = {
+        "World data",
+        "Terrain",
+        "Player session",
     };
 
     // World artwork shipped with the client, used as the loading backdrop.
@@ -89,6 +102,9 @@ void LoadingScreen::OnEnter()
     elapsed_      = 0.0f;
     completeHold_ = 0.0f;
     finished_     = false;
+
+    lastChunkCount_  = 0;
+    chunkQuietTimer_ = 0.0f;
 
     worldName_ = engine_ ? engine_->GetSelectedWorldName() : std::string();
 
@@ -230,7 +246,7 @@ void LoadingScreen::BuildLayout()
         stageIcons_[i] = icon;
 
         auto label = std::make_shared<UILabel>();
-        label->setText(kStages[i].label);
+        label->setText(kStageLabels[i]);
         label->setFont(BodyFont(UITheme::Body::Welcome));
         label->setTextColor(UITheme::Muted);
         label->setPosition(barX + S(18.0f), y);
@@ -317,37 +333,32 @@ bool LoadingScreen::RunStage(size_t index)
 {
     switch (index)
     {
-    case 0:
-        // World tiles. With a live session this is the server's confirmation;
-        // offline it is the local save.
+    case StageWorldData:
+        // The server's confirmation (or the timeout) has already been handled
+        // by the time this runs. A missing record is normal the first time an
+        // account plays, so this is not treated as a failure. It restores
+        // which world was last entered, not the world itself - the server
+        // owns that.
         if (WorldManager* worlds = engine_ ? engine_->GetWorldManager() : nullptr)
         {
             std::string loadedName;
-
-            // A missing record is normal the first time an account plays, so
-            // this is not treated as a failure. It restores which world was
-            // last entered, not the world itself - the server owns that.
             if (worlds->LoadLastSession(loadedName))
                 LOG_INFO("LoadingScreen: last session was in '" + loadedName + "'");
         }
         return true;
 
-    case 1:
-        // Entity data: the ECS is already constructed by the Engine.
-        return engine_ != nullptr;
+    case StageTerrain:
+        // Terrain arrives over the network and is counted by NetworkManager;
+        // there is nothing left to do here but acknowledge it.
+        return true;
 
-    case 2:
+    case StageSession:
         // Player session: record the world so Continue can offer it again.
         if (engine_ && !worldName_.empty())
         {
             if (WorldManager* worlds = engine_->GetWorldManager())
                 worlds->SetLastWorld(worldName_, engine_->GetSignedInUser());
         }
-        return true;
-
-    case 3:
-        // Crystal shards: warm the world artwork and font atlases so the first
-        // gameplay frame does not stall on an upload.
         return true;
 
     default:
@@ -417,35 +428,97 @@ void LoadingScreen::Update(float deltaTime)
         }
     }
 
-    // Advance the stages.
+    // Advance the stages. Each one finishes on a real milestone - there are
+    // no fixed durations left; timeouts exist only so a silent server cannot
+    // trap the player here forever.
+    bool indeterminateTerrain = false;
+
     if (currentStage_ < kStageCount)
     {
         stageTimer_ += deltaTime;
 
-        // The first stage additionally waits on the server's confirmation, so
-        // the bar reflects real progress rather than a fixed delay.
-        const bool worldConfirmed = engine_ && engine_->getNetworkManager().isWorldConfirmed();
-        const bool waitingOnServer = currentStage_ == 0 && awaitingServer_ && !worldConfirmed;
+        const NetworkManager& network = engine_->getNetworkManager();
+        const bool worldConfirmed = engine_ && network.isWorldConfirmed();
 
-        if (waitingOnServer && stageTimer_ < kWorldConfirmTimeout)
-        {
-            if (statusLabel_)
-                statusLabel_->setText("Waiting for the server...");
-            return;
-        }
+        // The first stage waits on the server's confirmation, so the bar
+        // reflects real progress rather than a fixed delay.
+        bool waitingOnServer = currentStage_ == StageWorldData &&
+                               awaitingServer_ && !worldConfirmed;
 
         if (waitingOnServer)
         {
-            LOG_WARN("LoadingScreen: the server did not confirm the world; continuing locally.");
-            awaitingServer_ = false;
+            if (stageTimer_ < kWorldConfirmTimeout)
+            {
+                if (statusLabel_)
+                    statusLabel_->setText("Waiting for the server...");
+            }
+            else
+            {
+                LOG_WARN("LoadingScreen: the server did not confirm the world; "
+                         "continuing locally.");
+                awaitingServer_ = false;
+                waitingOnServer = false;
+            }
         }
 
-        if (stageTimer_ >= kStages[currentStage_].minimumDuration)
+        bool readyToAdvance = !waitingOnServer;
+
+        if (readyToAdvance && currentStage_ == StageTerrain)
+        {
+            const uint32_t received = network.ChunksReceived();
+            const uint32_t expected = network.ChunksExpected();
+
+            // Watch the counter for silence: the server sends every chunk in
+            // one burst right after WorldState, so when no expected total was
+            // announced, a quiet gap means the burst has ended.
+            if (received != lastChunkCount_)
+            {
+                lastChunkCount_  = received;
+                chunkQuietTimer_ = 0.0f;
+            }
+            else
+            {
+                chunkQuietTimer_ += deltaTime;
+            }
+
+            if (!network.isConnected())
+            {
+                // A local session has no terrain to receive.
+                readyToAdvance = true;
+            }
+            else if (expected > 0 && received >= expected)
+            {
+                readyToAdvance = true;
+            }
+            else if (received > 0 && chunkQuietTimer_ >= kChunkIdleTimeout)
+            {
+                LOG_INFO(std::format("LoadingScreen: chunk burst ended at {} chunk(s); "
+                                     "the server never announced an expected total.",
+                                     received));
+                readyToAdvance = true;
+            }
+            else if (stageTimer_ >= kChunkTimeout)
+            {
+                LOG_WARN(std::format("LoadingScreen: still missing terrain after {:.0f}s "
+                                     "({} of {} chunk(s)); continuing.",
+                                     kChunkTimeout, received,
+                                     expected > 0 ? std::to_string(expected)
+                                                  : std::string("unknown")));
+                readyToAdvance = true;
+            }
+
+            // Without an announced total there is no honest fraction to show,
+            // so the bar sweeps instead.
+            if (expected == 0)
+                indeterminateTerrain = true;
+        }
+
+        if (readyToAdvance)
         {
             if (!RunStage(currentStage_))
             {
                 LOG_ERROR(std::format("LoadingScreen: stage '{}' failed",
-                                      kStages[currentStage_].label));
+                                      kStageLabels[currentStage_]));
 
                 if (statusLabel_)
                 {
@@ -462,23 +535,65 @@ void LoadingScreen::Update(float deltaTime)
             stageTimer_ = 0.0f;
             ++currentStage_;
 
-            progress_ = static_cast<float>(currentStage_) / static_cast<float>(kStageCount);
-
             UpdateStageVisuals();
 
             if (statusLabel_ && currentStage_ < kStageCount)
-                statusLabel_->setText(std::string("Loading ") + kStages[currentStage_].label + "...");
+                statusLabel_->setText(std::string("Loading ") +
+                                      kStageLabels[currentStage_] + "...");
         }
     }
 
-    // Ease the displayed value towards the real progress so the bar glides.
-    displayed_ += (progress_ - displayed_) * std::min(1.0f, deltaTime * 6.0f);
+    // Overall progress: completed stages plus whatever fraction of the
+    // terrain stage has genuinely arrived.
+    {
+        float stageFraction = 0.0f;
+
+        if (currentStage_ == StageTerrain && engine_)
+        {
+            const NetworkManager& network = engine_->getNetworkManager();
+
+            if (network.ChunksExpected() > 0)
+            {
+                stageFraction = std::clamp(
+                    static_cast<float>(network.ChunksReceived()) /
+                        static_cast<float>(network.ChunksExpected()),
+                    0.0f, 1.0f);
+            }
+        }
+
+        const float overall = (static_cast<float>(currentStage_) + stageFraction) /
+                              static_cast<float>(kStageCount);
+
+        progress_ = std::clamp(overall, 0.0f, 1.0f);
+    }
+
+    if (indeterminateTerrain)
+    {
+        // No total to measure against, so sweep the bar back and forth
+        // instead of pretending to know a percentage.
+        const float sweep = 0.5f + 0.5f * std::sin(elapsed_ * 2.4f);
+        displayed_ = 0.08f + 0.42f * sweep;
+    }
+    else
+    {
+        // Ease the displayed value towards the real progress so the bar glides.
+        displayed_ += (progress_ - displayed_) * std::min(1.0f, deltaTime * 6.0f);
+    }
 
     if (progressBar_)
         progressBar_->setProgress(displayed_);
 
     if (percentLabel_)
-        percentLabel_->setText(std::format("{}%", static_cast<int>(displayed_ * 100.0f + 0.5f)));
+    {
+        if (indeterminateTerrain)
+            percentLabel_->setText(std::format("{} chunks",
+                                               engine_
+                                                   ? engine_->getNetworkManager().ChunksReceived()
+                                                   : 0u));
+        else
+            percentLabel_->setText(std::format("{}%",
+                                               static_cast<int>(displayed_ * 100.0f + 0.5f)));
+    }
 
     if (currentStage_ >= kStageCount && !finished_)
     {
@@ -488,10 +603,11 @@ void LoadingScreen::Update(float deltaTime)
             statusLabel_->setTextColor(UITheme::Success);
         }
 
-        // Hold at 100% briefly so the completed state is visible.
+        // Hold at 100% briefly so the completed state is visible, and never
+        // leave before the shortest legible time on screen.
         completeHold_ += deltaTime;
 
-        if (completeHold_ >= 0.6f && displayed_ > 0.98f)
+        if (completeHold_ >= 0.4f && elapsed_ >= kMinTotalTime && displayed_ > 0.98f)
         {
             finished_ = true;
             RequestScreenChange(ScreenID::Game);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -18,8 +19,9 @@ class UIProgressBar;
  * headline progress bar with its percentage readout, the per-asset checklist,
  * the pulsing pip row and the rotating loading tip.
  *
- * Progress is driven by real loading stages rather than a single timer, so the
- * bar reflects the work the client is actually doing.
+ * Progress is driven by real milestones rather than a single timer: the world
+ * data stage completes when the server confirms the join (or the local save
+ * answers), and the terrain stage tracks NetworkManager's chunk counters.
  */
 class LoadingScreen : public Screen
 {
@@ -30,8 +32,17 @@ public:
     void OnEnter() override;
     void Update(float deltaTime) override;
 
+    // Number of milestone stages; also sizes the checklist layout.
+    static constexpr size_t kStageCount = 3;
+
 private:
-    static constexpr size_t kStageCount = 4;
+    // Stages as milestone indexes; see kStageLabels in the source file.
+    enum Stage
+    {
+        StageWorldData = 0,
+        StageTerrain   = 1,
+        StageSession   = 2,
+    };
 
     void BuildLayout();
     void LoadWorldArtwork();
@@ -54,15 +65,22 @@ private:
 
     std::string worldName_;
 
-    // True while the "World tiles" stage waits for the server's WorldState
+    // True while the "World data" stage waits for the server's WorldState
     // confirmation, which NetworkManager records for us.
     bool awaitingServer_ = false;
 
-    float  progress_      = 0.0f;
-    float  displayed_     = 0.0f;
-    size_t currentStage_  = 0;
-    float  stageTimer_    = 0.0f;
-    float  elapsed_       = 0.0f;
-    float  completeHold_  = 0.0f;
-    bool   finished_      = false;
+    float  progress_        = 0.0f;
+    float  displayed_       = 0.0f;
+    size_t currentStage_    = 0;
+    float  stageTimer_      = 0.0f;
+    float  elapsed_         = 0.0f;
+    float  completeHold_    = 0.0f;
+    bool   finished_        = false;
+
+    // Terrain stage bookkeeping. The quiet timer watches the chunk counter:
+    // the server sends the whole world in one burst right after WorldState,
+    // so when nothing new arrives for a while the burst is over even though
+    // no expected total was ever announced.
+    uint32_t lastChunkCount_  = 0;
+    float    chunkQuietTimer_ = 0.0f;
 };

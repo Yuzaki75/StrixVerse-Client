@@ -6,10 +6,13 @@
 #include "InventoryPacket.h"
 #include "InventoryUpdatePacket.h"
 #include "LoginPacket.h"
+#include "NotificationPacket.h"
 #include "PacketRegistry.h"
 #include "PingPacket.h"
 #include "PlayerDataPacket.h"
 #include "WorldListPacket.h"
+#include "StrixCorePacket.h"
+#include "WorldManagePackets.h"
 #include "PlayerMovePacket.h"
 #include "PlayerRemovePacket.h"
 #include "PlayerSpawnPacket.h"
@@ -19,6 +22,7 @@
 #include "WorldLeavePacket.h"
 #include "BlockBreakPacket.h"
 #include "BlockPlacePacket.h"
+#include "TileChangePacket.h"
 #include "ChunkLoadPacket.h"
 #include "WorldStatePacket.h"
 #include "../core/Logger.h"
@@ -133,6 +137,10 @@ bool NetworkManager::initialize()
 
                 m_Terrain[terrainKey(load->ChunkX, load->ChunkY)] = std::move(chunk);
                 ++m_TerrainRevision;
+
+                // The chunk is fully applied to the store; the loading screen
+                // watches this counter for its progress bar.
+                m_ChunksReceived.fetch_add(1, std::memory_order_relaxed);
             }));
 
     // World edits, echoed by the server once accepted. These arrive for edits
@@ -154,13 +162,67 @@ bool NetworkManager::initialize()
             {
                 const auto* placed = static_cast<const BlockPlacePacket*>(packet.get());
 
-                // The wire carries the ITEM id, and the world stores TILE ids.
-                // They coincide for the block items the generator uses, so the
-                // value is passed through; anything that does not fit a byte
-                // is clamped rather than wrapping into an unrelated tile.
-                const uint16_t itemId = placed->ItemID;
-                recordTileEdit(placed->X, placed->Y,
-                               static_cast<uint8_t>(itemId > 255 ? 255 : itemId));
+                // The server says which tile it wrote. It used to send only the
+                // item id, which this treated as a tile id and clamped above
+                // 255 - and the two are different spaces, so Dirt (item 1000,
+                // tile 1) drew as tile 255, the unknown-tile grey. Every block
+                // anyone placed was the wrong colour.
+                const uint16_t tileId = placed->TileID;
+                if (tileId == 0 || tileId > 255)
+                {
+                    Logger::Warning(std::format(
+                        "NetworkManager: placement at ({}, {}) carried tile id {}, which this "
+                        "client cannot store; ignored.", placed->X, placed->Y, tileId));
+                    return;
+                }
+
+                recordTileEdit(placed->X, placed->Y, static_cast<uint8_t>(tileId));
+            }));
+
+    // Everything the world changes on its own. Block place and break carry a
+    // player's own edits; this carries the rest -- a seed becoming a sapling, a
+    // plant maturing into its block, and whatever later systems change without
+    // anyone having clicked.
+    //
+    // There was no handler and no packet class for this at all, so every one of
+    // those changes arrived and was discarded. Planting has worked end to end
+    // on the server for some time and simply never appeared on screen.
+    m_dispatcher->addHandler(
+        Opcode::TileChange,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* change = static_cast<const TileChangePacket*>(packet.get());
+
+                // Same clamp as BlockPlace, and for the same reason: a tile id
+                // is one byte in this client's storage, so anything outside
+                // that range would silently become a different tile.
+                if (change->TileID == 0 || change->TileID > 255)
+                {
+                    Logger::Warning(std::format(
+                        "NetworkManager: tile change at ({}, {}) carried tile id {}, which this "
+                        "client cannot store; ignored.",
+                        change->X, change->Y, change->TileID));
+                    return;
+                }
+
+                recordTileEdit(change->X, change->Y,
+                               static_cast<uint8_t>(change->TileID));
+            }));
+
+    // The server confirming we are out of the world. Sent only on success; a
+    // refusal is silence, which is why nothing here assumes the press worked
+    // and the screen waits on this counter instead.
+    m_dispatcher->addHandler(
+        Opcode::WorldLeave,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>&)
+            {
+                // The session stays authenticated -- the server despawns the
+                // player but keeps the connection logged in -- so rejoining
+                // needs no fresh handshake, only another WorldJoin.
+                ++m_WorldLeftRevision;
+                Logger::Info("NetworkManager: left the world; the session is still open.");
             }));
 
     // The roster is maintained here so it survives the screen change between
@@ -336,6 +398,101 @@ bool NetworkManager::initialize()
                 }
             }));
 
+    m_dispatcher->addHandler(
+        Opcode::StrixCoreUpdated,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* core = static_cast<const StrixCoreUpdatedPacket*>(packet.get());
+                if (!core->Valid)
+                    return;
+
+                // The tile swap that makes the claim visible. Recorded through
+                // the same path as any other world edit, so GameScreen applies
+                // it on its next update whether or not it existed when this
+                // arrived.
+                if (core->TileID > 0 && core->TileID <= 255)
+                    recordTileEdit(core->X, core->Y, static_cast<uint8_t>(core->TileID));
+
+                m_Core.known         = true;
+                m_Core.tileX         = core->X;
+                m_Core.tileY         = core->Y;
+                m_Core.level         = core->CoreLevel;
+                m_Core.protectionOn  = core->ProtectionOn != 0;
+                m_Core.viewerIsOwner = core->ViewerIsOwner != 0;
+                m_Core.ownerName     = core->OwnerName;
+                ++m_CoreRevision;
+
+                Logger::Info(std::format(
+                    "NetworkManager: Strix Core at ({}, {}) is level {}, owned by '{}'{}.",
+                    core->X, core->Y, static_cast<int>(core->CoreLevel),
+                    core->OwnerName, core->ViewerIsOwner ? " (that is us)" : ""));
+            }));
+
+    // The world, and what this client may do in it. Everything here is the
+    // server's answer; nothing is derived locally. The revision counter is what
+    // GameScreen watches to refresh the management panel, matching how stats
+    // and inventory already work.
+    m_dispatcher->addHandler(
+        Opcode::WorldInfo,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* info = static_cast<const WorldInfoPacket*>(packet.get());
+                if (!info->Valid)
+                    return;
+
+                m_WorldManage.valid         = true;
+                m_WorldManage.worldName     = info->WorldName;
+                m_WorldManage.ownerName     = info->OwnerName;
+                m_WorldManage.coreLevel     = info->CoreLevel;
+                m_WorldManage.coreX         = info->CoreX;
+                m_WorldManage.coreY         = info->CoreY;
+                m_WorldManage.protectionOn  = info->ProtectionOn  != 0;
+                m_WorldManage.allowBuilding = info->AllowBuilding != 0;
+                m_WorldManage.allowBreaking = info->AllowBreaking != 0;
+                m_WorldManage.allowVisitors = info->AllowVisitors != 0;
+                m_WorldManage.memberCount   = info->MemberCount;
+                m_WorldManage.viewerRole    = info->ViewerRole;
+                m_WorldManage.canManage     = info->ViewerCanManage != 0;
+                m_WorldManage.isOwner       = info->ViewerIsOwner   != 0;
+                ++m_WorldInfoRevision;
+
+                Logger::Info(std::format(
+                    "NetworkManager: world '{}' owner '{}' level {} protection {} "
+                    "members {} (we are role {}{})",
+                    info->WorldName, info->OwnerName, static_cast<int>(info->CoreLevel),
+                    info->ProtectionOn ? "on" : "off", info->MemberCount,
+                    static_cast<int>(info->ViewerRole),
+                    info->ViewerCanManage ? ", may manage" : ""));
+            }));
+
+    // The roster. Only sent to someone whose role may see it, so an arrival is
+    // itself the server saying this client may act on the list.
+    m_dispatcher->addHandler(
+        Opcode::WorldMembers,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* roster = static_cast<const WorldMembersPacket*>(packet.get());
+                if (!roster->Valid)
+                    return;
+
+                m_WorldMembers.clear();
+                for (const auto& entry : roster->Members)
+                    m_WorldMembers.push_back({entry.Username, entry.Role});
+
+                m_WorldBans.clear();
+                for (const auto& entry : roster->Bans)
+                    m_WorldBans.push_back({entry.Username, entry.Role});
+
+                ++m_WorldMembersRevision;
+
+                Logger::Info(std::format(
+                    "NetworkManager: world '{}' roster - {} member(s), {} ban(s)",
+                    roster->WorldName, m_WorldMembers.size(), m_WorldBans.size()));
+            }));
+
     // Inventory, kept here for the same reason as the roster: the reply to the
     // request can land while a screen change is in flight.
     m_dispatcher->addHandler(
@@ -397,6 +554,22 @@ bool NetworkManager::initialize()
                 Logger::Warning(std::format("NetworkManager: server disconnected us - {}",
                                             disconnectPacket->Reason));
                 clearSession();
+            }));
+
+    // World-management notices for the HUD's notification stack: world saved,
+    // protection toggled and so on. Delivered to the registered handler, or
+    // queued here when the HUD has not bound itself yet.
+    m_dispatcher->addHandler(
+        Opcode::Notification,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* note = static_cast<const NotificationPacket*>(packet.get());
+
+                if (note->Message.empty())
+                    return;
+
+                pushNotification(note->Message, static_cast<int>(note->Severity));
             }));
 
     m_initialized = true;
@@ -545,6 +718,9 @@ bool NetworkManager::sendWorldJoin(const std::string& worldName)
     m_CurrentWorld.clear();
     m_RemotePlayers.clear();
 
+    // The loading screen reads the chunk counters from this join onwards.
+    ResetChunkProgress();
+
     auto packet = std::make_shared<WorldJoinPacket>();
 
     // The server ignores the client-supplied id and spawn point and uses the
@@ -554,6 +730,87 @@ bool NetworkManager::sendWorldJoin(const std::string& worldName)
     packet->SpawnX    = 0.0f;
     packet->SpawnY    = 0.0f;
 
+    return sendPacket(packet);
+}
+
+bool NetworkManager::sendClaimStrixCore(int32_t tileX, int32_t tileY)
+{
+    if (!isConnected())
+        return false;
+
+    auto packet = std::make_shared<ClaimStrixCorePacket>();
+    packet->X = tileX;
+    packet->Y = tileY;
+    return sendPacket(packet);
+}
+
+bool NetworkManager::sendInteractStrixCore(int32_t tileX, int32_t tileY)
+{
+    if (!isConnected())
+        return false;
+
+    auto packet = std::make_shared<InteractStrixCorePacket>();
+    packet->X = tileX;
+    packet->Y = tileY;
+    return sendPacket(packet);
+}
+
+bool NetworkManager::sendInviteWorldMember(const std::string& username, uint8_t role)
+{
+    if (!isConnected() || username.empty())
+        return false;
+
+    auto packet = std::make_shared<InviteWorldMemberPacket>();
+    packet->Username = username;
+    packet->Role     = role;
+    return sendPacket(packet);
+}
+
+bool NetworkManager::sendRemoveWorldMember(const std::string& username)
+{
+    if (!isConnected() || username.empty())
+        return false;
+
+    auto packet = std::make_shared<RemoveWorldMemberPacket>();
+    packet->Username = username;
+    return sendPacket(packet);
+}
+
+bool NetworkManager::sendChangeWorldRole(const std::string& username, uint8_t role)
+{
+    if (!isConnected() || username.empty())
+        return false;
+
+    auto packet = std::make_shared<ChangeWorldRolePacket>();
+    packet->Username = username;
+    packet->Role     = role;
+    return sendPacket(packet);
+}
+
+bool NetworkManager::sendSetWorldSettings(bool protectionOn, bool allowBuilding,
+                                          bool allowBreaking, bool allowVisitors)
+{
+    if (!isConnected())
+        return false;
+
+    auto packet = std::make_shared<SetWorldSettingsPacket>();
+    packet->ProtectionOn  = protectionOn  ? 1 : 0;
+    packet->AllowBuilding = allowBuilding ? 1 : 0;
+    packet->AllowBreaking = allowBreaking ? 1 : 0;
+    packet->AllowVisitors = allowVisitors ? 1 : 0;
+    return sendPacket(packet);
+}
+
+bool NetworkManager::sendBanWorldPlayer(const std::string& username, bool banned,
+                                        const std::string& reason)
+{
+    if (!isConnected() || username.empty())
+        return false;
+
+    auto packet = std::make_shared<BanWorldPlayerPacket>();
+    packet->Username = username;
+    packet->Banned   = banned ? 1 : 0;
+    packet->Reason   = reason;
     return sendPacket(packet);
 }
 
@@ -630,7 +887,7 @@ bool NetworkManager::sendPlayerMove(float tileX, float tileY,
     return sendPacket(packet);
 }
 
-bool NetworkManager::sendBlockBreak(int32_t tileX, int32_t tileY)
+bool NetworkManager::sendBlockBreak(int32_t tileX, int32_t tileY, uint16_t toolItemId)
 {
     if (!isConnected())
         return false;
@@ -639,7 +896,7 @@ bool NetworkManager::sendBlockBreak(int32_t tileX, int32_t tileY)
     packet->X = tileX;
     packet->Y = tileY;
     packet->Z = 0;          // foreground layer
-    packet->ToolID = 0;     // bare hands until tools are selectable
+    packet->ToolID = toolItemId;
     packet->Face = 0;
 
     return sendPacket(packet);
@@ -702,6 +959,50 @@ void NetworkManager::removePacketHandler(Opcode opcode, const std::shared_ptr<Pa
         m_dispatcher->removeHandler(opcode, handler);
 }
 
+void NetworkManager::SetNotificationHandler(
+    std::function<void(const std::string& message, int severity)> handler)
+{
+    m_NotificationHandler = std::move(handler);
+
+    // Anything that queued up before a handler existed is delivered now,
+    // oldest first, so the notices keep their order.
+    while (!m_PendingNotifications.empty())
+    {
+        PendingNotification pending = std::move(m_PendingNotifications.front());
+        m_PendingNotifications.pop_front();
+
+        if (m_NotificationHandler)
+            m_NotificationHandler(pending.message, pending.severity);
+    }
+}
+
+bool NetworkManager::PopPendingNotification(std::string& out, int& severity)
+{
+    if (m_PendingNotifications.empty())
+        return false;
+
+    PendingNotification pending = std::move(m_PendingNotifications.front());
+    m_PendingNotifications.pop_front();
+
+    out      = std::move(pending.message);
+    severity = pending.severity;
+    return true;
+}
+
+void NetworkManager::pushNotification(const std::string& message, int severity)
+{
+    if (m_NotificationHandler)
+    {
+        m_NotificationHandler(message, severity);
+        return;
+    }
+
+    if (m_PendingNotifications.size() >= kMaxPendingNotifications)
+        m_PendingNotifications.pop_front();
+
+    m_PendingNotifications.push_back({message, severity});
+}
+
 void NetworkManager::onPacketReceived(const std::shared_ptr<Packet>& packet)
 {
     if (m_dispatcher)
@@ -749,6 +1050,9 @@ void NetworkManager::clearSession()
 
     m_Inventory.clear();
     ++m_InventoryRevision;
+
+    m_Core = CoreState{};
+    ++m_CoreRevision;
 
     m_Stats = CharacterStats{};
     ++m_StatsRevision;

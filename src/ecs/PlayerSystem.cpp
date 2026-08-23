@@ -85,6 +85,9 @@ namespace StrixVerse
                     // on the first frame of a fall weaker than one taken while
                     // standing still.
                     velocity->vy = -m_JumpSpeed;
+
+                    // The impulse landed: this is the jump event.
+                    ++m_JumpsPending;
                 }
 
                 wasHeld = jumpDown;

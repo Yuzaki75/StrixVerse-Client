@@ -19,6 +19,7 @@
 #include "../ecs/SystemManager.h"
 #include "../ecs/TransformComponent.h"
 #include "../ecs/VelocityComponent.h"
+#include "../graphics/SpriteBatch.h"
 #include "../graphics/Texture.h"
 #include "../ecs/NetworkComponent.h"
 #include "../networking/ChatMessagePacket.h"
@@ -38,10 +39,30 @@
 #include <cmath>
 #include <cstdlib>
 #include <format>
+#include <vector>
 
 namespace
 {
     constexpr float S(float previewPixels) { return UITheme::Scaled(previewPixels); }
+
+    // Tile 24 is an unclaimed Strix Core; 25-28 are levels I-IV. Mirrors
+    // Server/src/item/ItemDefinition.h.
+    constexpr std::uint8_t kStrixCoreUnclaimedTile = 24;
+
+    // The world's entrance and its only exit. Mirrors the tile the server's
+    // generator builds at every world's spawn.
+    constexpr std::uint8_t kMainDoorTile = 20;
+
+    // TODO(server): the Lost Technology devices have no ids in the server's
+    // block registry yet - Tile.h carries only the server id the chunk sent,
+    // and nothing today places these tiles. These placeholders follow the
+    // Strix Core block (24-28) and MUST be reconciled with the server's
+    // registry once it defines them; until then a world containing the real
+    // ids will not open these panels.
+    constexpr std::uint8_t kAetherVaultTile       = 29;
+    constexpr std::uint8_t kAetherGateTile        = 30;
+    constexpr std::uint8_t kStabilizerTile        = 31;
+    constexpr std::uint8_t kMemoryCrystalTile     = 32;
 
     // One tile on screen, in world units. The renderer and the collision system
     // both need this and must be given the same value.
@@ -58,6 +79,36 @@ namespace
 
     // Movement below this is not worth a packet.
     constexpr float kMoveEpsilonTiles = 0.02f;
+
+    // The display colour of a tile type, the same table TileRendererSystem
+    // paints its flat-colour fallback textures with, so break debris matches
+    // what the eye had just been looking at.
+    Color TileDisplayColor(StrixVerse::World::Tile::Type type)
+    {
+        switch (type)
+        {
+        case StrixVerse::World::Tile::Type::Grass: return Color(34 / 255.0f, 139 / 255.0f, 34 / 255.0f, 1.0f);
+        case StrixVerse::World::Tile::Type::Dirt:  return Color(139 / 255.0f, 69 / 255.0f, 19 / 255.0f, 1.0f);
+        case StrixVerse::World::Tile::Type::Stone: return Color(112 / 255.0f, 128 / 255.0f, 144 / 255.0f, 1.0f);
+        case StrixVerse::World::Tile::Type::Water: return Color(30 / 255.0f, 110 / 255.0f, 190 / 255.0f, 1.0f);
+        case StrixVerse::World::Tile::Type::Sand:  return Color(237 / 255.0f, 201 / 255.0f, 145 / 255.0f, 1.0f);
+        default:                                   return Color(1.0f, 0.0f, 1.0f, 1.0f);
+        }
+    }
+
+    // Break sound per broken tile's server id, README spec section 36 names.
+    // Soft ground takes one take, worked wood another, gem ore the crystal
+    // one; everything else is stone-adjacent.
+    const char* BreakSoundForServerId(std::uint8_t id)
+    {
+        switch (id)
+        {
+        case 4:                              return "break_wood";     // wood
+        case 18:                             return "break_crystal";  // diamond ore
+        case 1: case 3: case 5: case 19:     return "break_dirt";     // dirt/grass/leaves/sapling
+        default:                             return "break_stone";
+        }
+    }
 }
 
 GameScreen::GameScreen(Engine* engine)
@@ -83,8 +134,8 @@ void GameScreen::OnEnter()
     InitializeUI();
     InitializeHUD();
 
-    // After the HUD, so the overlay draws above it.
-    BuildPausePanel();
+    // After the HUD, so the overlays draw above it.
+    InitializePanels();
     InitializeWorld();
     InitializeActors();
 
@@ -128,9 +179,113 @@ void GameScreen::RefreshStats()
     statsRevision_ = engine_->getNetworkManager().getStatsRevision();
 }
 
+void GameScreen::RefreshCharacterPanel()
+{
+    if (!characterPanel_ || !engine_)
+        return;
+
+    const NetworkManager& network = engine_->getNetworkManager();
+
+    // Both revisions, because this panel reads from both sources.
+    //
+    // It followed only getStatsRevision while drawing the player's world role
+    // out of getWorldManageState(), which a different counter drives. Claiming
+    // a world bumped the world-info revision and left the stats revision
+    // untouched, so the sheet went on reporting the role the player had before
+    // they owned the place - until some unrelated stat happened to move, which
+    // in a quiet session is never.
+    // Summing them is safe precisely because both only ever increment: the sum
+    // cannot stay put while either moves. It would not be safe for counters
+    // that could go down.
+    const uint32_t revision = network.getStatsRevision() +
+                              network.getWorldInfoRevision();
+    if (revision == characterPanelRevision_)
+        return;
+
+    characterPanelRevision_ = revision;
+
+    const NetworkManager::CharacterStats& source = network.getCharacterStats();
+
+    CharacterPanel::CharacterInfo info;
+
+    // The signed-in name is what the server knows us by; PlayerData carries
+    // no separate display name.
+    info.name = engine_->GetSignedInUser();
+    if (info.name.empty())
+        info.name = network.getUsername();
+
+    // The roster carries no role for anyone - including us. The only role
+    // the server ever sends is our own WorldRole in WorldInfo, so that is
+    // what is shown when it exists and everyone else reads as a player.
+    const NetworkManager::WorldManageState& world = network.getWorldManageState();
+    if (world.valid)
+    {
+        switch (world.viewerRole)
+        {
+        case 4:  info.role = "Owner";     break;
+        case 3:  info.role = "Co-Owner";  break;
+        case 2:  info.role = "Builder";   break;
+        case 1:  info.role = "Member";    break;
+        default: info.role = "Visitor";   break;
+        }
+    }
+    else
+    {
+        info.role = "Player";
+    }
+
+    // Nothing invented: until PlayerData arrives there are no numbers to
+    // show, so the level falls back to 1 and the stats map stays empty -
+    // which renders as a panel with no stat rows rather than made-up ones.
+    if (source.known)
+    {
+        info.level = source.level > 0 ? source.level : 1;
+        info.stats["Health"]                  = static_cast<int>(source.health);
+        info.stats["Max Health"]              = static_cast<int>(source.maxHealth);
+        info.stats["Experience"]              = static_cast<int>(source.experience);
+        info.stats["Experience To Next Level"] =
+            static_cast<int>(source.experienceToNextLevel);
+    }
+    else
+    {
+        info.level = 1;
+    }
+
+    characterPanel_->SetCharacter(info);
+}
+
+void GameScreen::RefreshRoster()
+{
+    if (!playerListPanel_ || !engine_)
+        return;
+
+    std::vector<PlayerListPanel::Entry> players;
+    players.reserve(engine_->getNetworkManager().getRemotePlayers().size() + 1);
+
+    // Us first, then everyone else in id order-ish map order; the panel only
+    // lists rows, it does not rank them.
+    const std::string own = engine_->GetSignedInUser();
+    if (!own.empty())
+        players.push_back({own, "Player"});
+
+    // The spawn roster carries a name and a look but no role field, so every
+    // row reads as "Player". When the server starts sending roles this is the
+    // line to change.
+    for (const auto& [id, remote] : engine_->getNetworkManager().getRemotePlayers())
+    {
+        (void)id;
+        players.push_back({remote.username.empty()
+                               ? std::format("Player {}", id)
+                               : remote.username,
+                           "Player"});
+    }
+
+    playerListPanel_->SetPlayers(players);
+}
+
 void GameScreen::RefreshInventory()
 {
-    if (!hud_ || !engine_)
+    if (!engine_)
         return;
 
     const NetworkManager& network = engine_->getNetworkManager();
@@ -150,7 +305,36 @@ void GameScreen::RefreshInventory()
         entries.push_back(entry);
     }
 
-    hud_->SetInventory(entries);
+    if (hud_)
+        hud_->SetInventory(entries);
+
+    // The full-inventory overlay reads the same source, mapped into its own
+    // slot shape. The server sends no item names and the client has no
+    // catalogue, so the id doubles as the display string; iconPath stays
+    // empty and the panel falls back to its letter glyph.
+    if (inventoryPanel_)
+    {
+        std::vector<InventoryPanel::Slot> slots;
+        slots.reserve(entries.size());
+
+        const uint8_t selectedSlot = hud_ ? hud_->GetSelectedSlot() : 0;
+
+        for (const auto& entry : entries)
+        {
+            InventoryPanel::Slot slot;
+            slot.itemId   = std::to_string(entry.itemId);
+            slot.name     = slot.itemId;
+            slot.quantity = entry.quantity;
+            // Hotbar slots 0 and 1 are the tools; an inventory slot N sits at
+            // hotbar slot N + 2, so only a tool-free selection highlights a
+            // grid row.
+            slot.selected = selectedSlot >= HUD::kFirstItemSlot &&
+                            entry.slot == static_cast<uint8_t>(selectedSlot - HUD::kFirstItemSlot);
+            slots.push_back(slot);
+        }
+
+        inventoryPanel_->SetSlots(slots);
+    }
 
     inventoryRevision_ = network.getInventoryRevision();
 }
@@ -160,7 +344,19 @@ void GameScreen::InitializeUI()
     const float originX = DesignOriginX();
     const float originY = DesignOriginY();
 
-    const std::string worldName = engine_ ? engine_->GetSelectedWorldName() : std::string();
+    // The world the server put us in, not the one we asked for.
+    //
+    // These are usually the same and are not always: a join can be refused -
+    // banned, or the world is closed to visitors - and the server answers by
+    // confirming whichever world we are actually standing in. Labelling the
+    // screen from our own selection then named a world the player had just been
+    // refused, over that other world's terrain.
+    const std::string confirmed =
+        engine_ ? engine_->getNetworkManager().getCurrentWorld() : std::string();
+
+    const std::string worldName =
+        !confirmed.empty() ? confirmed
+                           : (engine_ ? engine_->GetSelectedWorldName() : std::string());
 
     // The HUD occupies the top-left stat column and the top-right chat panel,
     // so the screen's own chrome sits along the bottom edge to avoid it.
@@ -183,8 +379,18 @@ void GameScreen::InitializeUI()
     settingsButton_->setPosition(originX + UIScale::kDesignWidth - buttonWidth - S(20.0f),
                                  originY + UIScale::kDesignHeight - buttonHeight - S(20.0f));
     settingsButton_->setSize(buttonWidth, buttonHeight);
-    settingsButton_->setOnClick([this]() { OnSettingsButtonClicked(); });
+    settingsButton_->setOnClick([this]()
+    {
+        PlaySfx("ui_click");
+        OnSettingsButtonClicked();
+    });
     root_->addChild(settingsButton_);
+
+    // Built here and hidden, not created per open: creating it on each wrench
+    // click would throw away scroll position, field focus and every live
+    // callback, which is the mistake the pause overlay was rewritten to avoid.
+    worldManagerPanel_ = std::make_unique<WorldManagerPanel>(engine_, uiManager_);
+    worldManagerPanel_->Build();
 }
 
 void GameScreen::InitializeHUD()
@@ -241,6 +447,95 @@ namespace
     }
 } // namespace
 
+bool GameScreen::CanvasToWorldPixel(float canvasX, float canvasY,
+                                    float& outX, float& outY) const
+{
+    if (!engine_)
+        return false;
+
+    const Camera2D& camera = engine_->GetCamera();
+    const glm::vec2 viewport = camera.GetViewport();
+    if (viewport.x <= 0.0f || viewport.y <= 0.0f)
+        return false;
+
+    const float zoom = camera.GetZoom() > 0.0f ? camera.GetZoom() : 1.0f;
+
+    // Canvas -> window pixels is the inverse of what UIScale did on the way in,
+    // and window pixels are what the camera's projection is built over.
+    const glm::vec4& visible = engine_->GetUIScale().GetVisibleCanvas();
+    if (visible.z <= 0.0f || visible.w <= 0.0f)
+        return false;
+
+    const float screenX = (canvasX - visible.x) / visible.z * viewport.x;
+    const float screenY = (canvasY - visible.y) / visible.w * viewport.y;
+
+    // Camera2D::GetViewMatrix is  screen = (world - position) * zoom + viewport/2,
+    // so this is that read backwards.
+    const glm::vec2 centre = camera.GetPosition();
+    outX = (screenX - viewport.x * 0.5f) / zoom + centre.x;
+    outY = (screenY - viewport.y * 0.5f) / zoom + centre.y;
+    return true;
+}
+
+bool GameScreen::WorldPixelToCanvas(float worldX, float worldY,
+                                    float& outX, float& outY) const
+{
+    if (!engine_)
+        return false;
+
+    const Camera2D& camera = engine_->GetCamera();
+    const glm::vec2 viewport = camera.GetViewport();
+    if (viewport.x <= 0.0f || viewport.y <= 0.0f)
+        return false;
+
+    const float zoom = camera.GetZoom() > 0.0f ? camera.GetZoom() : 1.0f;
+
+    const glm::vec4& visible = engine_->GetUIScale().GetVisibleCanvas();
+    if (visible.z <= 0.0f || visible.w <= 0.0f)
+        return false;
+
+    const glm::vec2 centre = camera.GetPosition();
+    const float screenX = (worldX - centre.x) * zoom + viewport.x * 0.5f;
+    const float screenY = (worldY - centre.y) * zoom + viewport.y * 0.5f;
+
+    outX = screenX / viewport.x * visible.z + visible.x;
+    outY = screenY / viewport.y * visible.w + visible.y;
+    return true;
+}
+
+void GameScreen::OnScroll(float canvasX, float canvasY, float delta)
+{
+    if (delta == 0.0f || GameplayInputBlocked())
+        return;
+
+    auto componentManager = ServiceLocator::Get<StrixVerse::ECS::ComponentManager>();
+    if (!componentManager || cameraEntity_ == StrixVerse::ECS::NULL_ENTITY)
+        return;
+
+    auto* cameraComp =
+        componentManager->getComponent<StrixVerse::ECS::Camera2DComponent>(cameraEntity_);
+    if (!cameraComp)
+        return;
+
+    // The zoom lives on the component rather than on Camera2D directly, because
+    // Camera2DSystem writes the camera from the component every frame and would
+    // overwrite anything set on the camera itself. It already divides the
+    // viewport by the zoom when clamping to the world bounds, so zooming out
+    // near an edge stays inside the world without anything further here.
+    const float previous = cameraComp->zoom > 0.0f ? cameraComp->zoom : 1.0f;
+
+    float next = delta > 0.0f ? previous * kZoomStep : previous / kZoomStep;
+    next = std::clamp(next, kMinZoom, kMaxZoom);
+
+    if (next == previous)
+        return;
+
+    cameraComp->zoom = next;
+
+    (void)canvasX;
+    (void)canvasY;
+}
+
 bool GameScreen::CanvasToServerTile(float canvasX, float canvasY,
                                     int32_t& outTileX, int32_t& outTileY) const
 {
@@ -253,13 +548,12 @@ bool GameScreen::CanvasToServerTile(float canvasX, float canvasY,
     if (!transform)
         return false;
 
-    // The camera follows the player at zoom 1, so the centre of the design
-    // canvas is the player and the mapping is one canvas pixel to one world
-    // pixel. If zoom ever stops being 1 this has to divide by it.
-    const float worldPixelX =
-        transform->position.x + (canvasX - UIScale::kDesignWidth  * 0.5f);
-    const float worldPixelY =
-        transform->position.y + (canvasY - UIScale::kDesignHeight * 0.5f);
+    (void)transform;
+
+    float worldPixelX = 0.0f;
+    float worldPixelY = 0.0f;
+    if (!CanvasToWorldPixel(canvasX, canvasY, worldPixelX, worldPixelY))
+        return false;
 
     const int localRowX = static_cast<int>(std::floor(worldPixelX / kTileSize));
     const int localRowY = static_cast<int>(std::floor(worldPixelY / kTileSize));
@@ -270,61 +564,450 @@ bool GameScreen::CanvasToServerTile(float canvasX, float canvasY,
     return true;
 }
 
-void GameScreen::BuildPausePanel()
+float GameScreen::BubbleLifetimeFor(const std::string& message)
 {
-    if (pausePanel_ || !uiManager_)
+    // A floor so a one-word reply is still readable, plus reading time. Roughly
+    // fifteen characters a second, which is slow enough to be comfortable for
+    // someone who was not watching when it appeared.
+    constexpr float kFloor      = 3.0f;
+    constexpr float kCeiling    = 9.0f;
+    constexpr float kPerCharSec = 1.0f / 15.0f;
+
+    const float earned = kFloor + static_cast<float>(message.size()) * kPerCharSec;
+    return earned > kCeiling ? kCeiling : earned;
+}
+
+StrixVerse::ECS::Entity GameScreen::EntityForSpeaker(uint64_t speakerId) const
+{
+    if (speakerId == kLocalSpeakerId)
+        return playerEntity_;
+
+    const auto it = remotePlayers_.find(speakerId);
+    return it != remotePlayers_.end() ? it->second : StrixVerse::ECS::NULL_ENTITY;
+}
+
+void GameScreen::ShowChatBubble(uint64_t speakerId, const std::string& message)
+{
+    if (!uiManager_ || message.empty())
         return;
 
-    // Built once and hidden, not created per Escape. Added to the UIManager
-    // after the HUD so it draws above it; UIManager renders in insertion order.
-    const float width  = S(260.0f);
-    const float height = S(170.0f);
+    // Nothing to hang a bubble on. Server system messages arrive as id 0 and
+    // have no body in the world, so they are chat-log-only by nature.
+    if (EntityForSpeaker(speakerId) == StrixVerse::ECS::NULL_ENTITY)
+        return;
 
-    pausePanel_ = std::make_shared<UIPanel>();
-    pausePanel_->setSize(width, height);
-    pausePanel_->setPosition((UIScale::kDesignWidth - width) * 0.5f,
-                             (UIScale::kDesignHeight - height) * 0.5f);
-    pausePanel_->setBackgroundColor(UITheme::Hex(0x1E2230, 0.97f));
-    pausePanel_->setBorder(UITheme::WithAlpha(UITheme::Accent, 0.45f), UITheme::BorderThin);
-    pausePanel_->setBorderRadius(UITheme::RadiusPanel);
-    pausePanel_->setVisible(false);
-    uiManager_->addElement(pausePanel_);
+    // A long line would draw a bubble wider than the screen, and the point of
+    // the bubble is a glance, not a transcript - the chat log keeps the whole
+    // message either way.
+    // Three ASCII dots rather than U+2026: the label drew the UTF-8 ellipsis as
+    // two mojibake glyphs, so whatever the text path does it is not decoding
+    // multi-byte sequences here. Not worth chasing for a truncation marker.
+    constexpr std::size_t kMaxShown = 40;
+    std::string shown = message.size() > kMaxShown
+                            ? message.substr(0, kMaxShown - 3) + "..."
+                            : message;
 
-    auto title = std::make_shared<UILabel>();
-    title->setText("PAUSED");
-    title->setFont(DisplayFont(UITheme::Display::Heading));
-    title->setTextColor(UITheme::Text);
-    title->setAlignment(UILabel::Alignment::Center);
-    title->setPosition(0.0f, S(18.0f));
-    title->setSize(width, S(24.0f));
-    pausePanel_->addChild(title);
+    ChatBubble& bubble = chatBubbles_[speakerId];
+    bubble.remaining = BubbleLifetimeFor(shown);
 
-    const float buttonWidth  = width - S(40.0f);
-    const float buttonHeight = S(34.0f);
-    float y = S(60.0f);
+    if (!bubble.panel)
+    {
+        bubble.panel = std::make_shared<UIPanel>();
+        bubble.panel->setBackgroundColor(UITheme::Hex(0x1E2230, 0.92f));
+        bubble.panel->setBorder(UITheme::WithAlpha(UITheme::Accent, 0.40f),
+                                UITheme::BorderThin);
+        bubble.panel->setBorderRadius(UITheme::RadiusPanel);
 
-    auto resume = std::make_shared<UIButton>();
-    resume->setText("RESUME");
-    resume->setFont(DisplayFont(UITheme::Display::Button));
-    resume->setPosition(S(20.0f), y);
-    resume->setSize(buttonWidth, buttonHeight);
-    resume->setOnClick([this]() { SetPaused(false); });
-    pausePanel_->addChild(resume);
+        // Deliberately not blocking input: a bubble drifts over the world and
+        // must not carve a hole in it that swallows clicks.
+        bubble.label = std::make_shared<UILabel>();
+        bubble.label->setFont(DisplayFont(UITheme::Display::Small));
+        bubble.label->setTextColor(UITheme::Text);
+        bubble.label->setAlignment(UILabel::Alignment::Center);
+        bubble.panel->addChild(bubble.label);
 
-    y += buttonHeight + S(12.0f);
+        // Added last so bubbles draw over the HUD panels rather than under them.
+        uiManager_->addElement(bubble.panel);
+    }
 
-    // Settings remains a real screen change: leaving gameplay for it is the
-    // intended behaviour, unlike pausing.
-    auto settings = std::make_shared<UIButton>();
-    settings->setText("SETTINGS");
-    settings->setFont(DisplayFont(UITheme::Display::Button));
-    settings->setPosition(S(20.0f), y);
-    settings->setSize(buttonWidth, buttonHeight);
-    settings->setOnClick([this]() {
+    bubble.label->setText(shown);
+
+    // Width follows the text, measured rather than estimated. A per-character
+    // guess is wrong in both directions on a proportional face - it gives a
+    // short line a bubble with a gap at each end, and lets a long one run out
+    // past the border it is supposed to sit inside.
+    const float padding = S(14.0f);
+    const float width   = bubble.label->measureTextWidth() + padding * 2.0f;
+    const float height  = S(26.0f);
+
+    bubble.panel->setSize(width, height);
+    bubble.label->setPosition(0.0f, S(7.0f));
+    bubble.label->setSize(width, S(14.0f));
+    bubble.panel->setVisible(true);
+}
+
+float GameScreen::NameTagOffset()
+{
+    // Clear of the sprite's head, and far enough that a chat bubble stacked
+    // above it still reads as belonging to the same player.
+    return S(14.0f);
+}
+
+std::shared_ptr<UILabel> GameScreen::NameTagFor(uint64_t speakerId, const std::string& name)
+{
+    if (!uiManager_ || name.empty())
+        return nullptr;
+
+    auto& tag = nameTags_[speakerId];
+    if (!tag)
+    {
+        tag = std::make_shared<UILabel>();
+        tag->setFont(DisplayFont(UITheme::Display::Small));
+        tag->setAlignment(UILabel::Alignment::Center);
+
+        // A hard black shadow rather than a panel behind the text. A tag is on
+        // screen for every player all of the time, and a filled box per player
+        // would compete with the world in a way a transient chat bubble does
+        // not - but plain text disappeared against bright terrain, and the
+        // first version was unreadable sitting over a lit neon strip. One
+        // offset pixel of black is enough to carry it over anything.
+        tag->setShadow(UITheme::Hex(0x000000, 1.0f), S(1.5f), S(1.5f));
+
+        // White for our own, accent for everyone else. The first version used
+        // Subtext grey for the local player and it was illegible sitting over
+        // the spawn gate's lit neon strip - grey and cyan are close enough in
+        // luminance that the shadow alone could not separate them. White beats
+        // any terrain in this palette.
+        tag->setTextColor(speakerId == kLocalSpeakerId ? UITheme::Text
+                                                       : UITheme::Accent);
+        uiManager_->addElement(tag);
+    }
+
+    tag->setText(name);
+    return tag;
+}
+
+void GameScreen::UpdateNameTags()
+{
+    if (!uiManager_ || !engine_)
+        return;
+
+    auto componentManager = ServiceLocator::Get<StrixVerse::ECS::ComponentManager>();
+    if (!componentManager)
+        return;
+
+    // Who should have a tag this frame: us, and everyone we can see. Built
+    // fresh each frame rather than maintained on spawn and remove, because the
+    // roster already changes through three different paths and a fourth place
+    // to keep in sync is a fourth place to forget.
+    std::vector<std::pair<uint64_t, std::string>> wanted;
+
+    if (playerEntity_ != StrixVerse::ECS::NULL_ENTITY)
+    {
+        const std::string own = engine_->GetSignedInUser();
+        if (!own.empty())
+            wanted.emplace_back(kLocalSpeakerId, own);
+    }
+
+    for (const auto& [entityId, entity] : remotePlayers_)
+    {
+        (void)entity;
+        wanted.emplace_back(entityId, DisplayNameFor(entityId));
+    }
+
+    // Drop tags for anyone no longer here, before placing the rest.
+    for (auto it = nameTags_.begin(); it != nameTags_.end();)
+    {
+        const bool stillHere =
+            std::any_of(wanted.begin(), wanted.end(),
+                        [&](const auto& entry) { return entry.first == it->first; });
+
+        if (!stillHere)
+        {
+            if (it->second)
+                uiManager_->removeElement(it->second);
+            it = nameTags_.erase(it);
+            continue;
+        }
+        ++it;
+    }
+
+    const glm::vec4& visible = engine_->GetUIScale().GetVisibleCanvas();
+
+    for (const auto& [speakerId, name] : wanted)
+    {
+        const StrixVerse::ECS::Entity entity = EntityForSpeaker(speakerId);
+        if (entity == StrixVerse::ECS::NULL_ENTITY)
+            continue;
+
+        const auto* transform =
+            componentManager->getComponent<StrixVerse::ECS::Transform>(entity);
+        if (!transform)
+            continue;
+
+        auto tag = NameTagFor(speakerId, name);
+        if (!tag)
+            continue;
+
+        const float headX = transform->position.x + kPlayerWidth * 0.5f;
+        const float headY = transform->position.y;
+
+        float canvasX = 0.0f;
+        float canvasY = 0.0f;
+        if (!WorldPixelToCanvas(headX, headY, canvasX, canvasY))
+            continue;
+
+        const float width  = S(160.0f);
+        const float height = S(12.0f);
+
+        tag->setSize(width, height);
+        tag->setPosition(canvasX - width * 0.5f, canvasY - NameTagOffset() - height);
+
+        // Off-screen players keep their tag but stop drawing it, so tags do not
+        // pile up against the edge of the view.
+        const bool onScreen = canvasX >= visible.x - width &&
+                              canvasX <= visible.x + visible.z + width &&
+                              canvasY >= visible.y - height &&
+                              canvasY <= visible.y + visible.w + height;
+        tag->setVisible(onScreen);
+    }
+}
+
+void GameScreen::UpdateChatBubbles(float deltaTime)
+{
+    if (chatBubbles_.empty())
+        return;
+
+    auto componentManager = ServiceLocator::Get<StrixVerse::ECS::ComponentManager>();
+
+    for (auto it = chatBubbles_.begin(); it != chatBubbles_.end();)
+    {
+        ChatBubble& bubble = it->second;
+        bubble.remaining -= deltaTime;
+
+        const StrixVerse::ECS::Entity speaker = EntityForSpeaker(it->first);
+
+        // Expired, or the speaker left the world while their bubble was up.
+        if (bubble.remaining <= 0.0f || speaker == StrixVerse::ECS::NULL_ENTITY ||
+            !componentManager)
+        {
+            if (bubble.panel)
+            {
+                bubble.panel->setVisible(false);
+                uiManager_->removeElement(bubble.panel);
+            }
+            it = chatBubbles_.erase(it);
+            continue;
+        }
+
+        const auto* transform =
+            componentManager->getComponent<StrixVerse::ECS::Transform>(speaker);
+        if (!transform || !bubble.panel)
+        {
+            ++it;
+            continue;
+        }
+
+        // Anchor to the middle of the sprite's top edge, then lift the bubble
+        // clear of the head. The player transform is a top-left corner, which
+        // is why the half-width is added rather than the position used raw.
+        const float headX = transform->position.x + kPlayerWidth * 0.5f;
+        const float headY = transform->position.y;
+
+        float canvasX = 0.0f;
+        float canvasY = 0.0f;
+        if (!WorldPixelToCanvas(headX, headY, canvasX, canvasY))
+        {
+            ++it;
+            continue;
+        }
+
+        const float sizeX = bubble.panel->getWidth();
+        const float sizeY = bubble.panel->getHeight();
+        const float gap = NameTagOffset() + S(12.0f);   // clear of the name tag
+
+        bubble.panel->setPosition(canvasX - sizeX * 0.5f, canvasY - sizeY - gap);
+
+        // Off-screen speakers keep their bubble alive but stop drawing it, so a
+        // bubble does not stack up against the edge of the view.
+        const glm::vec4& visible = engine_->GetUIScale().GetVisibleCanvas();
+        const bool onScreen = canvasX >= visible.x - sizeX &&
+                              canvasX <= visible.x + visible.z + sizeX &&
+                              canvasY >= visible.y - sizeY &&
+                              canvasY <= visible.y + visible.w + sizeY;
+        bubble.panel->setVisible(onScreen);
+
+        ++it;
+    }
+}
+
+void GameScreen::InitializePanels()
+{
+    if (!uiManager_)
+        return;
+
+    // Built here and hidden, not created per open: creating one on each
+    // toggle would throw away scroll position, field focus and every live
+    // callback, which is the mistake the pause overlay was rewritten to
+    // avoid. All of them add themselves to the UIManager directly so they
+    // draw above the HUD.
+    pauseOverlay_ = std::make_unique<PauseOverlay>(engine_, uiManager_);
+    pauseOverlay_->Build();
+
+    // The overlay decides nothing about navigation; the screen owns the
+    // session, so the buttons come back here.
+    pauseOverlay_->onResume = [this]() {
+        PlaySfx("ui_click");
+        SetPaused(false);
+    };
+    pauseOverlay_->onSettings = [this]() {
+        PlaySfx("ui_click");
         SetPaused(false);
         OnSettingsButtonClicked();
-    });
-    pausePanel_->addChild(settings);
+    };
+    pauseOverlay_->onExitWorld = [this]() {
+        PlaySfx("ui_click");
+        if (engine_)
+        {
+            // Same path as SettingsScreen's LEAVE WORLD: the server despawns
+            // us for everyone else and the session stays open, but leaving is
+            // a decision to stop playing this world, so Continue forgets it.
+            engine_->getNetworkManager().sendWorldLeave();
+
+            if (WorldManager* worlds = engine_->GetWorldManager())
+                worlds->ClearLastWorld();
+
+            engine_->SetSelectedWorldName(std::string());
+        }
+
+        LOG_INFO("GameScreen: left the world from the pause menu");
+        SetPaused(false);
+        RequestScreenChange(ScreenID::WorldBrowser);
+    };
+
+    playerListPanel_ = std::make_unique<PlayerListPanel>(engine_, uiManager_);
+    playerListPanel_->Build();
+
+    inventoryPanel_ = std::make_unique<InventoryPanel>(engine_, uiManager_);
+    inventoryPanel_->Build();
+
+    characterPanel_ = std::make_unique<CharacterPanel>(engine_, uiManager_);
+    characterPanel_->Build();
+
+    buffDisplay_ = std::make_unique<BuffDisplay>(engine_, uiManager_);
+    buffDisplay_->Build();
+
+    // Lost Technology interfaces, same lifecycle as the panels above.
+    vaultPanel_ = std::make_unique<VaultPanel>(engine_, uiManager_);
+    vaultPanel_->Build();
+
+    gatePanel_ = std::make_unique<GatePanel>(engine_, uiManager_);
+    gatePanel_->Build();
+
+    stabilizerPanel_ = std::make_unique<StabilizerPanel>(engine_, uiManager_);
+    stabilizerPanel_->Build();
+
+    memoryCrystalPanel_ = std::make_unique<MemoryCrystalPanel>(engine_, uiManager_);
+    memoryCrystalPanel_->Build();
+
+    // The panels only raise intents; nothing here sends protocol, because no
+    // vault/gate/stabiliser/crystal senders exist in NetworkManager yet.
+    vaultPanel_->onWithdraw = [this]() {
+        PlaySfx("ui_click");
+        LOG_INFO("GameScreen: vault withdraw - not yet implemented");
+    };
+    vaultPanel_->onDeposit = [this]() {
+        PlaySfx("ui_click");
+        LOG_INFO("GameScreen: vault deposit - not yet implemented");
+    };
+    vaultPanel_->onManage = [this]() {
+        PlaySfx("ui_click");
+        LOG_INFO("GameScreen: vault manage - not yet implemented");
+    };
+
+    gatePanel_->onActivate = [this]() {
+        PlaySfx("ui_click");
+        LOG_INFO("GameScreen: gate activate - not yet implemented");
+    };
+
+    stabilizerPanel_->onStabilize = [this]() {
+        PlaySfx("ui_click");
+        LOG_INFO("GameScreen: stabilizer stabilize - not yet implemented");
+    };
+
+    memoryCrystalPanel_->onExtract = [this]() {
+        PlaySfx("ui_click");
+        LOG_INFO("GameScreen: memory crystal extract - not yet implemented");
+    };
+
+    // TODO(server): populate the Lost Technology panels from packets. Nothing
+    // in WorldManageState or anywhere else on the wire carries this data
+    // today, so every panel opens with its empty default. Once the server
+    // defines them, these handlers must call:
+    //   - VaultPanel::SetResources()      from the vault contents packet handler
+    //   - GatePanel::SetStatus()/SetDestination() from the gate state handler
+    //   - StabilizerPanel::SetStability()/SetUpgrades() from the stabilizer state handler
+    //   - MemoryCrystalPanel::SetEntries() from the crystal log handler
+    // following the revision-keyed refresh idiom RefreshInventory uses.
+
+    // The interact prompt is a standing element like a chat bubble: scenery
+    // over the world that must not carve clicks out of it, built once and
+    // toggled by visibility rather than created per frame.
+    constexpr float kPromptWidth  = 120.0f;
+    constexpr float kPromptHeight = 22.0f;
+
+    interactPromptPanel_ = std::make_shared<UIPanel>();
+    interactPromptPanel_->setSize(S(kPromptWidth), S(kPromptHeight));
+    interactPromptPanel_->setBackgroundColor(UITheme::Hex(0x1E2230, 0.92f));
+    interactPromptPanel_->setBorder(UITheme::WithAlpha(UITheme::Accent, 0.40f),
+                                    UITheme::BorderThin);
+    interactPromptPanel_->setBorderRadius(UITheme::RadiusChip);
+
+    interactPromptLabel_ = std::make_shared<UILabel>();
+    interactPromptLabel_->setText("[ E ] Interact");
+    interactPromptLabel_->setFont(DisplayFont(UITheme::Display::Small));
+    interactPromptLabel_->setTextColor(UITheme::Text);
+    interactPromptLabel_->setAlignment(UILabel::Alignment::Center);
+    interactPromptLabel_->setPosition(0.0f, S(5.0f));
+    interactPromptLabel_->setSize(S(kPromptWidth), S(12.0f));
+    interactPromptPanel_->addChild(interactPromptLabel_);
+
+    interactPromptPanel_->setVisible(false);
+    uiManager_->addElement(interactPromptPanel_);
+
+    // Whatever stats arrived while the loading screen was up should be on
+    // the panels immediately rather than waiting for a revision change.
+    characterPanelRevision_ = 0;
+    RefreshCharacterPanel();
+    RefreshRoster();
+}
+
+void GameScreen::ClosePanelOverlays()
+{
+    if (inventoryPanel_)      inventoryPanel_->Close();
+    if (characterPanel_)      characterPanel_->Close();
+    if (playerListPanel_)     playerListPanel_->Close();
+    if (vaultPanel_)          vaultPanel_->Close();
+    if (gatePanel_)           gatePanel_->Close();
+    if (stabilizerPanel_)     stabilizerPanel_->Close();
+    if (memoryCrystalPanel_)  memoryCrystalPanel_->Close();
+}
+
+bool GameScreen::AnyPanelOpen() const
+{
+    // One list, consulted by everything that needs to know whether a panel is
+    // up: the click gate, the key gate, and the Escape ladder. They had drifted
+    // apart - the click gate knew only about the management panel and the key
+    // gate knew only about pause - which is how a keypress could act on the
+    // world from behind a modal that was already swallowing clicks.
+    return (worldManagerPanel_   && worldManagerPanel_->IsOpen())   ||
+           (inventoryPanel_      && inventoryPanel_->IsOpen())      ||
+           (characterPanel_      && characterPanel_->IsOpen())      ||
+           (playerListPanel_     && playerListPanel_->IsOpen())     ||
+           (vaultPanel_          && vaultPanel_->IsOpen())          ||
+           (gatePanel_           && gatePanel_->IsOpen())           ||
+           (stabilizerPanel_     && stabilizerPanel_->IsOpen())     ||
+           (memoryCrystalPanel_  && memoryCrystalPanel_->IsOpen());
 }
 
 void GameScreen::SetPaused(bool paused)
@@ -334,8 +1017,15 @@ void GameScreen::SetPaused(bool paused)
 
     paused_ = paused;
 
-    if (pausePanel_)
-        pausePanel_->setVisible(paused_);
+    // The overlay is the only visual; the flag is the only authority. Keeping
+    // them in one method means Escape and both buttons cannot disagree.
+    if (pauseOverlay_)
+    {
+        if (paused_)
+            pauseOverlay_->Open();
+        else
+            pauseOverlay_->Close();
+    }
 
     // Movement is stopped at the source. InputSystem samples the hardware
     // keyboard every frame, so anything cleared here would be rewritten before
@@ -387,7 +1077,20 @@ bool GameScreen::GameplayInputBlocked() const
     // screen unconditionally, so a player could mine and build in the middle of
     // typing a chat message.
     auto uiManager = ServiceLocator::Get<UIManager>();
-    return uiManager && uiManager->getFocusedElement() != nullptr;
+
+    // Every panel that covers live terrain, not just the management one.
+    //
+    // Each panel does set blocksInput on its root, so a click *inside* its
+    // rectangle is swallowed - but those rectangles cover under a tenth of the
+    // screen. With the inventory open, a click anywhere in the remaining nine
+    // tenths still reached OnMouseDown and broke a block the player could not
+    // see, which is the hotbar click-through bug over again at a much larger
+    // scale. A panel is either modal or it is not; being modal only within its
+    // own borders is not a thing.
+    if (AnyPanelOpen())
+        return true;
+
+    return uiManager && uiManager->isTextInputFocused();
 }
 
 void GameScreen::OnMouseDown(float x, float y)
@@ -405,11 +1108,40 @@ void GameScreen::OnMouseDown(float x, float y)
     // ground would also dig it out from under them.
     if (hud_ && hud_->GetSelectedTool() == HUD::Tool::Wrench)
     {
+        // The wrench is the "interact with things" tool, so it is what claims a
+        // Strix Core. The [ E ] Interact prompt reaches the same fork from the
+        // keyboard, targeting the tile the prompt found rather than this one.
+        // Says what the wrench found. A tool that silently does nothing is the
+        // hardest kind of thing to diagnose, and this is the one interaction
+        // where "nothing happened" and "that is not a Core" look identical.
+        LOG_INFO(std::format("GameScreen: wrench on tile {},{} (server id {})",
+                             tileX, tileY, static_cast<int>(ServerIdAt(tileX, tileY))));
+
+        if (IsStrixCoreAt(tileX, tileY))
+        {
+            // An unclaimed Core is claimed; a claimed one opens management.
+            // Which of the two this is comes from the tile the server sent us,
+            // and asking the wrong one is harmless: the server answers a claim
+            // on an owned world with "already belongs to someone else" and an
+            // interact on an unowned one with "no Core here".
+            if (ServerIdAt(tileX, tileY) == kStrixCoreUnclaimedTile)
+                engine_->getNetworkManager().sendClaimStrixCore(tileX, tileY);
+            else
+                engine_->getNetworkManager().sendInteractStrixCore(tileX, tileY);
+
+            return;
+        }
+
         InspectPlayerAt(tileX, tileY);
         return;
     }
 
-    engine_->getNetworkManager().sendBlockBreak(tileX, tileY);
+    // Primary attack attempt. Fired on the swing rather than the confirm -
+    // a punch that hits nothing (or is refused) should still sound like one.
+    if (hud_ && hud_->GetSelectedTool() == HUD::Tool::Punch)
+        PlaySfx("punch");
+
+    engine_->getNetworkManager().sendBlockBreak(tileX, tileY, SelectedToolItemId());
 }
 
 void GameScreen::OnRightMouseDown(float x, float y)
@@ -465,6 +1197,243 @@ void GameScreen::OnRightMouseDown(float x, float y)
     }
 
     network.sendBlockPlace(tileX, tileY, itemId);
+}
+
+std::uint8_t GameScreen::ServerIdAt(int32_t tileX, int32_t tileY) const
+{
+    if (!world_)
+        return 0;
+
+    // Server tile space to the client's row order - the same flip
+    // BuildWorldFromServerTerrain applied on the way in, so a tile is looked
+    // for where it was written.
+    const int localRowY = (worldHeightInTiles_ - 1) - tileY;
+    if (tileX < 0 || localRowY < 0 ||
+        tileX >= world_->GetWidthInTiles() || localRowY >= world_->GetHeightInTiles())
+    {
+        return 0;
+    }
+
+    const auto tile = world_->GetTileAt(tileX, localRowY, 0);
+    return tile ? tile->GetServerId() : 0;
+}
+
+bool GameScreen::IsStrixCoreAt(int32_t tileX, int32_t tileY) const
+{
+    // Ids 24 through 28: unclaimed, then one per Core level. The level is the
+    // id because tile ids are the only per-tile thing the chunk format keeps.
+    const std::uint8_t id = ServerIdAt(tileX, tileY);
+    return id >= 24 && id <= 28;
+}
+
+GameScreen::InteractTarget GameScreen::InteractTargetAt(int32_t tileX, int32_t tileY) const
+{
+    const std::uint8_t id = ServerIdAt(tileX, tileY);
+
+    if (id >= 24 && id <= 28)
+        return InteractTarget::StrixCore;
+
+    switch (id)
+    {
+    case kMainDoorTile:      return InteractTarget::MainDoor;
+    case kAetherVaultTile:   return InteractTarget::Vault;
+    case kAetherGateTile:    return InteractTarget::Gate;
+    case kStabilizerTile:    return InteractTarget::Stabilizer;
+    case kMemoryCrystalTile: return InteractTarget::MemoryCrystal;
+    default:                 return InteractTarget::None;
+    }
+}
+
+void GameScreen::UpdateInteractPrompt()
+{
+    if (!interactPromptPanel_ || !uiManager_)
+        return;
+
+    interactTileX_   = 0;
+    interactTileY_   = 0;
+    interactTarget_  = InteractTarget::None;
+
+    auto componentManager = ServiceLocator::Get<StrixVerse::ECS::ComponentManager>();
+    if (!componentManager || playerEntity_ == StrixVerse::ECS::NULL_ENTITY ||
+        !engine_)
+    {
+        interactPromptPanel_->setVisible(false);
+        return;
+    }
+
+    const auto* transform =
+        componentManager->getComponent<StrixVerse::ECS::Transform>(playerEntity_);
+    if (!transform)
+    {
+        interactPromptPanel_->setVisible(false);
+        return;
+    }
+
+    // The tile the player occupies, in server coordinates - the same
+    // conversion PublishLocalPosition reports with, so what E targets and
+    // where the server thinks we stand cannot disagree about the space.
+    const int32_t playerX =
+        static_cast<int32_t>(PlayerLocalXToTileX(transform->position.x));
+    const int32_t playerY =
+        static_cast<int32_t>(PlayerLocalYToTileY(transform->position.y));
+
+    // Nearest interactable within reach. Chebyshev distance, so the scan is a
+    // square; ties go to whichever came first, which is fine for a prompt.
+    bool found  = false;
+    int  bestD2 = kInteractRadius * kInteractRadius + 1;
+
+    for (int dy = -kInteractRadius; dy <= kInteractRadius; ++dy)
+    {
+        for (int dx = -kInteractRadius; dx <= kInteractRadius; ++dx)
+        {
+            const InteractTarget target =
+                InteractTargetAt(playerX + dx, playerY + dy);
+
+            // A Core, the main door, or one of the Lost Technology devices --
+            // anything E acts on. Whichever is nearest wins, so standing in
+            // the doorway of a world whose Core sits beside it still offers
+            // the door.
+            if (target == InteractTarget::None)
+                continue;
+
+            const int d2 = dx * dx + dy * dy;
+            if (d2 < bestD2)
+            {
+                bestD2          = d2;
+                found           = true;
+                interactTileX_  = playerX + dx;
+                interactTileY_  = playerY + dy;
+                interactTarget_ = target;
+            }
+        }
+    }
+
+    if (!found)
+    {
+        interactPromptPanel_->setVisible(false);
+        return;
+    }
+
+    // Say which of them it is. A prompt that reads "Interact" while pointing
+    // at the way out is worse than no prompt: the player has to press it to
+    // find out what it does.
+    const char* promptText = "[ E ] Interact";
+    switch (interactTarget_)
+    {
+    case InteractTarget::MainDoor:      promptText = "[ E ] Leave world";    break;
+    case InteractTarget::Vault:         promptText = "[ E ] Aether Vault";   break;
+    case InteractTarget::Gate:          promptText = "[ E ] Aether Gate";    break;
+    case InteractTarget::Stabilizer:    promptText = "[ E ] Stabilizer";     break;
+    case InteractTarget::MemoryCrystal: promptText = "[ E ] Memory Crystal"; break;
+    case InteractTarget::StrixCore:
+    case InteractTarget::None:          break;
+    }
+
+    if (interactPromptLabel_)
+    {
+        interactPromptLabel_->setText(promptText);
+
+        // Width follows the text, as the chat bubbles do: the fixed width was
+        // sized for "[ E ] Interact" and the longer device names would run
+        // past their own border.
+        const float padding = S(14.0f);
+        const float width   =
+            interactPromptLabel_->measureTextWidth() + padding * 2.0f;
+
+        interactPromptLabel_->setSize(width, S(12.0f));
+        interactPromptPanel_->setSize(width, interactPromptPanel_->getHeight());
+    }
+
+    // Centred along the bottom edge of the design canvas, clear of the world
+    // label that shares that edge.
+    const float width  = interactPromptPanel_->getWidth();
+    const float height = interactPromptPanel_->getHeight();
+
+    // Above the hotbar, not on top of it. The hotbar's top edge sits at
+    // kDesignHeight - S(110) -- its own S(46) height plus the S(64) it is
+    // lifted off the bottom, in HUD::CreateInventorySection -- and the prompt
+    // used to be placed at S(70), which put it 18 units inside the bar and
+    // covered four slots and their icons.
+    //
+    // It went unnoticed because the only prompt was a Strix Core, which a
+    // player stands next to rarely. The main door is at every spawn, so the
+    // prompt is now on screen the moment anyone arrives.
+    constexpr float kHotbarTopGap = 110.0f + 12.0f;
+    interactPromptPanel_->setPosition(
+        DesignOriginX() + (UIScale::kDesignWidth - width) * 0.5f,
+        DesignOriginY() + UIScale::kDesignHeight - height - S(kHotbarTopGap));
+    interactPromptPanel_->setVisible(true);
+}
+
+void GameScreen::InteractWithTarget()
+{
+    // The prompt's tile, not whatever is under the cursor: pressing E acts on
+    // exactly what the prompt is pointing at.
+    if (!engine_ || !interactPromptPanel_ || !interactPromptPanel_->isVisible())
+        return;
+
+    switch (interactTarget_)
+    {
+    case InteractTarget::None:
+        return;
+
+    case InteractTarget::MainDoor:
+        // The server answers only on success and is silent on refusal -- it
+        // refuses when the player is not actually at the door -- so nothing is
+        // assumed here. OnWorldLeft, driven by the reply, is what changes
+        // screen.
+        engine_->getNetworkManager().sendWorldLeave();
+        LOG_INFO(std::format("GameScreen: asked to leave through the door at {},{}",
+                             interactTileX_, interactTileY_));
+        return;
+
+    case InteractTarget::Vault:
+        if (vaultPanel_)
+        {
+            ClosePanelOverlays();
+            vaultPanel_->Open();
+        }
+        return;
+
+    case InteractTarget::Gate:
+        if (gatePanel_)
+        {
+            ClosePanelOverlays();
+            gatePanel_->Open();
+        }
+        return;
+
+    case InteractTarget::Stabilizer:
+        if (stabilizerPanel_)
+        {
+            ClosePanelOverlays();
+            stabilizerPanel_->Open();
+        }
+        return;
+
+    case InteractTarget::MemoryCrystal:
+        if (memoryCrystalPanel_)
+        {
+            ClosePanelOverlays();
+            memoryCrystalPanel_->Open();
+        }
+        return;
+
+    case InteractTarget::StrixCore:
+        break;
+    }
+
+    // The same fork the wrench uses on a Core click: an unclaimed Core is
+    // claimed, a claimed one opens management. Which of the two this is comes
+    // from the tile, and asking the wrong one is harmless - the server
+    // answers each with its own refusal.
+    if (ServerIdAt(interactTileX_, interactTileY_) == kStrixCoreUnclaimedTile)
+        engine_->getNetworkManager().sendClaimStrixCore(interactTileX_, interactTileY_);
+    else
+        engine_->getNetworkManager().sendInteractStrixCore(interactTileX_, interactTileY_);
+
+    LOG_INFO(std::format("GameScreen: interact key on tile {},{}",
+                         interactTileX_, interactTileY_));
 }
 
 void GameScreen::InspectPlayerAt(int32_t tileX, int32_t tileY)
@@ -523,15 +1492,38 @@ void GameScreen::ApplyPendingTileEdits()
         if (localRowY < 0)
             continue;
 
+        // What stood here before the edit landed. A break needs it for the
+        // debris colour and the material-appropriate sound; by the time this
+        // runs it is still in the world, because nothing else moves tiles.
+        const auto previous =
+            world_->GetTileAt(static_cast<int>(edit.tileX), localRowY, 0);
+
         StrixVerse::World::Tile::Type type{};
         if (!ServerTileToClientType(edit.tileId, type))
         {
+            // Confirmed break. TileEdit carries no actor id, so remote
+            // players' confirmed breaks play and burst here too - the apply
+            // path is shared and distinguishing them would mean a protocol
+            // change, which is not worth losing the feedback over.
+            if (previous)
+            {
+                particles_.EmitBlockBreak(static_cast<float>(edit.tileX),
+                                          static_cast<float>(localRowY),
+                                          TileDisplayColor(previous->GetType()));
+            }
+
+            PlayBreakSfx(previous ? previous->GetServerId()
+                                  : static_cast<std::uint8_t>(2));
+
             world_->SetTileAt(static_cast<int>(edit.tileX), localRowY, 0, nullptr);
             continue;
         }
 
         world_->SetTileAt(static_cast<int>(edit.tileX), localRowY, 0,
                           std::make_shared<StrixVerse::World::Tile>(type, edit.tileId));
+
+        // Confirmed placement, ours or anyone's.
+        PlaySfx("place");
     }
 }
 
@@ -730,8 +1722,13 @@ void GameScreen::InitializeWorld()
                                      static_cast<float>(world_->GetHeightInTiles()) * kTileSize);
     }
 
+    // The server's answer, for the same reason the label uses it: this line is
+    // the first thing read when diagnosing where a player ended up, and naming
+    // the world we asked for rather than the one we got is exactly the wrong
+    // answer to that question.
     LOG_INFO(std::format("GameScreen: entered '{}' ({} x {} tiles)",
-                         engine_ ? engine_->GetSelectedWorldName() : std::string(),
+                         engine_ ? engine_->getNetworkManager().getCurrentWorld()
+                                 : std::string(),
                          world_->GetWidthInTiles(),
                          world_->GetHeightInTiles()));
 }
@@ -996,7 +1993,30 @@ void GameScreen::Update(float deltaTime)
     // Server-accepted world edits, applied before anything reads the world.
     ApplyPendingTileEdits();
 
+    // Jump sounds. Engine::Update runs the ECS systems before the screen, so
+    // PlayerSystem has already counted this frame's jumps by the time we get
+    // here; drain the counter and take one per jump. ConsumeJumpCount returns
+    // zero once drained, so a frame with no jump costs one call.
+    if (auto systemManager = ServiceLocator::Get<StrixVerse::ECS::SystemManager>())
+    {
+        if (auto playerSystem = systemManager->getSystem<StrixVerse::ECS::PlayerSystem>())
+        {
+            while (playerSystem->ConsumeJumpCount() > 0)
+                PlaySfx("jump");
+        }
+    }
+
     TrackAirborne();
+
+    // The drop is announced once, on the transition - NetworkManager keeps
+    // the failure description, but the stack only needs to know it happened.
+    if (engine_)
+    {
+        const bool connected = engine_->getNetworkManager().isConnected();
+        if (wasConnected_ && !connected && hud_)
+            hud_->AddNotification("Connection lost.");
+        wasConnected_ = connected;
+    }
 
     if (hud_)
         hud_->Update(deltaTime);
@@ -1010,6 +2030,103 @@ void GameScreen::Update(float deltaTime)
 
     if (engine_ && engine_->getNetworkManager().getStatsRevision() != statsRevision_)
         RefreshStats();
+
+    // The character panel follows the same stats revision; both calls are
+    // no-ops until it moves.
+    RefreshCharacterPanel();
+
+    // The roster has no revision to key on and is small, so it is pushed
+    // every frame and the panel decides what to do with it.
+    RefreshRoster();
+
+    // Buffs stay empty until buff packets exist; Update keeps an empty
+    // display hidden at no cost.
+    if (buffDisplay_)
+        buffDisplay_->Update(deltaTime);
+
+    // Gameplay keys are polled rather than event-driven - Engine translates
+    // only the editing keys, so I/C/E/Tab never arrive as anything usable.
+    HandleGameplayKeys();
+
+    particles_.Update(deltaTime);
+    UpdateAmbientAether(deltaTime);
+
+    // After the camera has been moved for this frame by Camera2DSystem, so a
+    // bubble is placed against where its speaker is now rather than trailing
+    // them by a frame.
+    UpdateChatBubbles(deltaTime);
+    UpdateNameTags();
+
+    // Both of the calls above can insert a top-level element, and so can
+    // HUD::AddNotification at any moment. UIManager draws in insertion order,
+    // so each of them lands *over* whatever overlay is open - a name tag and a
+    // notification card floating on top of the pause dim. Re-asserting the open
+    // overlay afterwards is one list operation on a handful of elements, and
+    // only while something is actually open.
+    if (paused_ && pauseOverlay_)
+        pauseOverlay_->RaiseToFront();
+    else if (worldManagerPanel_ && worldManagerPanel_->IsOpen())
+        worldManagerPanel_->RaiseToFront();
+    else if (inventoryPanel_ && inventoryPanel_->IsOpen())
+        inventoryPanel_->RaiseToFront();
+    else if (characterPanel_ && characterPanel_->IsOpen())
+        characterPanel_->RaiseToFront();
+    else if (playerListPanel_ && playerListPanel_->IsOpen())
+        playerListPanel_->RaiseToFront();
+    UpdateInteractPrompt();
+
+    // Leaving is confirmed by the server, never assumed here. It answers
+    // WorldLeave on success and says nothing on refusal -- it refuses when the
+    // player is not really standing at the door -- so a press that changes
+    // nothing correctly leaves the player where they are.
+    //
+    // The session stays authenticated across this, so the browser's ordinary
+    // join path works on the way back in without another login.
+    if (engine_)
+    {
+        const uint32_t left = engine_->getNetworkManager().getWorldLeftRevision();
+        if (left != worldLeftRevision_)
+        {
+            worldLeftRevision_ = left;
+            LOG_INFO("GameScreen: the server confirmed the world was left");
+            RequestScreenChange(ScreenID::WorldBrowser);
+            return;
+        }
+    }
+
+    // WorldInfo arriving is what opens the wrench panel. The click only asked;
+    // the server decides whether this player sees anything at all, so a refusal
+    // simply never produces one of these and the panel never appears.
+    if (engine_ && worldManagerPanel_)
+    {
+        const uint32_t revision = engine_->getNetworkManager().getWorldInfoRevision();
+        if (revision != worldInfoRevision_)
+        {
+            worldInfoRevision_ = revision;
+            if (!worldManagerPanel_->IsOpen())
+            {
+                // The server answering WorldInfo *is* the interaction
+                // succeeding, so this is where the burst belongs - a claim or
+                // an open-management both land here.
+                EmitCoreBurst();
+                worldManagerPanel_->Show();
+            }
+        }
+
+        worldManagerPanel_->Refresh();
+    }
+}
+
+void GameScreen::RenderGame() const
+{
+    // Runs right after SystemManager::render in Engine::Render, so particles
+    // draw over tiles and players but under the UI, through the same camera
+    // projection and white texture everything else in the world uses.
+    auto batch = ServiceLocator::Get<SpriteBatch>();
+    if (!batch || !playerTexture_)
+        return;
+
+    particles_.Render(*batch, *playerTexture_);
 }
 
 void GameScreen::TrackAirborne()
@@ -1074,22 +2191,217 @@ void GameScreen::TrackAirborne()
     wasGrounded_ = grounded;
 }
 
+void GameScreen::PlaySfx(const std::string& baseName)
+{
+    if (engine_)
+        engine_->GetAudio().PlaySfx(baseName);
+}
+
+void GameScreen::PlayBreakSfx(std::uint8_t brokenServerId)
+{
+    if (!engine_)
+        return;
+
+    // The material take first, the generic name when only that exists - a
+    // false return means "nothing by that name", which is harmless.
+    if (engine_->GetAudio().PlaySfx(BreakSoundForServerId(brokenServerId)))
+        return;
+
+    engine_->GetAudio().PlaySfx("break");
+}
+
+std::uint16_t GameScreen::SelectedToolItemId() const
+{
+    // Hotbar slots 0 and 1 are the client-side PUNCH/WRENCH tools, so server
+    // inventory slot N sits at hotbar slot N + 2 - the same mapping
+    // OnRightMouseDown reads for placing.
+    if (!engine_ || !hud_ || hud_->GetSelectedTool() != HUD::Tool::Item)
+        return 0;
+
+    const uint8_t inventorySlot =
+        static_cast<uint8_t>(hud_->GetSelectedSlot() - HUD::kFirstItemSlot);
+
+    const auto& inventory = engine_->getNetworkManager().getInventory();
+    const auto it = inventory.find(inventorySlot);
+    if (it == inventory.end() || it->second.IsEmpty())
+        return 0;
+
+    return it->second.itemId;
+}
+
+void GameScreen::EmitCoreBurst()
+{
+    // Centred on the tile the interaction targeted, in local world pixels -
+    // TileYToLocalY already does the server-Y flip, so +half a tile is the
+    // middle of that tile's square.
+    const float cx = static_cast<float>(interactTileX_) * kTileSize + kTileSize * 0.5f;
+    const float cy = TileYToLocalY(static_cast<float>(interactTileY_) + 0.5f);
+
+    // Two interleaved bursts, one end of the Aether palette each, so the puff
+    // reads violet-blue rather than either alone.
+    particles_.EmitBurst(cx, cy, 20, 40.0f, 150.0f, UITheme::Secondary, 60.0f, 0.8f);
+    particles_.EmitBurst(cx, cy, 20, 40.0f, 150.0f, UITheme::Accent,   60.0f, 0.9f);
+}
+
+void GameScreen::UpdateAmbientAether(float deltaTime)
+{
+    if (!engine_)
+        return;
+
+    constexpr float kAetherInterval = 0.5f;
+
+    aetherTimer_ += deltaTime;
+    if (aetherTimer_ < kAetherInterval)
+        return;
+
+    aetherTimer_ = 0.0f;
+
+    // The visible bounds exactly as TileRendererSystem derives them: camera
+    // centre plus half the viewport over zoom, floored to tiles. One mote per
+    // tick anywhere inside costs a couple of comparisons and one particle.
+    const Camera2D& camera = engine_->GetCamera();
+    const glm::vec2 viewport = camera.GetViewport();
+    if (viewport.x <= 0.0f || viewport.y <= 0.0f)
+        return;
+
+    const float zoom   = camera.GetZoom() > 0.0f ? camera.GetZoom() : 1.0f;
+    const glm::vec2 centre = camera.GetPosition();
+
+    const float halfWidth  = (viewport.x * 0.5f) / zoom;
+    const float halfHeight = (viewport.y * 0.5f) / zoom;
+
+    const float x = centre.x + (std::rand() / static_cast<float>(RAND_MAX) * 2.0f - 1.0f) * halfWidth;
+    const float y = centre.y + (std::rand() / static_cast<float>(RAND_MAX) * 2.0f - 1.0f) * halfHeight;
+
+    particles_.EmitAether(x, y);
+}
+
 void GameScreen::OnKeyDown(int key, bool, bool)
 {
     // This only runs while nothing holds keyboard focus, so Enter here always
     // means "start typing" and never "send".
     if (key == UIKey::Enter)
     {
+        PlaySfx("ui_click");
         if (hud_)
             hud_->FocusChatInput();
         return;
     }
 
-    // Escape toggles the overlay. This only runs once UIManager has already
-    // consumed an Escape to clear field focus, so the two-stage behaviour is
-    // preserved: Escape while typing abandons the message, Escape again pauses.
+    // Escape unwinds one layer per press: the topmost overlay first, with
+    // pause last so a stack closes in the order it was opened. This only
+    // runs once UIManager has already consumed an Escape to clear field
+    // focus, so Escape while typing abandons the message and nothing here.
     if (key == UIKey::Escape)
-        SetPaused(!paused_);
+    {
+        if (pauseOverlay_ && pauseOverlay_->IsOpen())
+            SetPaused(false);
+        else if (worldManagerPanel_ && worldManagerPanel_->IsOpen())
+            worldManagerPanel_->Hide();
+        else if (inventoryPanel_ && inventoryPanel_->IsOpen())
+            inventoryPanel_->Close();
+        else if (characterPanel_ && characterPanel_->IsOpen())
+            characterPanel_->Close();
+        else if (playerListPanel_ && playerListPanel_->IsOpen())
+            playerListPanel_->Close();
+        else if (vaultPanel_ && vaultPanel_->IsOpen())
+            vaultPanel_->Close();
+        else if (gatePanel_ && gatePanel_->IsOpen())
+            gatePanel_->Close();
+        else if (stabilizerPanel_ && stabilizerPanel_->IsOpen())
+            stabilizerPanel_->Close();
+        else if (memoryCrystalPanel_ && memoryCrystalPanel_->IsOpen())
+            memoryCrystalPanel_->Close();
+        else
+            SetPaused(true);
+    }
+}
+
+void GameScreen::HandleGameplayKeys()
+{
+    // Level read of the hardware keyboard - the same source InputSystem uses
+    // for movement - with edge detection kept here. Blocked frames still
+    // refresh the previous state, so releasing a key behind a focused chat
+    // field does not queue a phantom press for when focus goes away.
+    const bool* state = SDL_GetKeyboardState(nullptr);
+
+    const bool tab       = state[SDL_SCANCODE_TAB] != 0;
+    const bool inventory = state[SDL_SCANCODE_I]   != 0;
+    const bool character = state[SDL_SCANCODE_C]   != 0;
+    const bool interact  = state[SDL_SCANCODE_E]   != 0;
+
+    // The management panel counts as blocking here, exactly as it does for
+    // clicks. It did not, so with the panel open `E` still fired
+    // InteractWithTarget at whatever tile the prompt last found, and `I` opened
+    // a second modal stacked on the first. The Lost Technology panels count as
+    // blocking for the same reason: they are opened from the world with E, and
+    // a second E behind an open vault must not act on the terrain behind it.
+    //
+    // The toggle panels deliberately do NOT block: `I` while the inventory is
+    // open is how it closes again. AnyPanelOpen is the click gate's test and
+    // would trap them shut.
+    const bool blocked = !uiManager_ || uiManager_->isTextInputFocused() || paused_ ||
+                         (worldManagerPanel_ && worldManagerPanel_->IsOpen()) ||
+                         (vaultPanel_         && vaultPanel_->IsOpen()) ||
+                         (gatePanel_          && gatePanel_->IsOpen()) ||
+                         (stabilizerPanel_    && stabilizerPanel_->IsOpen()) ||
+                         (memoryCrystalPanel_ && memoryCrystalPanel_->IsOpen());
+
+    if (!blocked)
+    {
+        // Tab is hold-to-show: down opens the list, up closes it. Reading it
+        // as level state sidesteps key-repeat entirely - the event path only
+        // delivers keydowns with no repeat flag, so a toggle there would
+        // flicker while the key is held.
+        if (tab && !prevPlayerListKey_)
+        {
+            ClosePanelOverlays();
+            if (playerListPanel_)
+                playerListPanel_->Open();
+        }
+        else if (!tab && prevPlayerListKey_)
+        {
+            if (playerListPanel_)
+                playerListPanel_->Close();
+        }
+
+        if (inventory && !prevInventoryKey_)
+        {
+            if (inventoryPanel_ && !inventoryPanel_->IsOpen())
+                ClosePanelOverlays();
+            if (inventoryPanel_)
+                inventoryPanel_->Toggle();
+        }
+
+        if (character && !prevCharacterKey_)
+        {
+            if (characterPanel_ && !characterPanel_->IsOpen())
+                ClosePanelOverlays();
+            if (characterPanel_)
+                characterPanel_->Toggle();
+        }
+
+        if (interact && !prevInteractKey_)
+            InteractWithTarget();
+    }
+
+    // Tab's release is handled whether or not the frame was blocked.
+    //
+    // Both edges used to sit inside the `if (!blocked)` above while the
+    // previous-state below was updated unconditionally, so a release that
+    // happened during a blocked frame was swallowed and then forgotten: hold
+    // Tab, press Escape, let go, and the player list stayed up for good with no
+    // key held. Closing is the safe half of a hold-to-show binding and nothing
+    // is gained by suppressing it.
+    if (!tab && prevPlayerListKey_ && playerListPanel_ && playerListPanel_->IsOpen())
+    {
+        playerListPanel_->Close();
+    }
+
+    prevPlayerListKey_ = tab;
+    prevInventoryKey_  = inventory;
+    prevCharacterKey_  = character;
+    prevInteractKey_   = interact;
 }
 
 void GameScreen::SubmitChat(const std::string& message)
@@ -1121,9 +2433,12 @@ void GameScreen::SubmitChat(const std::string& message)
     }
 
     // The server broadcasts to every client except the sender, so the local
-    // echo is what puts our own line in the log.
+    // echo is what puts our own line in the log - and, for the same reason,
+    // what raises our own bubble. Nothing comes back to trigger it.
     if (hud_)
         hud_->AddChatMessage(author + ": " + message);
+
+    ShowChatBubble(kLocalSpeakerId, message);
 }
 
 void GameScreen::OnChatReceived(uint64_t senderId, const std::string& message)
@@ -1132,6 +2447,9 @@ void GameScreen::OnChatReceived(uint64_t senderId, const std::string& message)
         return;
 
     hud_->AddChatMessage(DisplayNameFor(senderId) + ": " + message);
+
+    // And over their head, if they have one in this world.
+    ShowChatBubble(senderId, message);
 }
 
 std::string GameScreen::DisplayNameFor(uint64_t entityId) const
@@ -1262,7 +2580,7 @@ void GameScreen::OnPlayerSpawn(uint64_t entityId, const std::string& username,
     remotePlayers_[entityId] = entity;
 
     if (announce && hud_)
-        hud_->AddChatMessage(username + " joined.");
+        hud_->AddNotification(username + " joined.");
 
     LOG_INFO(std::format("GameScreen: '{}' (id {}) spawned at tile {:.1f},{:.1f}",
                          username, entityId, tileX, tileY));
@@ -1316,7 +2634,7 @@ void GameScreen::OnPlayerRemove(uint64_t entityId)
         entityManager->destroyEntity(it->second);
 
     if (hud_)
-        hud_->AddChatMessage(DisplayNameFor(entityId) + " left.");
+        hud_->AddNotification(DisplayNameFor(entityId) + " left.");
 
     remotePlayers_.erase(it);
     remoteNames_.erase(entityId);
@@ -1418,7 +2736,48 @@ void GameScreen::OnExit()
     // point would otherwise reach a handler holding a dangling screen.
     UnregisterNetworkHandlers();
 
+    // The gameplay-pause gate lives on InputSystem, which outlives this
+    // screen. Leaving it set would freeze the next world's player.
+    SetPaused(false);
+
+    // Bubbles hold UIManager elements and are keyed on entities DestroyActors
+    // is about to invalidate, so they go first.
+    for (auto& [speakerId, bubble] : chatBubbles_)
+    {
+        (void)speakerId;
+        if (bubble.panel && uiManager_)
+            uiManager_->removeElement(bubble.panel);
+    }
+    chatBubbles_.clear();
+
+    for (auto& [speakerId, tag] : nameTags_)
+    {
+        (void)speakerId;
+        if (tag && uiManager_)
+            uiManager_->removeElement(tag);
+    }
+    nameTags_.clear();
+
     hud_.reset();
+
+    // Panel overlays hold UIManager elements; each destructor hands its root
+    // back to the UIManager, which outlives the screen. Reset before the
+    // prompt element below, which nothing else owns.
+    pauseOverlay_.reset();
+    playerListPanel_.reset();
+    inventoryPanel_.reset();
+    characterPanel_.reset();
+    buffDisplay_.reset();
+
+    vaultPanel_.reset();
+    gatePanel_.reset();
+    stabilizerPanel_.reset();
+    memoryCrystalPanel_.reset();
+
+    if (interactPromptPanel_ && uiManager_)
+        uiManager_->removeElement(interactPromptPanel_);
+    interactPromptPanel_.reset();
+    interactPromptLabel_.reset();
 
     DestroyActors();
 

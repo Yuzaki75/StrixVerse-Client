@@ -109,6 +109,16 @@ public:
     // Whether this element takes keyboard focus (and joins the Tab order).
     virtual bool isFocusable() const { return false; }
 
+    // Whether this element consumes typing while it holds focus.
+    //
+    // Distinct from isFocusable, and the distinction matters: a button is
+    // focusable so it can be reached by keyboard, but focusing one must not
+    // stop the player walking or building. Gameplay asks this question, not
+    // "is anything focused" - which was true the instant a hotbar slot was
+    // clicked, and froze movement and world edits until the player happened to
+    // click somewhere blank.
+    virtual bool consumesTextInput() const { return false; }
+
     // --- Hierarchy -------------------------------------------------------
     void addChild(std::shared_ptr<UIElement> child);
     void removeChild(const std::shared_ptr<UIElement>& child);

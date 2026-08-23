@@ -74,6 +74,9 @@ public:
     bool wantsInput() const override { return true; }
     bool isFocusable() const override { return enabled_; }
 
+    // A text box is the thing the keyboard belongs to while it has focus.
+    bool consumesTextInput() const override { return enabled_; }
+
     void update(float deltaTime) override;
     void onMouseDown(float x, float y) override;
     void onFocusGained() override;

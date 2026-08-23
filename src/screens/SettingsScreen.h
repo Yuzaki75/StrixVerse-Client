@@ -64,6 +64,7 @@ private:
     std::shared_ptr<UIButton> leaveButton_;
 
     std::shared_ptr<UILabel>  volumeValue_;
+    std::shared_ptr<UILabel>  sfxValue_;
     std::shared_ptr<UILabel>  resolutionValue_;
     std::shared_ptr<UIButton> fullscreenToggle_;
     std::shared_ptr<UIButton> vsyncToggle_;

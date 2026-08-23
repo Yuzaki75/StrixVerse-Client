@@ -6,6 +6,7 @@
 #include "../core/ServiceLocator.h"
 #include "../graphics/Color.h"
 #include "../graphics/Font.h"
+#include "../networking/NetworkManager.h"
 #include "../networking/Protocol.h"
 #include "../ui/UIButton.h"
 #include "../ui/UIFonts.h"
@@ -18,6 +19,7 @@
 #include "../ui/UITextBox.h"
 #include "../ui/UITheme.h"
 
+#include <algorithm>
 #include <format>
 
 HUD::HUD(Engine* engine)
@@ -29,15 +31,16 @@ HUD::HUD(Engine* engine)
     , m_LevelLabel(nullptr)
     , m_ExperienceLabel(nullptr)
     , m_ChatBackground(nullptr)
-    , m_NotificationPanel(nullptr)
-    , m_NotificationLabel(nullptr)
-    , m_NotificationTimer(0.0f)
-    , m_NotificationActive(false)
 {
 }
 
 HUD::~HUD()
 {
+    // Stop the NetworkManager from delivering into a destroyed HUD; notices
+    // that arrive before the next HUD binds itself queue there instead.
+    if (m_NotificationBound && m_Engine)
+        m_Engine->getNetworkManager().SetNotificationHandler(nullptr);
+
     // Remove all HUD elements from the UIManager to avoid dangling pointers
     if (m_UIManager)
     {
@@ -45,7 +48,12 @@ HUD::~HUD()
         if (m_LevelPanel) m_UIManager->removeElement(m_LevelPanel);
         if (m_ChatBackground) m_UIManager->removeElement(m_ChatBackground);
         if (m_InventoryBar) m_UIManager->removeElement(m_InventoryBar);
-        if (m_NotificationPanel) m_UIManager->removeElement(m_NotificationPanel);
+
+        for (const Notification& note : m_Notifications)
+        {
+            if (note.panel)
+                m_UIManager->removeElement(note.panel);
+        }
     }
     // Note: We do not delete the UI elements here because they are managed by shared_ptr.
     // The UIManager also holds a shared_ptr, so removing from UIManager decreases the reference count.
@@ -73,26 +81,48 @@ void HUD::Initialize()
     CreateLevelSection();
     CreateChatSection();
     CreateInventorySection();
-    CreateNotificationSection();
 
     LOG_INFO("HUD initialized");
 }
 
 void HUD::Update(float deltaTime)
 {
-    // Update notification timer
-    if (m_NotificationActive)
+    // Self-binding: GameScreen constructs the HUD with the engine, and the
+    // engine owns the NetworkManager, so no screen wiring is needed. Done on
+    // the first frame rather than Initialize so any notifications queued
+    // before the HUD existed are drained into a fully built stack.
+    if (!m_NotificationBound && m_Engine)
+        BindNotificationSource(&m_Engine->getNetworkManager());
+
+    // Tick the stack down, then repaint what survives at its current fade.
+    // The last half second eases to invisible so an expiry never pops.
+    constexpr float kFadeSeconds = 0.5f;
+
+    for (std::size_t i = m_Notifications.size(); i > 0; --i)
     {
-        m_NotificationTimer -= deltaTime;
-        if (m_NotificationTimer <= 0.0f)
-        {
-            m_NotificationActive = false;
-            if (m_NotificationPanel)
-            {
-                m_NotificationPanel->setVisible(false);
-            }
-        }
+        Notification& note = m_Notifications[i - 1];
+        note.remaining -= deltaTime;
+        if (note.remaining <= 0.0f)
+            CloseNotification(i - 1);
     }
+
+    for (const Notification& note : m_Notifications)
+    {
+        const float fade = std::clamp(note.remaining / kFadeSeconds, 0.0f, 1.0f);
+
+        if (note.panel)
+            note.panel->setBackgroundColor(
+                UITheme::WithAlpha(note.background, note.background.a * fade));
+
+        if (note.accent)
+            note.accent->setBackgroundColor(
+                UITheme::WithAlpha(note.accentColor, note.accentColor.a * fade));
+
+        if (note.label)
+            note.label->setTextColor(UITheme::WithAlpha(UITheme::Text, fade));
+    }
+
+    LayoutNotifications();
 }
 
 void HUD::Render()
@@ -186,26 +216,14 @@ void HUD::AddChatMessage(const std::string& message)
 
 }
 
-void HUD::ShowNotification(const std::string& message, float duration)
-{
-    if (m_NotificationLabel)
-    {
-        m_NotificationLabel->setText(message);
-    }
-    m_NotificationMessage = message;
-    m_NotificationTimer = duration;
-    m_NotificationActive = true;
-    if (m_NotificationPanel)
-    {
-        m_NotificationPanel->setVisible(true);
-    }
-}
-
 // The HUD is positioned in the same 1920x1080 design canvas as the screens, so
 // it scales with the rest of the UI instead of drifting with the window size.
 namespace
 {
     constexpr float S(float previewPixels) { return UITheme::Scaled(previewPixels); }
+
+    // The notification channel's standard lifetime.
+    constexpr float kNotificationSeconds = 5.0f;
 
     Font* HudFont(Engine* engine, UIFonts::Typeface face, unsigned int size)
     {
@@ -219,6 +237,126 @@ namespace
         panel->setBackgroundColor(UITheme::Hex(0x0E121E, 0.62f));
         panel->setBorder(UITheme::SubtleBorder, UITheme::BorderThin);
         panel->setBorderRadius(UITheme::RadiusButton);
+    }
+}
+
+void HUD::ShowNotification(const std::string& message, float duration)
+{
+    AddNotification(message, duration, 0);
+}
+
+void HUD::AddNotification(const std::string& message)
+{
+    AddNotification(message, kNotificationSeconds, 0);
+}
+
+void HUD::BindNotificationSource(NetworkManager* network)
+{
+    if (!network || m_NotificationBound)
+        return;
+
+    m_NotificationBound = true;
+
+    // SetNotificationHandler first drains anything the NetworkManager queued
+    // before this HUD existed, so early notices keep their order.
+    network->SetNotificationHandler(
+        [this](const std::string& message, int severity)
+        {
+            AddNotification(message, kNotificationSeconds, severity);
+        });
+}
+
+void HUD::AddNotification(const std::string& message, float duration, int severity)
+{
+    if (!m_UIManager || message.empty())
+        return;
+
+    // Room for five; the oldest drops when a sixth arrives.
+    while (m_Notifications.size() >= kMaxNotifications)
+        CloseNotification(0);
+
+    constexpr float kWidth  = S(420.0f);
+    constexpr float kHeight = S(30.0f);
+
+    Notification note;
+    note.remaining   = duration;
+    note.background  = UITheme::Hex(0x1E2230, 0.82f);
+
+    note.panel = std::make_shared<UIPanel>();
+    note.panel->setSize(kWidth, kHeight);
+    note.panel->setBackgroundColor(note.background);
+    note.panel->setBorderRadius(UITheme::RadiusChip);
+    m_UIManager->addElement(note.panel);
+
+    // Severity styling. Warnings read as gold and successes as green; plain
+    // info keeps the alternating Aether-violet/-blue accent so a group of
+    // notices reads as one family rather than one repeated card.
+    switch (severity)
+    {
+    case 1:  note.accentColor = UITheme::Gold;    break;
+    case 2:  note.accentColor = UITheme::Success; break;
+    default: note.accentColor = (m_Notifications.size() % 2 == 0) ? UITheme::Secondary
+                                                                  : UITheme::Accent;
+             break;
+    }
+
+    if (severity == 1 || severity == 2)
+    {
+        note.panel->setBorder(UITheme::WithAlpha(note.accentColor, 0.65f),
+                              UITheme::BorderThin);
+    }
+
+    note.accent = std::make_shared<UIPanel>();
+    note.accent->setSize(S(3.0f), kHeight - S(10.0f));
+    note.accent->setPosition(S(6.0f), S(5.0f));
+    note.accent->setBackgroundColor(note.accentColor);
+    note.accent->setBorderRadius(UITheme::RadiusBar);
+    note.panel->addChild(note.accent);
+
+    note.label = std::make_shared<UILabel>();
+    note.label->setFont(HudFont(m_Engine, UIFonts::Typeface::Body, UITheme::Body::Caption));
+    note.label->setTextColor(UITheme::Text);
+    note.label->setAlignment(UILabel::Alignment::Left);
+    note.label->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
+    note.label->setPosition(S(16.0f), 0.0f);
+    note.label->setSize(kWidth - S(24.0f), kHeight);
+    note.panel->addChild(note.label);
+
+    note.label->setText(message);
+
+    m_Notifications.push_back(std::move(note));
+    LayoutNotifications();
+}
+
+void HUD::CloseNotification(std::size_t index)
+{
+    if (index >= m_Notifications.size())
+        return;
+
+    if (m_UIManager && m_Notifications[index].panel)
+        m_UIManager->removeElement(m_Notifications[index].panel);
+
+    m_Notifications.erase(m_Notifications.begin() +
+                          static_cast<std::ptrdiff_t>(index));
+}
+
+void HUD::LayoutNotifications()
+{
+    // Top-centre stack, below the top edge and clear of the stat panels on
+    // the left and the chat panel on the right.
+    constexpr float kTopMargin = S(20.0f);
+    constexpr float kGap       = S(6.0f);
+
+    for (std::size_t i = 0; i < m_Notifications.size(); ++i)
+    {
+        const Notification& note = m_Notifications[i];
+        if (!note.panel)
+            continue;
+
+        note.panel->setPosition(
+            (UIScale::kDesignWidth - note.panel->getWidth()) * 0.5f,
+            kTopMargin + static_cast<float>(i) *
+                             (note.panel->getHeight() + kGap));
     }
 }
 
@@ -484,18 +622,53 @@ void HUD::CreateInventorySection()
         m_SlotButtons.push_back(hit);
     }
 
-    // The two permanent tools. Written straight into the labels rather than
-    // routed through SetInventory, because they are not inventory: they are
-    // always present and the server knows nothing about them.
+    // The two permanent tools. Set here rather than routed through
+    // SetInventory, because they are not inventory: they are always present
+    // and the server knows nothing about them.
+    //
+    // Drawn as artwork like every other slot, with the words kept only as the
+    // fallback for a missing file. Two text labels among a row of pictures read
+    // as a row that had not been finished.
     if (m_InventoryLabels.size() > kWrenchSlot)
     {
-        m_InventoryLabels[kPunchSlot]->setText("PUNCH");
-        m_InventoryLabels[kPunchSlot]->setTextColor(UITheme::Text);
-        m_InventoryLabels[kWrenchSlot]->setText("WRENCH");
-        m_InventoryLabels[kWrenchSlot]->setTextColor(UITheme::Accent);
+        SetToolSlot(kPunchSlot,  "assets/items/9001_punch.png",  "PUNCH",  UITheme::Text);
+        SetToolSlot(kWrenchSlot, "assets/items/9002_wrench.png", "WRENCH", UITheme::Accent);
     }
 
     RefreshSlotHighlight();
+}
+
+void HUD::SetToolSlot(std::size_t barSlot, const std::string& iconPath,
+                      const std::string& fallbackText, const Color& fallbackColor)
+{
+    if (barSlot >= m_InventorySlots.size())
+        return;
+
+    std::shared_ptr<Texture> icon;
+    if (auto assets = ServiceLocator::Get<AssetManager>())
+    {
+        // Mipmaps off: 32x32 pixel art shown small goes soft with them.
+        icon = assets->LoadTexture(iconPath, false, false);
+    }
+
+    if (icon && m_InventoryIcons[barSlot])
+    {
+        m_InventoryIcons[barSlot]->setTexture(std::move(icon));
+        m_InventoryIcons[barSlot]->setVisible(true);
+
+        if (auto& label = m_InventoryLabels[barSlot])
+            label->setText("");
+        return;
+    }
+
+    // No art: say what the slot is rather than leaving it blank.
+    LOG_WARN("HUD: " + iconPath + " did not load; that tool keeps its label");
+
+    if (auto& label = m_InventoryLabels[barSlot])
+    {
+        label->setText(fallbackText);
+        label->setTextColor(fallbackColor);
+    }
 }
 
 std::string HUD::IconPathForItem(uint16_t itemId)
@@ -632,29 +805,4 @@ void HUD::SetInventory(const std::vector<InventoryEntry>& entries)
     // Repainted last: the loop above resets borders, which would otherwise
     // erase the selection ring.
     RefreshSlotHighlight();
-}
-
-void HUD::CreateNotificationSection()
-{
-    const float width  = S(400.0f);
-    const float height = S(50.0f);
-
-    m_NotificationPanel = std::make_shared<UIPanel>();
-    m_NotificationPanel->setSize(width, height);
-    m_NotificationPanel->setPosition((UIScale::kDesignWidth - width) * 0.5f, S(20.0f));
-    m_NotificationPanel->setBackgroundColor(UITheme::Hex(0x1E2230, 0.96f));
-    m_NotificationPanel->setBorder(UITheme::WithAlpha(UITheme::Accent, 0.35f), UITheme::BorderThin);
-    m_NotificationPanel->setBorderRadius(UITheme::RadiusPanel);
-    m_NotificationPanel->setVisible(false);
-    m_UIManager->addElement(m_NotificationPanel);
-
-    m_NotificationLabel = std::make_shared<UILabel>();
-    m_NotificationLabel->setText("");
-    m_NotificationLabel->setFont(HudFont(m_Engine, UIFonts::Typeface::Body, UITheme::Body::Regular));
-    m_NotificationLabel->setTextColor(UITheme::Warning);
-    m_NotificationLabel->setAlignment(UILabel::Alignment::Center);
-    m_NotificationLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
-    m_NotificationLabel->setPosition(S(10.0f), 0.0f);
-    m_NotificationLabel->setSize(width - S(20.0f), height);
-    m_NotificationPanel->addChild(m_NotificationLabel);
 }

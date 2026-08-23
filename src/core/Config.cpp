@@ -86,6 +86,23 @@ namespace
         }
     }
 
+    bool ParseFloat(const std::string& json, const std::string& key, float& out)
+    {
+        std::string token;
+        if (!FindValueToken(json, key, token))
+            return false;
+
+        try
+        {
+            out = std::stof(token);
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }
+
     bool ParseBool(const std::string& json, const std::string& key, bool& out)
     {
         std::string token;
@@ -135,6 +152,7 @@ bool Config::Load()
     ParseBool(json, "offline", m_Offline);
 
     ParseInt(json, "musicVolume", m_MusicVolume);
+    ParseFloat(json, "sfxVolume", m_SfxVolume);
 
     Validate();
 
@@ -179,7 +197,8 @@ bool Config::Save() const
          << "    },\n"
          << "    \"audio\":\n"
          << "    {\n"
-         << "        \"musicVolume\": " << m_MusicVolume << "\n"
+         << "        \"musicVolume\": " << m_MusicVolume << ",\n"
+         << "        \"sfxVolume\": " << m_SfxVolume << "\n"
          << "    }\n"
          << "}\n";
 
@@ -192,6 +211,8 @@ void Config::ResetToDefaults()
     m_Height = 720;
     m_Fullscreen = false;
     m_VSync = true;
+
+    m_SfxVolume = 1.0f;
 }
 
 bool Config::Validate()
@@ -212,6 +233,12 @@ bool Config::Validate()
         valid = false;
 
     m_MusicVolume = volume;
+
+    const float sfxVolume = std::clamp(m_SfxVolume, 0.0f, 1.0f);
+    if (sfxVolume != m_SfxVolume)
+        valid = false;
+
+    m_SfxVolume = sfxVolume;
 
     return valid;
 }
@@ -240,6 +267,13 @@ int Config::GetMusicVolume() const { return m_MusicVolume; }
 void Config::SetMusicVolume(int volume)
 {
     m_MusicVolume = std::clamp(volume, 0, 100);
+}
+
+float Config::GetSfxVolume() const { return m_SfxVolume; }
+
+void Config::SetSfxVolume(float volume)
+{
+    m_SfxVolume = std::clamp(volume, 0.0f, 1.0f);
 }
 
 bool Config::IsOfflineMode() const { return m_Offline; }

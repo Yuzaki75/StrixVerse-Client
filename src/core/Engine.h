@@ -154,6 +154,16 @@ private:
     void Update(float deltaTime);
     void Render();
 
+    // Writes the framebuffer to screenshots/ as a PNG. Called from Render, at
+    // the only moment the finished frame exists and has not yet been swapped
+    // away.
+    void CaptureScreenshot();
+
+    // F12, edge-detected. Level-read from the keyboard rather than taken from
+    // the event queue, so it works on every screen without each one having to
+    // forward the key -- the same approach GameScreen uses for its own keys.
+    void PollScreenshotKey();
+
     void UpdateTransition(float deltaTime);
     void SwitchScreen(ScreenID id);
     void HandleResize();
@@ -176,6 +186,10 @@ private:
     std::shared_ptr<UIManager>   m_UIManager;
 
     UIScale m_UIScale;
+
+    // Screenshot request, raised by F12 and consumed by the next Render.
+    bool m_ScreenshotRequested = false;
+    bool m_PrevScreenshotKey   = false;
 
     EngineState    m_State = EngineState::Uninitialized;
     NetworkManager m_NetworkManager;

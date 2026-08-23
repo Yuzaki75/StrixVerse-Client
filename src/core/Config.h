@@ -62,6 +62,10 @@ public:
     int GetMusicVolume() const;
     void SetMusicVolume(int volume);
 
+    // Sound effect level, 0.0 (silent) to 1.0. Read as "sfxVolume" in the config.
+    float GetSfxVolume() const;
+    void SetSfxVolume(float volume);
+
     // Path of the backing file (relative to the working directory).
     const std::string& GetFilePath() const;
 
@@ -73,6 +77,7 @@ private:
     bool m_Offline = false;
 
     int m_MusicVolume = 70;
+    float m_SfxVolume = 1.0f;
 
     int m_Width = 1280;
     int m_Height = 720;
