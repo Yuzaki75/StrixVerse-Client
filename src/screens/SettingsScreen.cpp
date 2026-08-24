@@ -201,6 +201,10 @@ namespace
 
     constexpr int kVolumeStep = 10;
     constexpr float kSfxVolumeStep = 0.10f;
+
+    // Width of the right-aligned control column shared by every row, so all
+    // captions end at the same x regardless of the row type.
+    constexpr float kControlColumn = S(220.0f);
 }
 
 void SettingsScreen::BuildSettingsRows(float x, float y, float width)
@@ -238,12 +242,14 @@ void SettingsScreen::BuildSettingsRows(float x, float y, float width)
         [this]() {
             Config* c = engine_ ? engine_->GetConfig() : nullptr;
             if (!c) return;
+            engine_->GetAudio().PlaySfx("ui_click");
             c->SetMusicVolume(std::max(0, c->GetMusicVolume() - kVolumeStep));
             ApplyAndSave();
         },
         [this]() {
             Config* c = engine_ ? engine_->GetConfig() : nullptr;
             if (!c) return;
+            engine_->GetAudio().PlaySfx("ui_click");
             c->SetMusicVolume(std::min(100, c->GetMusicVolume() + kVolumeStep));
             ApplyAndSave();
         });
@@ -253,12 +259,14 @@ void SettingsScreen::BuildSettingsRows(float x, float y, float width)
         [this]() {
             Config* c = engine_ ? engine_->GetConfig() : nullptr;
             if (!c) return;
+            engine_->GetAudio().PlaySfx("ui_click");
             c->SetSfxVolume(c->GetSfxVolume() - kSfxVolumeStep);
             ApplyAndSave();
         },
         [this]() {
             Config* c = engine_ ? engine_->GetConfig() : nullptr;
             if (!c) return;
+            engine_->GetAudio().PlaySfx("ui_click");
             c->SetSfxVolume(c->GetSfxVolume() + kSfxVolumeStep);
             ApplyAndSave();
         });
@@ -272,6 +280,7 @@ void SettingsScreen::BuildSettingsRows(float x, float y, float width)
     fullscreenToggle_->setOnClick([this]() {
         Config* c = engine_ ? engine_->GetConfig() : nullptr;
         if (!c) return;
+        engine_->GetAudio().PlaySfx("ui_click");
         c->SetFullscreen(!c->IsFullscreen());
         ApplyAndSave();
     });
@@ -281,17 +290,30 @@ void SettingsScreen::BuildSettingsRows(float x, float y, float width)
     vsyncToggle_->setOnClick([this]() {
         Config* c = engine_ ? engine_->GetConfig() : nullptr;
         if (!c) return;
+        engine_->GetAudio().PlaySfx("ui_click");
         c->SetVSync(!c->IsVSyncEnabled());
         ApplyAndSave();
     });
     rowY = BuildToggleRow(x, rowY, width, "VERTICAL SYNC", vsyncToggle_);
 
+    // Offline mode is read once at startup (Engine wires it into the auth
+    // service), so it sits with the other restart-to-apply settings.
+    offlineToggle_ = std::make_shared<UIButton>();
+    offlineToggle_->setOnClick([this]() {
+        Config* c = engine_ ? engine_->GetConfig() : nullptr;
+        if (!c) return;
+        engine_->GetAudio().PlaySfx("ui_click");
+        c->SetOfflineMode(!c->IsOfflineMode());
+        ApplyAndSave();
+    });
+    rowY = BuildToggleRow(x, rowY, width, "OFFLINE MODE", offlineToggle_);
+
     // Honest about what takes effect when. Volume and resolution are applied as
-    // they change; the other two only reach the window at startup, and saying
+    // they change; the rest only reach the engine at startup, and saying
     // so beats a setting that appears to do nothing.
     auto note = std::make_shared<UILabel>();
     note->setText("Volume and resolution apply immediately. "
-                  "Fullscreen and vertical sync apply when the game restarts.");
+                  "Fullscreen, vertical sync and offline mode apply when the game restarts.");
     note->setFont(BodyFont(UITheme::Body::Caption));
     note->setTextColor(UITheme::Muted);
     note->setPosition(x, rowY + S(10.0f));
@@ -306,6 +328,8 @@ void SettingsScreen::StepResolution(int direction)
     Config* config = engine_ ? engine_->GetConfig() : nullptr;
     if (!config)
         return;
+
+    engine_->GetAudio().PlaySfx("ui_click");
 
     const int count = static_cast<int>(std::size(kResolutions));
 
@@ -351,7 +375,7 @@ float SettingsScreen::BuildStepperRow(float x, float y, float width,
     label->setTextColor(UITheme::Subtext);
     label->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
     label->setPosition(x, y);
-    label->setSize(width - valueWidth - stepWidth * 2.0f - S(20.0f), rowHeight);
+    label->setSize(width - kControlColumn, rowHeight);
     root_->addChild(label);
 
     const float controlsX = x + width - valueWidth - stepWidth * 2.0f - S(10.0f);
@@ -365,7 +389,7 @@ float SettingsScreen::BuildStepperRow(float x, float y, float width,
     down->setOnClick(onDown);
     root_->addChild(down);
 
-    value->setFont(BodyFont(UITheme::Body::Medium));
+    value->setFont(DataFont(UITheme::Data::Regular));
     value->setTextColor(UITheme::Text);
     value->setAlignment(UILabel::Alignment::Center);
     value->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
@@ -398,7 +422,7 @@ float SettingsScreen::BuildToggleRow(float x, float y, float width,
     label->setTextColor(UITheme::Subtext);
     label->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
     label->setPosition(x, y);
-    label->setSize(width - toggleWidth - S(10.0f), rowHeight);
+    label->setSize(width - kControlColumn, rowHeight);
     root_->addChild(label);
 
     toggle->setFont(DisplayFont(UITheme::Display::Small));
@@ -441,6 +465,14 @@ void SettingsScreen::RefreshSettingValues()
         vsyncToggle_->setText(on ? "ON" : "OFF");
         vsyncToggle_->setVariant(on ? UIButton::Variant::Primary
                                     : UIButton::Variant::Purple);
+    }
+
+    if (offlineToggle_)
+    {
+        const bool on = config->IsOfflineMode();
+        offlineToggle_->setText(on ? "ON" : "OFF");
+        offlineToggle_->setVariant(on ? UIButton::Variant::Primary
+                                      : UIButton::Variant::Purple);
     }
 }
 

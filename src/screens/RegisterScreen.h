@@ -40,6 +40,8 @@ private:
     std::string Validate(std::shared_ptr<UITextBox>& fieldToFocus) const;
 
     void Submit();
+    // Refreshes the pre-submit hint line as the player types.
+    void UpdateInlineValidation();
     void SetStatus(const std::string& message, const Color& color);
     void SetBusy(bool busy);
 

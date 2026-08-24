@@ -152,8 +152,19 @@ private:
     // One label per visible chat line; UILabel is single-line by design.
     std::vector<std::shared_ptr<UILabel>> m_ChatLines;
 
-    std::vector<std::string> m_ChatMessages;
+    // Each remembered line carries its own colour so the log can keep system
+    // notices visually apart from player speech as it scrolls.
+    struct ChatMessage
+    {
+        std::string text;
+        Color       color{1.0f, 1.0f, 1.0f, 1.0f};
+    };
+
+    std::vector<ChatMessage> m_ChatMessages;
     static const int MAX_CHAT_MESSAGES = 10;
+
+    // True for lines the client itself wrote rather than relayed speech.
+    static bool IsSystemChatMessage(const std::string& message);
 
     // Hotbar: one panel per slot with a quantity label inside it.
     std::shared_ptr<UIPanel>              m_InventoryBar;
@@ -199,6 +210,11 @@ private:
         Color background{0.0f, 0.0f, 0.0f, 0.0f};
         Color accentColor{0.0f, 0.0f, 0.0f, 0.0f};
 
+        // Alpha the panel's border was styled with, or 0 when it has none;
+        // faded in Update alongside everything else.
+        float borderAlpha = 0.0f;
+
+        float age      = 0.0f;
         float remaining = 0.0f;
     };
 

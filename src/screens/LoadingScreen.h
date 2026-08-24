@@ -83,4 +83,15 @@ private:
     // no expected total was ever announced.
     uint32_t lastChunkCount_  = 0;
     float    chunkQuietTimer_ = 0.0f;
+
+    // Last values shown in the labels Update() touches every frame.
+    // setText copies its argument, so each avoided rewrite also avoids a
+    // per-frame string allocation.
+    uint32_t shownChunks_          = 0;
+    int      shownPercent_         = -1;
+    bool     indeterminateShown_   = false;
+    bool     waitingMessageShown_  = false;
+    bool     readyMessageShown_    = false;
+    uint32_t shownRtt_             = 0;
+    bool     shownConnected_       = false;
 };

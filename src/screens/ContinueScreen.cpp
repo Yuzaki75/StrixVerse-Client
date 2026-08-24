@@ -80,6 +80,8 @@ void ContinueScreen::OnEnter()
     countdown_   = kAutoJoinSeconds;
     autoJoining_ = true;
 
+    countdownShownSeconds_ = -1;
+
     CreateRoot();
 
     AddBackdrop(UITheme::Hex(0x090E1A), UITheme::Hex(0x0F1828), true);
@@ -311,7 +313,12 @@ void ContinueScreen::BuildCard(float centreX, float y, float width)
     continueButton->setVariant(UIButton::Variant::Primary);
     continueButton->setPosition(kBodyPadX, buttonY);
     continueButton->setSize(continueWidth, buttonHeight);
-    continueButton->setOnClick([this]() { JoinLastWorld(); });
+    continueButton->setOnClick([this]()
+                               {
+                                   if (engine_)
+                                       engine_->GetAudio().PlaySfx("ui_click");
+                                   JoinLastWorld();
+                               });
     card->addChild(continueButton);
 
     auto playIcon = std::make_shared<UIIcon>(UIIcon::Shape::Play);
@@ -329,8 +336,13 @@ void ContinueScreen::BuildCard(float centreX, float y, float width)
     changeButton->setSize(changeWidth, buttonHeight);
     changeButton->setOnClick([this]()
                              {
-                                 CancelAutoJoin();
-                                 RequestScreenChange(ScreenID::WorldBrowser);
+                                 if (!joining_)
+                                 {
+                                     if (engine_)
+                                         engine_->GetAudio().PlaySfx("ui_click");
+                                     CancelAutoJoin();
+                                     RequestScreenChange(ScreenID::WorldBrowser);
+                                 }
                              });
     card->addChild(changeButton);
 }
@@ -403,8 +415,14 @@ void ContinueScreen::Update(float deltaTime)
     if (countdownLabel_)
     {
         const int seconds = static_cast<int>(countdown_) + 1;
-        countdownLabel_->setText(
-            std::format("Auto-joining in {}s - press any key to cancel", seconds));
+
+        // Rebuild the label once per second rather than every frame.
+        if (seconds != countdownShownSeconds_)
+        {
+            countdownShownSeconds_ = seconds;
+            countdownLabel_->setText(
+                std::format("Auto-joining in {}s - press any key to cancel", seconds));
+        }
     }
 }
 

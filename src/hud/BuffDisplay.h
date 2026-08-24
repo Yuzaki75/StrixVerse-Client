@@ -56,8 +56,13 @@ private:
     {
         std::shared_ptr<UIPanel> backing;
         std::shared_ptr<UILabel> name;
+        std::shared_ptr<UILabel> seconds;
         std::shared_ptr<UIPanel> barBackground;
         std::shared_ptr<UIPanel> barFill;
+
+        // The whole-second figure currently shown; the string is only
+        // rebuilt when this changes, never per frame.
+        int shownSecond = -1;
     };
 
     void BuildFrame();

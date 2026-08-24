@@ -10,6 +10,8 @@
 #include "../ui/UITheme.h"
 
 #include <algorithm>
+#include <cmath>
+#include <format>
 
 namespace
 {
@@ -19,6 +21,12 @@ namespace
     {
         UIFonts* fonts = engine ? engine->GetUIFonts() : nullptr;
         return fonts ? fonts->Get(face, size) : nullptr;
+    }
+
+    // Whole seconds left, as the countdown label shows them.
+    int ShownSeconds(float remainingSeconds)
+    {
+        return static_cast<int>(std::ceil(std::max(remainingSeconds, 0.0f)));
     }
 
     // Geometry, in style-guide pixels. A narrow column pinned under the HUD's
@@ -120,8 +128,23 @@ void BuffDisplay::RebuildRows()
         row.name->setTextColor(UITheme::Subtext);
         row.name->setText(buff.name.empty() ? buff.id : buff.name);
         row.name->setPosition(0.0f, 0.0f);
-        row.name->setSize(width, S(kNameHeight - 1.0f));
+        // Narrowed to leave the right-hand column for the countdown.
+        row.name->setSize(width - S(22.0f), S(kNameHeight - 1.0f));
         row.backing->addChild(row.name);
+
+        // Seconds remaining, Share Tech Mono per the type scale's rule that
+        // numbers are Data; at the name's pixel size so the row stays one
+        // visual line.
+        row.seconds = std::make_shared<UILabel>();
+        row.seconds->setFont(PanelFont(engine_, UIFonts::Typeface::Data,
+                                       UITheme::Display::Micro));
+        row.seconds->setTextColor(UITheme::Subtext);
+        row.seconds->setAlignment(UILabel::Alignment::Right);
+        row.seconds->setPosition(width - S(22.0f), 0.0f);
+        row.seconds->setSize(S(22.0f), S(kNameHeight - 1.0f));
+        row.shownSecond = ShownSeconds(buff.remainingSeconds);
+        row.seconds->setText(std::format("{}", row.shownSecond));
+        row.backing->addChild(row.seconds);
 
         row.barBackground = std::make_shared<UIPanel>();
         row.barBackground->setSize(width, S(kBarHeight));
@@ -208,5 +231,20 @@ void BuffDisplay::Update(float dt)
         buff.remainingSeconds = std::max(buff.remainingSeconds - dt, 0.0f);
 
     ApplyBars();
+
+    // The numeric countdown is only rewritten when the displayed second
+    // flips over: setText copies its argument, so rewriting an unchanged
+    // figure would allocate every frame for identical text.
+    for (std::size_t i = 0; i < rows_.size(); ++i)
+    {
+        const int second = ShownSeconds(buffs_[i].remainingSeconds);
+        if (second == rows_[i].shownSecond)
+            continue;
+
+        rows_[i].shownSecond = second;
+        if (rows_[i].seconds)
+            rows_[i].seconds->setText(std::format("{}", second));
+    }
+
     UpdateVisibility();
 }

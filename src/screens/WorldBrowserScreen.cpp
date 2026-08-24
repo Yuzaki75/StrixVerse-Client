@@ -146,6 +146,11 @@ void WorldBrowserScreen::OnEnter()
     BuildFooter(originX, originY + UIScale::kDesignHeight - kFooterHeight, UIScale::kDesignWidth);
 
     RebuildList();
+
+    // The field starts focused, as on the Login screen: this screen's whole
+    // purpose is to type a world name when the server has no list.
+    if (searchBox_)
+        uiManager_->setFocusedElement(searchBox_);
 }
 
 void WorldBrowserScreen::BuildHeader(float x, float y, float width)
@@ -253,6 +258,33 @@ void WorldBrowserScreen::BuildHeader(float x, float y, float width)
 
     cursorX -= S(9.0f);
 
+    // Clear affordance for the field. Sits between the field and the filter
+    // pills; clearing routes through setText so the text-changed callback
+    // below refreshes the list for us.
+    const float clearSize = controlHeight;
+
+    clearSearchButton_ = std::make_shared<UIButton>();
+    clearSearchButton_->setVariant(UIButton::Variant::Ghost);
+    clearSearchButton_->setBorderRadius(S(5.0f));
+    clearSearchButton_->setSize(clearSize, controlHeight);
+    clearSearchButton_->setPosition(cursorX - clearSize, controlY);
+    clearSearchButton_->setEnabled(false);
+    clearSearchButton_->setOnClick([this]()
+                                   {
+                                       if (searchBox_)
+                                           searchBox_->setText("");
+                                   });
+    header->addChild(clearSearchButton_);
+
+    auto clearIcon = std::make_shared<UIIcon>(UIIcon::Shape::Cross);
+    clearIcon->setColor(UITheme::Subtext);
+    clearIcon->setPosition((clearSize - S(10.0f)) * 0.5f,
+                           (controlHeight - S(10.0f)) * 0.5f);
+    clearIcon->setSize(S(10.0f), S(10.0f));
+    clearSearchButton_->addChild(clearIcon);
+
+    cursorX -= clearSize + S(5.0f);
+
     // Search field.
     const float searchWidth = S(200.0f);
 
@@ -269,6 +301,10 @@ void WorldBrowserScreen::BuildHeader(float x, float y, float width)
     searchBox_->setOnTextChanged([this](const std::string& text)
                                  {
                                      query_ = text;
+
+                                     if (clearSearchButton_)
+                                         clearSearchButton_->setEnabled(!query_.empty());
+
                                      RebuildList();
                                  });
     searchBox_->setOnEnterPressed([this]() { EnterTypedWorld(); });
@@ -495,6 +531,10 @@ void WorldBrowserScreen::RebuildList()
 
 void WorldBrowserScreen::EnterTypedWorld()
 {
+    // A join already in flight owns the status line; do not talk over it.
+    if (joining_)
+        return;
+
     // A name of nothing but spaces is not a name.
     const size_t first = query_.find_first_not_of(" \t");
 
@@ -503,7 +543,7 @@ void WorldBrowserScreen::EnterTypedWorld()
         if (selectionLabel_)
         {
             selectionLabel_->setText("Type a world name first.");
-            selectionLabel_->setTextColor(UITheme::Warning);
+            selectionLabel_->setTextColor(UITheme::Danger);
         }
 
         if (searchBox_ && uiManager_)
@@ -701,11 +741,21 @@ void WorldBrowserScreen::JoinWorld(const WorldInfo& world)
     joining_       = true;
     selectedWorld_ = world.name;
 
+    // The create action shows a busy state while the join request is in
+    // flight, matching the Login screen's submit treatment.
+    if (createButton_)
+    {
+        createButton_->setEnabled(false);
+        createButton_->setText("JOINING...");
+    }
+
     if (selectionLabel_)
         selectionLabel_->setText("Joining " + world.name + "...");
 
     if (engine_)
     {
+        engine_->GetAudio().PlaySfx("ui_click");
+
         engine_->SetSelectedWorldName(world.name);
 
         // Remember the choice so Continue can offer it next session.
@@ -719,6 +769,12 @@ void WorldBrowserScreen::JoinWorld(const WorldInfo& world)
         if (network.isConnected() && !network.sendWorldJoin(world.name))
         {
             joining_ = false;
+
+            if (createButton_)
+            {
+                createButton_->setEnabled(true);
+                createButton_->setText("CREATE WORLD");
+            }
 
             if (selectionLabel_)
                 selectionLabel_->setText("Could not reach the server.");

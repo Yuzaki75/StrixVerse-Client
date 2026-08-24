@@ -75,6 +75,7 @@ private:
     std::shared_ptr<UIButton> recentButton_;
     std::shared_ptr<UIButton> favoritesButton_;
     std::shared_ptr<UIButton> createButton_;
+    std::shared_ptr<UIButton> clearSearchButton_;
 
     std::string query_;
     Filter      filter_ = Filter::All;

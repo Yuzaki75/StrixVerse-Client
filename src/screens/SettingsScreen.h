@@ -68,6 +68,7 @@ private:
     std::shared_ptr<UILabel>  resolutionValue_;
     std::shared_ptr<UIButton> fullscreenToggle_;
     std::shared_ptr<UIButton> vsyncToggle_;
+    std::shared_ptr<UIButton> offlineToggle_;
 
     // Index into the offered resolutions, or -1 when the configured size is
     // not one of them - in which case it is shown but stepping starts from the

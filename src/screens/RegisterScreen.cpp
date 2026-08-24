@@ -34,6 +34,13 @@ namespace
     constexpr size_t kMinPasswordLength = 8;
     constexpr size_t kMinUsernameLength = 3;
 
+    // Shared between the inline hints and Validate() so the wording never
+    // drifts apart.
+    constexpr const char* kErrUsernameShort   = "Username must be at least 3 characters.";
+    constexpr const char* kErrEmailInvalid    = "Enter a valid email address.";
+    constexpr const char* kErrPasswordShort   = "Password must be at least 8 characters.";
+    constexpr const char* kErrConfirmMismatch = "Passwords do not match.";
+
     constexpr std::array<const char*, 4> kJourneyTags = {
         "Equip", "Craft", "Trade", "Quest",
     };
@@ -323,6 +330,11 @@ void RegisterScreen::BuildForm(float columnX, float columnWidth)
     passwordBox_ = addField("PASSWORD",         "Min 8 characters",     true,  64);
     confirmBox_  = addField("CONFIRM PASSWORD", "Repeat password",      true,  64);
 
+    // Inline validation: each keystroke refreshes the hint line below the
+    // form so the rules are visible before the player reaches submit.
+    for (auto* field : {&usernameBox_, &emailBox_, &passwordBox_, &confirmBox_})
+        (*field)->setOnTextChanged([this](const std::string&) { UpdateInlineValidation(); });
+
     termsBox_ = std::make_shared<UICheckBox>();
     termsBox_->setLabel("I agree to the Terms of Service and Privacy Policy");
     termsBox_->setFont(BodyFont(UITheme::Body::Caption));
@@ -340,7 +352,12 @@ void RegisterScreen::BuildForm(float columnX, float columnWidth)
     createButton_->setVariant(UIButton::Variant::Purple);
     createButton_->setPosition(x, y);
     createButton_->setSize(contentWidth, S(31.0f));
-    createButton_->setOnClick([this]() { Submit(); });
+    createButton_->setOnClick([this]()
+                              {
+                                  if (engine_)
+                                      engine_->GetAudio().PlaySfx("ui_click");
+                                  Submit();
+                              });
     panel->addChild(createButton_);
     y += S(31.0f) + kFieldGap;
 
@@ -362,7 +379,11 @@ void RegisterScreen::BuildForm(float columnX, float columnWidth)
     signIn->setOnClick([this]()
                        {
                            if (!submitting_)
+                           {
+                               if (engine_)
+                                   engine_->GetAudio().PlaySfx("ui_click");
                                RequestScreenChange(ScreenID::Login);
+                           }
                        });
     panel->addChild(signIn);
     y += S(14.0f) + S(8.0f);
@@ -389,25 +410,25 @@ std::string RegisterScreen::Validate(std::shared_ptr<UITextBox>& fieldToFocus) c
     if (username.size() < kMinUsernameLength)
     {
         fieldToFocus = usernameBox_;
-        return "Username must be at least 3 characters.";
+        return kErrUsernameShort;
     }
 
     if (!LooksLikeEmail(email))
     {
         fieldToFocus = emailBox_;
-        return "Enter a valid email address.";
+        return kErrEmailInvalid;
     }
 
     if (password.size() < kMinPasswordLength)
     {
         fieldToFocus = passwordBox_;
-        return "Password must be at least 8 characters.";
+        return kErrPasswordShort;
     }
 
     if (confirm != password)
     {
         fieldToFocus = confirmBox_;
-        return "Passwords do not match.";
+        return kErrConfirmMismatch;
     }
 
     if (termsBox_ && !termsBox_->isChecked())
@@ -418,6 +439,34 @@ std::string RegisterScreen::Validate(std::shared_ptr<UITextBox>& fieldToFocus) c
 
     fieldToFocus = nullptr;
     return {};
+}
+
+void RegisterScreen::UpdateInlineValidation()
+{
+    if (!statusLabel_ || submitting_)
+        return;
+
+    const std::string username = usernameBox_ ? usernameBox_->getText() : std::string();
+    const std::string email    = emailBox_ ? emailBox_->getText() : std::string();
+    const std::string password = passwordBox_ ? passwordBox_->getText() : std::string();
+    const std::string confirm  = confirmBox_ ? confirmBox_->getText() : std::string();
+
+    // Only fields the player has started filling in give feedback, so an
+    // untouched form does not open shouting errors.
+    const char* hint = nullptr;
+    if (!username.empty() && username.size() < kMinUsernameLength)
+        hint = kErrUsernameShort;
+    else if (!email.empty() && !LooksLikeEmail(email))
+        hint = kErrEmailInvalid;
+    else if (!password.empty() && password.size() < kMinPasswordLength)
+        hint = kErrPasswordShort;
+    else if (!confirm.empty() && confirm != password)
+        hint = kErrConfirmMismatch;
+
+    if (hint)
+        SetStatus(hint, UITheme::Warning);
+    else
+        statusLabel_->setText("");
 }
 
 void RegisterScreen::SetStatus(const std::string& message, const Color& color)

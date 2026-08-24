@@ -1,6 +1,7 @@
 #include "CreditsScreen.h"
 
 #include "../core/Engine.h"
+#include "../audio/AudioManager.h"
 #include "../core/Logger.h"
 #include "../core/Version.h"
 #include "../ui/UIButton.h"
@@ -145,7 +146,10 @@ void CreditsScreen::OnEnter()
     backButton_->setSize(buttonWidth, buttonHeight);
     backButton_->setPosition(originX + (UIScale::kDesignWidth - buttonWidth) * 0.5f,
                              originY + UIScale::kDesignHeight - buttonHeight - 60.0f);
-    backButton_->setOnClick([this]() { OnBack(); });
+    backButton_->setOnClick([this]() {
+        engine_->GetAudio().PlaySfx("ui_click");
+        OnBack();
+    });
     root_->addChild(backButton_);
 
     auto backIcon = std::make_shared<UIIcon>(UIIcon::Shape::ArrowLeft);

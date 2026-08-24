@@ -22,6 +22,15 @@
 #include <algorithm>
 #include <format>
 
+namespace
+{
+    // Notification easing, shared by Update and LayoutNotifications. A notice
+    // slides down from slightly above its slot while it fades in over
+    // kEnterSeconds, and fades out over the last kFadeSeconds of its life.
+    constexpr float kEnterSeconds = 0.2f;
+    constexpr float kFadeSeconds  = 0.5f;
+}
+
 HUD::HUD(Engine* engine)
     : m_Engine(engine)
     , m_UIManager(nullptr)
@@ -95,12 +104,12 @@ void HUD::Update(float deltaTime)
         BindNotificationSource(&m_Engine->getNetworkManager());
 
     // Tick the stack down, then repaint what survives at its current fade.
-    // The last half second eases to invisible so an expiry never pops.
-    constexpr float kFadeSeconds = 0.5f;
-
+    // The first kEnterSeconds ease in (and slide into place) and the last
+    // half second eases to invisible, so neither arrival nor expiry pops.
     for (std::size_t i = m_Notifications.size(); i > 0; --i)
     {
         Notification& note = m_Notifications[i - 1];
+        note.age += deltaTime;
         note.remaining -= deltaTime;
         if (note.remaining <= 0.0f)
             CloseNotification(i - 1);
@@ -108,7 +117,9 @@ void HUD::Update(float deltaTime)
 
     for (const Notification& note : m_Notifications)
     {
-        const float fade = std::clamp(note.remaining / kFadeSeconds, 0.0f, 1.0f);
+        const float enter = std::clamp(note.age / kEnterSeconds, 0.0f, 1.0f);
+        const float fade  = std::clamp(note.remaining / kFadeSeconds, 0.0f, 1.0f) *
+                            enter;
 
         if (note.panel)
             note.panel->setBackgroundColor(
@@ -117,6 +128,10 @@ void HUD::Update(float deltaTime)
         if (note.accent)
             note.accent->setBackgroundColor(
                 UITheme::WithAlpha(note.accentColor, note.accentColor.a * fade));
+
+        if (note.borderAlpha > 0.0f && note.panel)
+            note.panel->setBorderColor(
+                UITheme::WithAlpha(note.accentColor, note.borderAlpha * fade));
 
         if (note.label)
             note.label->setTextColor(UITheme::WithAlpha(UITheme::Text, fade));
@@ -182,9 +197,29 @@ void HUD::SetStats(const Stats& stats)
     }
 }
 
+// Chat lines the client writes itself rather than relays from a player.
+// A leading bracket covers the local send-failure prefixes ("[not connected]",
+// "[failed to send]"); the welcome banner is matched exactly because
+// GameScreen posts it without any marker. New client-side lines should carry
+// a bracketed prefix so they pick this treatment up for free.
+bool HUD::IsSystemChatMessage(const std::string& message)
+{
+    if (!message.empty() && message.front() == '[')
+        return true;
+
+    return message == "Welcome to StrixVerse!";
+}
+
 void HUD::AddChatMessage(const std::string& message)
 {
-    m_ChatMessages.push_back(message);
+    // System notices share the log but must not read as something a person
+    // said, so they are dropped to the Muted tone while player speech keeps
+    // the body Subtext colour.
+    ChatMessage entry;
+    entry.text  = message;
+    entry.color = IsSystemChatMessage(message) ? UITheme::Muted : UITheme::Subtext;
+
+    m_ChatMessages.push_back(std::move(entry));
     if (m_ChatMessages.size() > MAX_CHAT_MESSAGES)
     {
         m_ChatMessages.erase(m_ChatMessages.begin());
@@ -206,7 +241,8 @@ void HUD::AddChatMessage(const std::string& message)
         if (slotFromBottom < visible)
         {
             const size_t index = m_ChatMessages.size() - 1 - slotFromBottom;
-            m_ChatLines[i]->setText(m_ChatMessages[index]);
+            m_ChatLines[i]->setText(m_ChatMessages[index].text);
+            m_ChatLines[i]->setTextColor(m_ChatMessages[index].color);
         }
         else
         {
@@ -284,7 +320,9 @@ void HUD::AddNotification(const std::string& message, float duration, int severi
 
     note.panel = std::make_shared<UIPanel>();
     note.panel->setSize(kWidth, kHeight);
-    note.panel->setBackgroundColor(note.background);
+    // Created fully transparent: the next Update fades it in over
+    // kEnterSeconds, so a notice never appears at full strength for a frame.
+    note.panel->setBackgroundColor(UITheme::WithAlpha(note.background, 0.0f));
     note.panel->setBorderRadius(UITheme::RadiusChip);
     m_UIManager->addElement(note.panel);
 
@@ -302,20 +340,21 @@ void HUD::AddNotification(const std::string& message, float duration, int severi
 
     if (severity == 1 || severity == 2)
     {
-        note.panel->setBorder(UITheme::WithAlpha(note.accentColor, 0.65f),
+        note.borderAlpha = 0.65f;
+        note.panel->setBorder(UITheme::WithAlpha(note.accentColor, 0.0f),
                               UITheme::BorderThin);
     }
 
     note.accent = std::make_shared<UIPanel>();
     note.accent->setSize(S(3.0f), kHeight - S(10.0f));
     note.accent->setPosition(S(6.0f), S(5.0f));
-    note.accent->setBackgroundColor(note.accentColor);
+    note.accent->setBackgroundColor(UITheme::WithAlpha(note.accentColor, 0.0f));
     note.accent->setBorderRadius(UITheme::RadiusBar);
     note.panel->addChild(note.accent);
 
     note.label = std::make_shared<UILabel>();
     note.label->setFont(HudFont(m_Engine, UIFonts::Typeface::Body, UITheme::Body::Caption));
-    note.label->setTextColor(UITheme::Text);
+    note.label->setTextColor(UITheme::WithAlpha(UITheme::Text, 0.0f));
     note.label->setAlignment(UILabel::Alignment::Left);
     note.label->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
     note.label->setPosition(S(16.0f), 0.0f);
@@ -353,10 +392,15 @@ void HUD::LayoutNotifications()
         if (!note.panel)
             continue;
 
+        // Still entering: sit slightly above the slot and settle down as the
+        // fade-in completes, so an arrival moves instead of popping.
+        const float enter = std::clamp(note.age / kEnterSeconds, 0.0f, 1.0f);
+        const float slide = (1.0f - enter) * S(10.0f);
+
         note.panel->setPosition(
             (UIScale::kDesignWidth - note.panel->getWidth()) * 0.5f,
             kTopMargin + static_cast<float>(i) *
-                             (note.panel->getHeight() + kGap));
+                             (note.panel->getHeight() + kGap) - slide);
     }
 }
 
@@ -489,6 +533,9 @@ void HUD::CreateChatSection()
     m_ChatInput = std::make_shared<UITextBox>();
     m_ChatInput->setFont(chatFont);
     m_ChatInput->setPlaceholderText("Press Enter to chat");
+    // The text box defaults to this tone already; pinned here so the log's
+    // muted treatment and the placeholder come from the same token.
+    m_ChatInput->setPlaceholderColor(UITheme::Muted);
     m_ChatInput->setMaxLength(static_cast<int>(ProtocolLimits::MaxChatMessageLength));
     m_ChatInput->setPadding(S(8.0f));
     m_ChatInput->setSize(width - padding * 2.0f, inputHeight);

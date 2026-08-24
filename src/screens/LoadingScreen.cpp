@@ -106,6 +106,14 @@ void LoadingScreen::OnEnter()
     lastChunkCount_  = 0;
     chunkQuietTimer_ = 0.0f;
 
+    shownChunks_         = 0;
+    shownPercent_        = -1;
+    indeterminateShown_  = false;
+    waitingMessageShown_ = false;
+    readyMessageShown_   = false;
+    shownRtt_            = 0;
+    shownConnected_      = false;
+
     worldName_ = engine_ ? engine_->GetSelectedWorldName() : std::string();
 
     // When a session is live the first stage waits for the server to confirm
@@ -257,6 +265,10 @@ void LoadingScreen::BuildLayout()
         y += S(16.0f);
     }
 
+    // The first stage starts in its "current" state without waiting for a
+    // stage to complete.
+    UpdateStageVisuals();
+
     y += S(28.0f);
 
     // Pulsing pip row.
@@ -290,7 +302,7 @@ void LoadingScreen::BuildLayout()
         auto tipCard = std::make_shared<UIPanel>();
         tipCard->setBackgroundColor(UITheme::Hex(0x0E121E, 0.75f));
         tipCard->setBorder(UITheme::WithAlpha(UITheme::Accent, 0.20f), UITheme::BorderThin);
-        tipCard->setBorderRadius(S(8.0f));
+        tipCard->setBorderRadius(UITheme::RadiusCard);
         tipCard->setPosition(centreX - kTipWidth * 0.5f, tipY);
         tipCard->setSize(kTipWidth, tipHeight);
         root_->addChild(tipCard);
@@ -370,16 +382,23 @@ void LoadingScreen::UpdateStageVisuals()
 {
     for (size_t i = 0; i < kStageCount; ++i)
     {
-        const bool done = i < currentStage_;
+        const bool done    = i < currentStage_;
+        const bool current = i == currentStage_;
 
         if (stageIcons_[i])
         {
             stageIcons_[i]->setShape(done ? UIIcon::Shape::Check : UIIcon::Shape::Ring);
-            stageIcons_[i]->setColor(done ? UITheme::Success : UITheme::Muted);
+            stageIcons_[i]->setColor(done   ? UITheme::Success
+                                     : current ? UITheme::Accent
+                                               : UITheme::Muted);
         }
 
         if (stageLabels_[i])
-            stageLabels_[i]->setTextColor(done ? UITheme::Subtext : UITheme::Muted);
+        {
+            stageLabels_[i]->setTextColor(done   ? UITheme::Subtext
+                                          : current ? UITheme::Text
+                                                    : UITheme::Muted);
+        }
     }
 }
 
@@ -418,11 +437,21 @@ void LoadingScreen::Update(float deltaTime)
 
         if (network.isConnected())
         {
-            connectionLabel_->setText(std::format("{} ms", network.getLastRoundTripTimeMs()));
-            connectionLabel_->setTextColor(UITheme::Success);
+            const uint32_t rtt = network.getLastRoundTripTimeMs();
+
+            if (!shownConnected_ || rtt != shownRtt_)
+            {
+                shownConnected_ = true;
+                shownRtt_       = rtt;
+
+                connectionLabel_->setText(std::format("{} ms", rtt));
+                connectionLabel_->setTextColor(UITheme::Success);
+            }
         }
-        else
+        else if (shownConnected_ || connectionLabel_->getText().empty())
         {
+            shownConnected_ = false;
+
             connectionLabel_->setText("local session");
             connectionLabel_->setTextColor(UITheme::Muted);
         }
@@ -449,8 +478,11 @@ void LoadingScreen::Update(float deltaTime)
         {
             if (stageTimer_ < kWorldConfirmTimeout)
             {
-                if (statusLabel_)
+                if (statusLabel_ && !waitingMessageShown_)
+                {
+                    waitingMessageShown_ = true;
                     statusLabel_->setText("Waiting for the server...");
+                }
             }
             else
             {
@@ -535,6 +567,8 @@ void LoadingScreen::Update(float deltaTime)
             stageTimer_ = 0.0f;
             ++currentStage_;
 
+            waitingMessageShown_ = false;
+
             UpdateStageVisuals();
 
             if (statusLabel_ && currentStage_ < kStageCount)
@@ -585,20 +619,44 @@ void LoadingScreen::Update(float deltaTime)
 
     if (percentLabel_)
     {
+        // Switching between the sweep and the real percentage invalidates both
+        // caches so the new mode's first readout is always drawn.
+        if (indeterminateTerrain != indeterminateShown_)
+        {
+            indeterminateShown_ = indeterminateTerrain;
+            shownPercent_       = -1;
+            shownChunks_        = ~0u;
+        }
+
         if (indeterminateTerrain)
-            percentLabel_->setText(std::format("{} chunks",
-                                               engine_
-                                                   ? engine_->getNetworkManager().ChunksReceived()
-                                                   : 0u));
+        {
+            const uint32_t chunks = engine_
+                                        ? engine_->getNetworkManager().ChunksReceived()
+                                        : 0u;
+
+            if (chunks != shownChunks_)
+            {
+                shownChunks_ = chunks;
+                percentLabel_->setText(std::format("{} chunks", chunks));
+            }
+        }
         else
-            percentLabel_->setText(std::format("{}%",
-                                               static_cast<int>(displayed_ * 100.0f + 0.5f)));
+        {
+            const int percent = static_cast<int>(displayed_ * 100.0f + 0.5f);
+
+            if (percent != shownPercent_)
+            {
+                shownPercent_ = percent;
+                percentLabel_->setText(std::format("{}%", percent));
+            }
+        }
     }
 
     if (currentStage_ >= kStageCount && !finished_)
     {
-        if (statusLabel_)
+        if (statusLabel_ && !readyMessageShown_)
         {
+            readyMessageShown_ = true;
             statusLabel_->setText("Ready");
             statusLabel_->setTextColor(UITheme::Success);
         }

@@ -49,4 +49,8 @@ private:
     float countdown_    = 0.0f;
     bool  autoJoining_  = false;
     bool  joining_      = false;
+
+    // Second value currently shown by the countdown label; the text is only
+    // rebuilt when it changes, not every frame.
+    int countdownShownSeconds_ = -1;
 };

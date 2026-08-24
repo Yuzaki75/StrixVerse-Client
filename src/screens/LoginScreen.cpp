@@ -355,7 +355,12 @@ void LoginScreen::BuildForm(float columnX, float columnWidth)
     loginButton_->setVariant(UIButton::Variant::Primary);
     loginButton_->setPosition(x, y);
     loginButton_->setSize(contentWidth, kButtonHeight);
-    loginButton_->setOnClick([this]() { Submit(); });
+    loginButton_->setOnClick([this]()
+                             {
+                                 if (engine_)
+                                     engine_->GetAudio().PlaySfx("ui_click");
+                                 Submit();
+                             });
     panel->addChild(loginButton_);
 
     y += kButtonHeight + kFieldGap;
@@ -403,7 +408,11 @@ void LoginScreen::BuildForm(float columnX, float columnWidth)
     registerButton_->setOnClick([this]()
                                 {
                                     if (!submitting_)
+                                    {
+                                        if (engine_)
+                                            engine_->GetAudio().PlaySfx("ui_click");
                                         RequestScreenChange(ScreenID::Register);
+                                    }
                                 });
     panel->addChild(registerButton_);
 

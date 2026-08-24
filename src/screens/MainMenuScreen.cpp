@@ -1,6 +1,7 @@
 #include "MainMenuScreen.h"
 
 #include "../core/AssetManager.h"
+#include "../audio/AudioManager.h"
 #include "../core/Engine.h"
 #include "../core/Logger.h"
 #include "../core/Version.h"
@@ -170,10 +171,22 @@ void MainMenuScreen::BuildMenu()
         buttons_[i] = button;
     }
 
-    buttons_[0]->setOnClick([this]() { OnPlayOnline(); });
-    buttons_[1]->setOnClick([this]() { RequestScreenChange(ScreenID::Settings); });
-    buttons_[2]->setOnClick([this]() { RequestScreenChange(ScreenID::Credits); });
-    buttons_[3]->setOnClick([this]() { OnQuitGame(); });
+    buttons_[0]->setOnClick([this]() {
+        engine_->GetAudio().PlaySfx("ui_click");
+        OnPlayOnline();
+    });
+    buttons_[1]->setOnClick([this]() {
+        engine_->GetAudio().PlaySfx("ui_click");
+        RequestScreenChange(ScreenID::Settings);
+    });
+    buttons_[2]->setOnClick([this]() {
+        engine_->GetAudio().PlaySfx("ui_click");
+        RequestScreenChange(ScreenID::Credits);
+    });
+    buttons_[3]->setOnClick([this]() {
+        engine_->GetAudio().PlaySfx("ui_click");
+        OnQuitGame();
+    });
 }
 
 void MainMenuScreen::BuildFooter()
@@ -185,9 +198,9 @@ void MainMenuScreen::BuildFooter()
     statusLabel_->setText(std::string("v") + Version::GetClientVersion() + " - Alpha Build");
     statusLabel_->setFont(DataFont(UITheme::Data::Small));
     statusLabel_->setTextColor(UITheme::WithAlpha(UITheme::Subtext, 0.30f));
-    statusLabel_->setLetterSpacing(3.36f);
+    statusLabel_->setLetterSpacing(UITheme::Tracking::SplashFooter);
     statusLabel_->setPosition(originX + 30.0f, originY + 1033.0f);
-    statusLabel_->setSize(528.0f, 24.0f);
+    statusLabel_->setSize(528.0f, 29.0f);
     root_->addChild(statusLabel_);
 
     auto copyright = std::make_shared<UILabel>();
@@ -195,10 +208,10 @@ void MainMenuScreen::BuildFooter()
     copyright->setFont(DataFont(UITheme::Data::Small));
     copyright->setTextColor(UITheme::WithAlpha(UITheme::Subtext, 0.30f));
     copyright->setAlignment(UILabel::Alignment::Right);
-    copyright->setLetterSpacing(3.36f);
+    copyright->setLetterSpacing(UITheme::Tracking::SplashFooter);
     copyright->setPosition(originX + UIScale::kDesignWidth - 30.0f - 528.0f,
                            originY + 1033.0f);
-    copyright->setSize(528.0f, 24.0f);
+    copyright->setSize(528.0f, 29.0f);
     root_->addChild(copyright);
 }
 

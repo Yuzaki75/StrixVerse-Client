@@ -51,6 +51,9 @@ private:
     void BuildSteps(float centreX, float& y);
     void BuildFailureCard(float centreX, float y);
 
+    // Colours the in-progress step brighter than the ones still queued.
+    void HighlightCurrentStep();
+
     // Returns false to drive the failure path. This is the seam for the real
     // NetworkManager connection.
     bool AttemptConnect();

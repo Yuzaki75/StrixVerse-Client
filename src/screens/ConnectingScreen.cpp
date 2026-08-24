@@ -78,6 +78,8 @@ void ConnectingScreen::OnEnter()
     AddBackdrop(UITheme::Hex(0x090E1A), UITheme::Hex(0x0F1828), true);
 
     BuildLayout();
+
+    HighlightCurrentStep();
 }
 
 void ConnectingScreen::BuildLayout()
@@ -220,7 +222,12 @@ void ConnectingScreen::BuildFailureCard(float centreX, float y)
     retryButton->setVariant(UIButton::Variant::Primary);
     retryButton->setPosition(padding, buttonY);
     retryButton->setSize(buttonWidth, buttonHeight);
-    retryButton->setOnClick([this]() { Retry(); });
+    retryButton->setOnClick([this]()
+                            {
+                                if (engine_)
+                                    engine_->GetAudio().PlaySfx("ui_click");
+                                Retry();
+                            });
     failureCard_->addChild(retryButton);
 
     auto backButton = std::make_shared<UIButton>();
@@ -229,8 +236,26 @@ void ConnectingScreen::BuildFailureCard(float centreX, float y)
     backButton->setVariant(UIButton::Variant::Purple);
     backButton->setPosition(padding + buttonWidth + gap, buttonY);
     backButton->setSize(buttonWidth, buttonHeight);
-    backButton->setOnClick([this]() { RequestScreenChange(ScreenID::Login); });
+    backButton->setOnClick([this]()
+                           {
+                               if (engine_)
+                                   engine_->GetAudio().PlaySfx("ui_click");
+                               RequestScreenChange(ScreenID::Login);
+                           });
     failureCard_->addChild(backButton);
+}
+
+void ConnectingScreen::HighlightCurrentStep()
+{
+    if (currentStep_ >= kStepCount)
+        return;
+
+    // The step in progress reads brighter than the pending ones, which stay
+    // muted until they complete.
+    if (stepIcons_[currentStep_])
+        stepIcons_[currentStep_]->setColor(UITheme::Accent);
+    if (stepLabels_[currentStep_])
+        stepLabels_[currentStep_]->setTextColor(UITheme::Text);
 }
 
 bool ConnectingScreen::AttemptConnect()
@@ -341,6 +366,8 @@ void ConnectingScreen::Retry()
         if (stepLabels_[i])
             stepLabels_[i]->setTextColor(UITheme::Muted);
     }
+
+    HighlightCurrentStep();
 }
 
 void ConnectingScreen::Update(float deltaTime)
@@ -391,6 +418,8 @@ void ConnectingScreen::Update(float deltaTime)
 
     stepTimer_ = 0.0f;
     ++currentStep_;
+
+    HighlightCurrentStep();
 
     if (currentStep_ >= kStepCount)
         ShowBranch();
