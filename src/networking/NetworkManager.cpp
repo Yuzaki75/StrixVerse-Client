@@ -14,6 +14,7 @@
 #include "WorldListPacket.h"
 #include "StrixCorePacket.h"
 #include "WorldManagePackets.h"
+#include "WorldRoleChangedPacket.h"
 #include "PlayerMovePacket.h"
 #include "PlayerRemovePacket.h"
 #include "PlayerSpawnPacket.h"
@@ -283,6 +284,22 @@ bool NetworkManager::initialize()
             {
                 const auto* remove = static_cast<const PlayerRemovePacket*>(packet.get());
                 m_RemotePlayers.erase(remove->EntityID);
+            }));
+
+    // Someone's standing changed - invite accepted, role set, removal, ban.
+    // The roster is the only consumer, so it is updated right here; the
+    // player list re-reads it every frame it is open.
+    m_dispatcher->addHandler(
+        Opcode::WorldRoleChanged,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* changed = static_cast<const WorldRoleChangedPacket*>(packet.get());
+                if (!changed->Valid)
+                    return;
+
+                updateRemotePlayerRole(changed->EntityID, changed->Username,
+                                       changed->Role);
             }));
 
     m_dispatcher->addHandler(
@@ -992,6 +1009,30 @@ bool NetworkManager::sendUseItem(uint8_t inventorySlot, uint16_t itemId)
     packet->Quantity  = 1;
 
     return sendPacket(packet);
+}
+
+bool NetworkManager::updateRemotePlayerRole(uint64_t entityId, const std::string& username,
+                                            uint8_t role)
+{
+    if (auto it = m_RemotePlayers.find(entityId); it != m_RemotePlayers.end())
+    {
+        it->second.worldRole = role;
+        return true;
+    }
+
+    // A pending offer can name a player this client has no spawn frame for
+    // yet. The username is the server's own attribution, so matching on it is
+    // as authoritative as the id would be.
+    for (auto& [id, player] : m_RemotePlayers)
+    {
+        if (player.username == username)
+        {
+            player.worldRole = role;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void NetworkManager::recordTileEdit(int32_t tileX, int32_t tileY, uint8_t tileId,

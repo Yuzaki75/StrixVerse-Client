@@ -91,6 +91,13 @@ void SpriteBatch::Begin()
 void SpriteBatch::Draw(const Texture& texture, float x, float y, float width, float height,
                        float r, float g, float b, float a)
 {
+    DrawUV(texture, x, y, width, height, 0.0f, 0.0f, 1.0f, 1.0f, r, g, b, a);
+}
+
+void SpriteBatch::DrawUV(const Texture& texture, float x, float y, float width, float height,
+                         float u0, float v0, float u1, float v1,
+                         float r, float g, float b, float a)
+{
     if (width <= 0.0f || height <= 0.0f || a <= 0.0f)
         return;
 
@@ -121,13 +128,13 @@ void SpriteBatch::Draw(const Texture& texture, float x, float y, float width, fl
     const float x1 = x + width;
     const float y1 = y + height;
 
-    m_Vertices.push_back({x,  y,  0.0f, 0.0f, r, g, b, a});
-    m_Vertices.push_back({x1, y,  1.0f, 0.0f, r, g, b, a});
-    m_Vertices.push_back({x,  y1, 0.0f, 1.0f, r, g, b, a});
+    m_Vertices.push_back({x,  y,  u0, v0, r, g, b, a});
+    m_Vertices.push_back({x1, y,  u1, v0, r, g, b, a});
+    m_Vertices.push_back({x,  y1, u0, v1, r, g, b, a});
 
-    m_Vertices.push_back({x1, y,  1.0f, 0.0f, r, g, b, a});
-    m_Vertices.push_back({x1, y1, 1.0f, 1.0f, r, g, b, a});
-    m_Vertices.push_back({x,  y1, 0.0f, 1.0f, r, g, b, a});
+    m_Vertices.push_back({x1, y,  u1, v0, r, g, b, a});
+    m_Vertices.push_back({x1, y1, u1, v1, r, g, b, a});
+    m_Vertices.push_back({x,  y1, u0, v1, r, g, b, a});
 
     m_Batches.back().vertexCount += kVerticesPerSprite;
 }

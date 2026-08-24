@@ -1,6 +1,7 @@
 #include "PacketRegistry.h"
 
 #include "ChatMessagePacket.h"
+#include "WorldRoleChangedPacket.h"
 #include "DisconnectPacket.h"
 #include "HandshakePacket.h"
 #include "InventoryPacket.h"
@@ -110,6 +111,8 @@ void PacketRegistry::registerAllPacketTypes()
     add(Opcode::WorldMembers, [] { return std::make_shared<WorldMembersPacket>(); });
     add(Opcode::WorldNotification,
         [] { return std::make_shared<WorldNotificationPacket>(); });
+    add(Opcode::WorldRoleChanged,
+        [] { return std::make_shared<WorldRoleChangedPacket>(); });
 
     // Inventory. InventoryUpdate is inbound only - the server disconnects a
     // client that sends one - but it still needs an entry here to be decoded.

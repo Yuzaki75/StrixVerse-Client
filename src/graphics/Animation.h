@@ -28,6 +28,15 @@ namespace StrixVerse
             const Texture* sheet = nullptr;
             int   frameWidth  = 0;
             int   frameHeight = 0;
+
+            // Index of this clip's first frame within the sheet, counted in
+            // the same left-to-right, top-to-bottom order as everything else.
+            //
+            // Without it every clip has to start at frame zero, which means a
+            // separate sheet per clip - six body zones times three states is
+            // eighteen files to keep in step instead of six.
+            int   firstFrame  = 0;
+
             int   frameCount  = 1;
             float fps         = 8.0f;
             bool  loop        = true;

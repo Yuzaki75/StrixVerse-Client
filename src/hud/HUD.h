@@ -69,7 +69,8 @@ public:
         Error   = 3,
     };
 
-    void AddChatMessage(const std::string& message, ChatKind kind = ChatKind::Player);
+    void AddChatMessage(const std::string& message, ChatKind kind = ChatKind::Player,
+                        const Color& lineColor = Color(0.0f, 0.0f, 0.0f, 0.0f));
 
     // Pushes a system notice onto the top-centre notification stack. This is
     // the channel for join/left/connection events, kept out of the chat log

@@ -22,9 +22,17 @@ namespace StrixVerse
         // -------------------------------------------------------------------
         // CharacterRenderSystem
         // -------------------------------------------------------------------
-        // Draws players as an animated procedural placeholder figure -- a small
-        // robot/golem built from tinted rects through the white-texture
-        // SpriteBatch path -- until real spritesheet art arrives.
+        // Draws players from six spritesheets, one per palette zone.
+        //
+        // Each sheet is a white/grey mask of the same figure -- skin, hair,
+        // eyes, shirt, trousers, boots -- and is drawn tinted by that zone's
+        // palette colour, so one set of art serves every combination a player
+        // can pick. Grey pixels in a sheet shade the tint rather than fighting
+        // it, which is where the figure's depth comes from.
+        //
+        // The procedural rect figure this replaces is still here and still
+        // correct; it draws when the sheets are missing, so a broken or absent
+        // asset costs the new silhouette and not the player.
         //
         // The figure is coloured from the same palette indices every player
         // already carries: shirt tints the body, skin the head, eyes the
@@ -65,6 +73,23 @@ namespace StrixVerse
             // One flat white texture shared by every rect of every character;
             // all colour arrives as the batch's per-draw tint.
             void EnsureWhiteTexture();
+
+            // Loads the six zone sheets once. Missing files leave the pointers
+            // null and the procedural figure in charge.
+            void EnsureSheets();
+
+            // True when every sheet loaded, which is what decides between the
+            // two figures. All or nothing on purpose: half a character with
+            // no trousers is worse than the placeholder.
+            bool m_SheetsReady = false;
+
+            // Indexed by CharacterPalette::Zone.
+            std::shared_ptr<Texture> m_ZoneSheets[6];
+
+            void DrawCharacterSprite(SpriteBatch& spriteBatch,
+                                     const AnimState& state,
+                                     const Transform& transform,
+                                     const CharacterComponent& look);
 
             void DrawCharacterFigure(SpriteBatch& spriteBatch,
                                      const AnimState& state,

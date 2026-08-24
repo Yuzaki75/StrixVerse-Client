@@ -80,7 +80,11 @@ namespace StrixVerse
                 return false;
             }
 
-            const int index = std::clamp(frameIndex, 0, clip->frameCount - 1);
+            // Clamped within the clip, then shifted to where the clip
+            // actually sits in the sheet. frameIndex is the caller's frame
+            // number inside this clip, never a sheet position.
+            const int index =
+                clip->firstFrame + std::clamp(frameIndex, 0, clip->frameCount - 1);
 
             // Column count follows from the sheet itself, so a strip that wraps
             // onto a second row needs no extra metadata.

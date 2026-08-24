@@ -334,7 +334,8 @@ private:
     void SubmitChat(const std::string& message);
 
     // Appends a line another player sent.
-    void OnChatReceived(uint64_t senderId, const std::string& message);
+    void OnChatReceived(uint64_t senderId, const std::string& message,
+                        const std::string& senderName, uint8_t senderRole);
 
     // --- Player replication ------------------------------------------------
     void RegisterNetworkHandlers();
@@ -447,6 +448,7 @@ private:
     std::shared_ptr<PacketHandler> spawnHandler_;
     std::shared_ptr<PacketHandler> moveHandler_;
     std::shared_ptr<PacketHandler> removeHandler_;
+    std::shared_ptr<PacketHandler> roleChangedHandler_;
 
     // Other players in the world, keyed by the server's entity id.
     std::unordered_map<uint64_t, StrixVerse::ECS::Entity> remotePlayers_;

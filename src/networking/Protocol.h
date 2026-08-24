@@ -85,7 +85,8 @@ enum class Opcode : uint16_t
     WorldRoleChanged    = 114,  // S->C: someone's standing in this world changed
     GemBalance          = 115,  // S->C: the recipient's gem wallet changed
     BlockDamaged        = 116,  // S->C: a block took a punch; cracks progress
-    PlayerBuffs         = 117,  // S->C: what is running on you, and for how long
+    Reconnect           = 117,  // C->S: resume a session with its bearer token
+    PlayerBuffs         = 118,  // S->C: what is running on you, and for how long
 
     // 108 SetWorldSpawn and 110 TransferWorldOwner are reserved by the design
     // and deliberately unimplemented; the gaps are left so they land on their

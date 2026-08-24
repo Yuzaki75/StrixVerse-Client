@@ -26,6 +26,7 @@
 #include "../networking/NetworkManager.h"
 #include "../networking/PlayerMovePacket.h"
 #include "../networking/PlayerRemovePacket.h"
+#include "../networking/WorldRoleChangedPacket.h"
 #include "../networking/PlayerSpawnPacket.h"
 #include "../ui/UIButton.h"
 #include "../ui/UIElement.h"
@@ -2974,19 +2975,55 @@ void GameScreen::SubmitChat(const std::string& message)
 
     // The server broadcasts to every client except the sender, so the local
     // echo is what puts our own line in the log - and, for the same reason,
-    // what raises our own bubble. Nothing comes back to trigger it.
+    // what raises our own bubble. Nothing comes back to trigger it. Tagged
+    // with our own standing, same rule the received path applies.
     if (hud_)
-        hud_->AddChatMessage(author + ": " + message);
+    {
+        std::string tag;
+        Color       lineColor = UITheme::Text;
+        switch (network.getWorldManageState().viewerRole)
+        {
+        case 4:  tag = "[Owner] ";    lineColor = UITheme::Gold;      break;
+        case 3:  tag = "[Co-Owner] "; lineColor = UITheme::Secondary; break;
+        case 2:  tag = "[Builder] ";  lineColor = UITheme::Accent;    break;
+        case 1:  tag = "[Member] ";   break;
+        default: break;
+        }
+
+        hud_->AddChatMessage(tag + author + ": " + message,
+                             HUD::ChatKind::Player, lineColor);
+    }
 
     ShowChatBubble(kLocalSpeakerId, message);
 }
 
-void GameScreen::OnChatReceived(uint64_t senderId, const std::string& message)
+void GameScreen::OnChatReceived(uint64_t senderId, const std::string& message,
+                                const std::string& senderName, uint8_t senderRole)
 {
     if (!hud_ || message.empty())
         return;
 
-    hud_->AddChatMessage(DisplayNameFor(senderId) + ": " + message);
+    // The server's attribution outranks the roster: it is filled per message
+    // from the authenticated sender, so it is right even when a spawn frame
+    // was missed and DisplayNameFor would have to fall back to an id.
+    const std::string& name = !senderName.empty() ? senderName
+                                                  : DisplayNameFor(senderId);
+
+    // WorldRole 0 is Visitor - a tag on every line would be noise, so the
+    // unnamed default is what a visitor gets. Builder and above are tagged
+    // and their line takes the colour their name wears in the player list.
+    std::string tag;
+    Color       lineColor = UITheme::Text;
+    switch (senderRole)
+    {
+    case 4:  tag = "[Owner] ";       lineColor = UITheme::Gold;      break;
+    case 3:  tag = "[Co-Owner] ";    lineColor = UITheme::Secondary; break;
+    case 2:  tag = "[Builder] ";     lineColor = UITheme::Accent;    break;
+    case 1:  tag = "[Member] ";      break;
+    default: break;
+    }
+
+    hud_->AddChatMessage(tag + name + ": " + message, HUD::ChatKind::Player, lineColor);
 
     // And over their head, if they have one in this world.
     ShowChatBubble(senderId, message);
@@ -3012,9 +3049,24 @@ void GameScreen::RegisterNetworkHandlers()
         [this](const std::shared_ptr<Packet>& packet)
         {
             const auto* chat = static_cast<const ChatMessagePacket*>(packet.get());
-            OnChatReceived(chat->SenderID, chat->Message);
+            OnChatReceived(chat->SenderID, chat->Message,
+                           chat->SenderName, chat->SenderRole);
         });
     network.addPacketHandler(Opcode::ChatMessage, chatHandler_);
+
+    // Live role updates: the roster re-colours without a panel refresh, and a
+    // pending invite that was accepted shows up in the player list at once.
+    roleChangedHandler_ = std::make_shared<FunctionPacketHandler>(
+        [this](const std::shared_ptr<Packet>& packet)
+        {
+            const auto* changed = static_cast<const WorldRoleChangedPacket*>(packet.get());
+            if (!changed->Valid || !engine_)
+                return;
+
+            engine_->getNetworkManager().updateRemotePlayerRole(
+                changed->EntityID, changed->Username, changed->Role);
+        });
+    network.addPacketHandler(Opcode::WorldRoleChanged, roleChangedHandler_);
 
     spawnHandler_ = std::make_shared<FunctionPacketHandler>(
         [this](const std::shared_ptr<Packet>& packet)
@@ -3048,15 +3100,17 @@ void GameScreen::UnregisterNetworkHandlers()
 
     NetworkManager& network = engine_->getNetworkManager();
 
-    if (chatHandler_)   network.removePacketHandler(Opcode::ChatMessage, chatHandler_);
-    if (spawnHandler_)  network.removePacketHandler(Opcode::PlayerSpawn, spawnHandler_);
-    if (moveHandler_)   network.removePacketHandler(Opcode::PlayerMove, moveHandler_);
-    if (removeHandler_) network.removePacketHandler(Opcode::PlayerRemove, removeHandler_);
+    if (chatHandler_)        network.removePacketHandler(Opcode::ChatMessage, chatHandler_);
+    if (spawnHandler_)       network.removePacketHandler(Opcode::PlayerSpawn, spawnHandler_);
+    if (moveHandler_)        network.removePacketHandler(Opcode::PlayerMove, moveHandler_);
+    if (removeHandler_)      network.removePacketHandler(Opcode::PlayerRemove, removeHandler_);
+    if (roleChangedHandler_) network.removePacketHandler(Opcode::WorldRoleChanged, roleChangedHandler_);
 
     chatHandler_.reset();
     spawnHandler_.reset();
     moveHandler_.reset();
     removeHandler_.reset();
+    roleChangedHandler_.reset();
 }
 
 void GameScreen::OnPlayerSpawn(uint64_t entityId, const std::string& username,

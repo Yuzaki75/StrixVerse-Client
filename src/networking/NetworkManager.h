@@ -169,6 +169,13 @@ public:
         return m_RemotePlayers.find(id) != m_RemotePlayers.end();
     }
 
+    // Applies a WorldRoleChanged broadcast to the roster: by entity id first,
+    // falling back to the username (a pending offer can arrive for a player
+    // whose spawn frame this client has not seen). Returns true when someone
+    // was found and updated.
+    bool updateRemotePlayerRole(uint64_t entityId, const std::string& username,
+                                uint8_t role);
+
     // --- Character stats --------------------------------------------------
     // The local player's own stats, as last reported. Everything here comes
     // from the server; the client never invents a value. `known` stays false

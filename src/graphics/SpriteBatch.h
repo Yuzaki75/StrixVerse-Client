@@ -42,6 +42,17 @@ public:
     void Draw(const Texture& texture, float x, float y, float width, float height,
               float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f);
 
+    // The same, from a sub-rectangle of the texture. Needed by anything drawn
+    // from a spritesheet rather than from a whole image.
+    //
+    // Horizontal flip is free: pass u0 > u1 and the quad samples backwards, so
+    // a sprite sheet holds one facing and the renderer mirrors it. There is no
+    // separate flip flag for the same reason there is no rotation one - the
+    // vertices carry it.
+    void DrawUV(const Texture& texture, float x, float y, float width, float height,
+                float u0, float v0, float u1, float v1,
+                float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f);
+
     // Submits everything queued since Begin().
     void End();
 

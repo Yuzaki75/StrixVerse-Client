@@ -7,6 +7,7 @@
 #include "TransformComponent.h"
 #include "VelocityComponent.h"
 
+#include "core/AssetManager.h"
 #include "core/ServiceLocator.h"
 #include "graphics/CharacterPalette.h"
 #include "graphics/SpriteBatch.h"
@@ -37,6 +38,59 @@ namespace StrixVerse
             constexpr float kPhasePixelsPerCycle = 48.0f;
 
             constexpr float kPi = 3.14159265358979f;
+
+            // The sheet layout, which the generator in
+            // scratchpad/make_character.py writes and this reads. One strip of
+            // 24x48 frames per zone: Idle, then Walk, then Jump.
+            constexpr int kFrameW = 24;
+            constexpr int kFrameH = 48;
+
+            constexpr int kIdleFirst  = 0;
+            constexpr int kIdleCount  = 4;
+            constexpr int kWalkFirst  = 4;
+            constexpr int kWalkCount  = 6;
+            constexpr int kJumpFirst  = 10;
+            constexpr int kJumpCount  = 2;
+
+            // Drawn back to front. Trousers and boots first so the shirt hem
+            // sits over them, then skin, then hair, then eyes on top.
+            constexpr CharacterPalette::Zone kZoneOrder[] = {
+                CharacterPalette::Zone::Trousers,
+                CharacterPalette::Zone::Boots,
+                CharacterPalette::Zone::Shirt,
+                CharacterPalette::Zone::Skin,
+                CharacterPalette::Zone::Hair,
+                CharacterPalette::Zone::Eyes,
+            };
+
+            const char* SheetPathFor(CharacterPalette::Zone zone)
+            {
+                switch (zone)
+                {
+                case CharacterPalette::Zone::Skin:     return "assets/character/skin.png";
+                case CharacterPalette::Zone::Trousers: return "assets/character/trousers.png";
+                case CharacterPalette::Zone::Boots:    return "assets/character/boots.png";
+                case CharacterPalette::Zone::Shirt:    return "assets/character/shirt.png";
+                case CharacterPalette::Zone::Hair:     return "assets/character/hair.png";
+                case CharacterPalette::Zone::Eyes:     return "assets/character/eyes.png";
+                default:                               return nullptr;
+                }
+            }
+
+            // The palette index a character carries for one zone.
+            uint8_t LookIndex(const CharacterComponent& look, CharacterPalette::Zone zone)
+            {
+                switch (zone)
+                {
+                case CharacterPalette::Zone::Skin:     return look.skin;
+                case CharacterPalette::Zone::Trousers: return look.trousers;
+                case CharacterPalette::Zone::Boots:    return look.boots;
+                case CharacterPalette::Zone::Shirt:    return look.shirt;
+                case CharacterPalette::Zone::Hair:     return look.hair;
+                case CharacterPalette::Zone::Eyes:     return look.eyes;
+                default:                               return 0;
+                }
+            }
 
             float Clamp01(float v)
             {
@@ -69,6 +123,42 @@ namespace StrixVerse
             setSignature<Transform, CharacterComponent>();
 
             EnsureWhiteTexture();
+            EnsureSheets();
+        }
+
+        void CharacterRenderSystem::EnsureSheets()
+        {
+            auto assets = ServiceLocator::Get<AssetManager>();
+            if (!assets)
+            {
+                return;
+            }
+
+            bool all = true;
+
+            for (CharacterPalette::Zone zone : kZoneOrder)
+            {
+                const auto slot = static_cast<std::size_t>(zone);
+                if (slot >= std::size(m_ZoneSheets))
+                {
+                    all = false;
+                    continue;
+                }
+
+                if (!m_ZoneSheets[slot])
+                {
+                    // No mipmaps and no sRGB: this is pixel art sampled at or
+                    // near 1:1, and either would blur it.
+                    m_ZoneSheets[slot] = assets->LoadTexture(SheetPathFor(zone), false, false);
+                }
+
+                if (!m_ZoneSheets[slot])
+                {
+                    all = false;
+                }
+            }
+
+            m_SheetsReady = all;
         }
 
         void CharacterRenderSystem::EnsureWhiteTexture()
@@ -96,6 +186,15 @@ namespace StrixVerse
                 return;
             }
 
+            // Retried until it succeeds rather than attempted once in init:
+            // init can run before there is a GL context to upload into, and a
+            // single failed attempt would leave the placeholder figure in
+            // charge for the rest of the session.
+            if (!m_SheetsReady)
+            {
+                EnsureSheets();
+            }
+
             for (Entity entity : entities)
             {
                 auto* transform = m_pComponentManager->getComponent<Transform>(entity);
@@ -106,19 +205,35 @@ namespace StrixVerse
 
                 AnimState& state = m_AnimStates[entity.id];
 
-                if (state.animator.CurrentClipName().empty())
+                // Registered only once the sheets exist, so a clip can never be
+                // created pointing at a sheet that had not loaded yet - AddClip
+                // runs once per entity and would keep that null forever.
+                if (m_SheetsReady && state.animator.CurrentClipName().empty())
                 {
                     // First sighting: register the placeholder clips. Sheets
                     // are filled in when real art lands; nothing else changes.
+                    // All three clips share one sheet per zone and differ
+                    // only in where they start, which is what firstFrame is
+                    // for. The sheet pointer is the skin one purely so the
+                    // frame maths has a size to work from - every zone sheet
+                    // has identical dimensions, and the draw picks the right
+                    // texture per layer.
                     Graphics::AnimationClip clip;
+                    clip.sheet       = m_ZoneSheets[static_cast<std::size_t>(
+                                           CharacterPalette::Zone::Skin)].get();
+                    clip.frameWidth  = kFrameW;
+                    clip.frameHeight = kFrameH;
 
-                    clip.frameCount = 4; clip.loop = true; clip.fps = 6.0f;
+                    clip.firstFrame = kIdleFirst;
+                    clip.frameCount = kIdleCount; clip.loop = true;  clip.fps = 6.0f;
                     state.animator.AddClip("Idle", clip);
 
-                    clip.frameCount = 6; clip.loop = true; clip.fps = 10.0f;
+                    clip.firstFrame = kWalkFirst;
+                    clip.frameCount = kWalkCount; clip.loop = true;  clip.fps = 10.0f;
                     state.animator.AddClip("Walk", clip);
 
-                    clip.frameCount = 2; clip.loop = false; clip.fps = 8.0f;
+                    clip.firstFrame = kJumpFirst;
+                    clip.frameCount = kJumpCount; clip.loop = false; clip.fps = 8.0f;
                     state.animator.AddClip("Jump", clip);
                 }
 
@@ -230,13 +345,67 @@ namespace StrixVerse
 
             for (const Drawable& d : drawables)
             {
-                DrawCharacterFigure(*spriteBatch,
-                                    m_AnimStates[d.entityId],
-                                    *d.transform,
-                                    *d.look);
+                if (m_SheetsReady)
+                {
+                    DrawCharacterSprite(*spriteBatch,
+                                        m_AnimStates[d.entityId],
+                                        *d.transform,
+                                        *d.look);
+                }
+                else
+                {
+                    DrawCharacterFigure(*spriteBatch,
+                                        m_AnimStates[d.entityId],
+                                        *d.transform,
+                                        *d.look);
+                }
             }
 
             spriteBatch->End();
+        }
+
+        void CharacterRenderSystem::DrawCharacterSprite(SpriteBatch& spriteBatch,
+                                                        const AnimState& state,
+                                                        const Transform& transform,
+                                                        const CharacterComponent& look)
+        {
+            const float x = transform.position.x;
+            const float y = transform.position.y;
+            const float w = transform.scale.x;
+            const float h = transform.scale.y;
+
+            float u0 = 0.0f, v0 = 0.0f, u1 = 1.0f, v1 = 1.0f;
+            if (!state.animator.GetFrameUV(state.animator.CurrentFrame(), u0, v0, u1, v1))
+            {
+                // No playable clip yet - one frame of nothing beats one frame
+                // of the whole sheet squashed into the character's box.
+                return;
+            }
+
+            // Facing by swapping the U pair. The art holds one direction and
+            // this mirrors it, so there is no second set of frames to keep in
+            // step with the first.
+            if (state.facing < 0.0f)
+            {
+                std::swap(u0, u1);
+            }
+
+            for (CharacterPalette::Zone zone : kZoneOrder)
+            {
+                const auto slot = static_cast<std::size_t>(zone);
+                if (slot >= std::size(m_ZoneSheets) || !m_ZoneSheets[slot])
+                {
+                    continue;
+                }
+
+                float r = 1.0f, g = 1.0f, b = 1.0f;
+                CharacterPalette::ColourFloats(zone, LookIndex(look, zone), r, g, b);
+
+                // The sheet's grey levels multiply the tint, so shading comes
+                // out of the art and the palette stays the palette.
+                spriteBatch.DrawUV(*m_ZoneSheets[slot], x, y, w, h,
+                                   u0, v0, u1, v1, r, g, b, 1.0f);
+            }
         }
 
         void CharacterRenderSystem::DrawCharacterFigure(SpriteBatch& spriteBatch,

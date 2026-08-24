@@ -218,7 +218,8 @@ bool HUD::IsSystemChatMessage(const std::string& message)
     return message == "Welcome to StrixVerse!";
 }
 
-void HUD::AddChatMessage(const std::string& message, ChatKind kind)
+void HUD::AddChatMessage(const std::string& message, ChatKind kind,
+                         const Color& lineColor)
 {
     // System notices share the log but must not read as something a person
     // said. The kind is now told to us rather than inferred: the server has its
@@ -241,6 +242,11 @@ void HUD::AddChatMessage(const std::string& message, ChatKind kind)
                                                    : UITheme::Subtext;
         break;
     }
+
+    // A role line arrives pre-coloured: the caller has already mapped the
+    // server's WorldRole to the same palette the player list wears.
+    if (lineColor.a > 0.0f)
+        entry.color = lineColor;
 
     m_ChatMessages.push_back(std::move(entry));
     if (m_ChatMessages.size() > MAX_CHAT_MESSAGES)
