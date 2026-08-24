@@ -381,14 +381,15 @@ public:
     // `toolItemId` is the selected hotbar item's id and feeds the server's
     // XP/durability handling; 0 (the default) means bare hands, so callers
     // that do not track tools stay valid.
-    bool sendBlockBreak(int32_t tileX, int32_t tileY, uint16_t toolItemId = 0);
-    bool sendBlockPlace(int32_t tileX, int32_t tileY, uint16_t itemId);
+    bool sendBlockBreak(int32_t tileX, int32_t tileY, uint16_t toolItemId = 0, int32_t tileZ = 0);
+    bool sendBlockPlace(int32_t tileX, int32_t tileY, uint16_t itemId, int32_t tileZ = 0);
 
     // One accepted edit, as broadcast by the server.
     struct TileEdit
     {
         int32_t tileX  = 0;
         int32_t tileY  = 0;
+        int32_t tileZ  = 0;   // layer; the drawable world is layer 0
         uint8_t tileId = 0;   // 0 = air, i.e. the block was broken
     };
 
@@ -456,7 +457,7 @@ private:
     // Applies an accepted edit to the stored chunk and queues it for the
     // world. Keeping the store in step means a later rebuild from m_Terrain
     // still reflects every edit.
-    void recordTileEdit(int32_t tileX, int32_t tileY, uint8_t tileId);
+    void recordTileEdit(int32_t tileX, int32_t tileY, uint8_t tileId, int32_t tileZ = 0);
 
     CoreState      m_Core;
     uint32_t       m_CoreRevision = 0;

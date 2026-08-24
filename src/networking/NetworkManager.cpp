@@ -152,7 +152,7 @@ bool NetworkManager::initialize()
             [this](const std::shared_ptr<Packet>& packet)
             {
                 const auto* broken = static_cast<const BlockBreakPacket*>(packet.get());
-                recordTileEdit(broken->X, broken->Y, 0);   // 0 = air
+                recordTileEdit(broken->X, broken->Y, 0, broken->Z);   // 0 = air
             }));
 
     m_dispatcher->addHandler(
@@ -176,7 +176,8 @@ bool NetworkManager::initialize()
                     return;
                 }
 
-                recordTileEdit(placed->X, placed->Y, static_cast<uint8_t>(tileId));
+                recordTileEdit(placed->X, placed->Y, static_cast<uint8_t>(tileId),
+                               placed->Z);
             }));
 
     // Everything the world changes on its own. Block place and break carry a
@@ -207,7 +208,8 @@ bool NetworkManager::initialize()
                 }
 
                 recordTileEdit(change->X, change->Y,
-                               static_cast<uint8_t>(change->TileID));
+                               static_cast<uint8_t>(change->TileID),
+                               change->Z);
             }));
 
     // The server confirming we are out of the world. Sent only on success; a
@@ -899,7 +901,8 @@ bool NetworkManager::sendPlayerMove(float tileX, float tileY,
     return sendPacket(packet);
 }
 
-bool NetworkManager::sendBlockBreak(int32_t tileX, int32_t tileY, uint16_t toolItemId)
+bool NetworkManager::sendBlockBreak(int32_t tileX, int32_t tileY, uint16_t toolItemId,
+                                    int32_t tileZ)
 {
     if (!isConnected())
         return false;
@@ -907,14 +910,15 @@ bool NetworkManager::sendBlockBreak(int32_t tileX, int32_t tileY, uint16_t toolI
     auto packet = std::make_shared<BlockBreakPacket>();
     packet->X = tileX;
     packet->Y = tileY;
-    packet->Z = 0;          // foreground layer
+    packet->Z = tileZ;
     packet->ToolID = toolItemId;
     packet->Face = 0;
 
     return sendPacket(packet);
 }
 
-bool NetworkManager::sendBlockPlace(int32_t tileX, int32_t tileY, uint16_t itemId)
+bool NetworkManager::sendBlockPlace(int32_t tileX, int32_t tileY, uint16_t itemId,
+                                    int32_t tileZ)
 {
     if (!isConnected())
         return false;
@@ -922,14 +926,15 @@ bool NetworkManager::sendBlockPlace(int32_t tileX, int32_t tileY, uint16_t itemI
     auto packet = std::make_shared<BlockPlacePacket>();
     packet->X = tileX;
     packet->Y = tileY;
-    packet->Z = 0;
+    packet->Z = tileZ;
     packet->ItemID = itemId;
     packet->Face = 0;
 
     return sendPacket(packet);
 }
 
-void NetworkManager::recordTileEdit(int32_t tileX, int32_t tileY, uint8_t tileId)
+void NetworkManager::recordTileEdit(int32_t tileX, int32_t tileY, uint8_t tileId,
+                                    int32_t tileZ)
 {
     constexpr int32_t kChunkSize = 16;
 
@@ -955,7 +960,7 @@ void NetworkManager::recordTileEdit(int32_t tileX, int32_t tileY, uint8_t tileId
         }
     }
 
-    m_PendingTileEdits.push_back(TileEdit{tileX, tileY, tileId});
+    m_PendingTileEdits.push_back(TileEdit{tileX, tileY, tileZ, tileId});
     ++m_TerrainRevision;
 }
 

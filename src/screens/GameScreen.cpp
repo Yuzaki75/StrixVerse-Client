@@ -1201,7 +1201,18 @@ void GameScreen::OnMouseDown(float x, float y)
         // Fired on the swing rather than the confirm - a punch that hits
         // nothing (or is refused) should still sound like one.
         PlaySfx("punch");
-        network.sendBlockBreak(tileX, tileY, SelectedToolItemId());
+
+        // One swing breaks a 2x2x2 cube anchored at the clicked tile: two
+        // wide, two tall, two deep. The far layer sits behind the foreground
+        // plane, so what visibly opens up is the 2x2 face; the four blocks
+        // behind it go with it. The server still rules on each block
+        // individually, so a cube crossing into protection comes back
+        // partially refused rather than wholly allowed or denied.
+        for (int dz = 0; dz < 2; ++dz)
+            for (int dy = 0; dy < 2; ++dy)
+                for (int dx = 0; dx < 2; ++dx)
+                    network.sendBlockBreak(tileX + dx, tileY + dy,
+                                           SelectedToolItemId(), dz);
         return;
     }
 
@@ -1222,7 +1233,15 @@ void GameScreen::OnMouseDown(float x, float y)
         return;
     }
 
-    network.sendBlockPlace(tileX, tileY, held->second.itemId);
+    // Placing is the same cube: a 2x2x2 anchored at the click, one item from
+    // the stack per block. The server consumes and validates per block, so a
+    // stack too small to fill the cube places what it can and the rest come
+    // back refused rather than the client pretending eight were placed.
+    for (int dz = 0; dz < 2; ++dz)
+        for (int dy = 0; dy < 2; ++dy)
+            for (int dx = 0; dx < 2; ++dx)
+                network.sendBlockPlace(tileX + dx, tileY + dy,
+                                       held->second.itemId, dz);
 }
 
 
@@ -1513,6 +1532,14 @@ void GameScreen::ApplyPendingTileEdits()
 
     for (const auto& edit : edits)
     {
+        // The drawable world is layer 0. A 2x2x2 edit echoes blocks on layer
+        // 1 too - the plane behind the one you see - and this client keeps
+        // that plane permanently empty, so an echo for it has nothing to
+        // update and must not land on layer 0, where it would overwrite a
+        // visible block with a neighbour's result.
+        if (edit.tileZ != 0)
+            continue;
+
         // Same flip the terrain builder uses, so an edit lands on the row the
         // player is looking at.
         const int localRowY = (worldHeightInTiles_ - 1) - static_cast<int>(edit.tileY);
