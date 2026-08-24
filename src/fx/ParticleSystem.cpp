@@ -63,9 +63,16 @@ namespace StrixVerse
         void ParticleSystem::EmitBurst(float x, float y, int count,
                                        float speedMin, float speedMax,
                                        const Color& color, float gravity,
-                                       float lifetime)
+                                       float lifetime,
+                                       float sizeMin, float sizeMax)
         {
-            if (count <= 0 || speedMax < speedMin)
+            if (count <= 0 || speedMax < speedMin || sizeMax < sizeMin)
+                return;
+
+            // A zero or negative lifetime would divide by zero at render time.
+            // Refused here rather than clamped: a caller asking for a burst
+            // that is already over has made a mistake worth not hiding.
+            if (lifetime <= 0.0f)
                 return;
 
             for (int i = 0; i < count; ++i)
@@ -88,7 +95,7 @@ namespace StrixVerse
                 p.maxLife = lifetime * RandomInRange(m_Rng, 0.7f, 1.0f);
                 p.life    = p.maxLife;
 
-                p.size    = RandomInRange(m_Rng, kDebrisSizeMin, kDebrisSizeMax);
+                p.size    = RandomInRange(m_Rng, sizeMin, sizeMax);
                 p.color   = color;
                 p.gravity = gravity;
 
@@ -166,9 +173,13 @@ namespace StrixVerse
 
             // Alternate the two ends of the Aether palette so a cluster of
             // motes reads violet-blue rather than either alone.
-            static bool violetFirst = true;
-            p.color = violetFirst ? kAetherViolet : kAetherBlue;
-            violetFirst = !violetFirst;
+            //
+            // A member, not a function-local static: this class owns its RNG
+            // per instance, and a static made two ParticleSystems share one
+            // toggle - so two emitters running at once would interleave each
+            // other's colours and neither would alternate.
+            p.color = m_AetherViolet ? kAetherViolet : kAetherBlue;
+            m_AetherViolet = !m_AetherViolet;
 
             Emit(p);
         }
@@ -213,8 +224,16 @@ namespace StrixVerse
 
                 // Fade by remaining life, matching how the HUD fades things out
                 // without ever popping.
-                const float alpha = std::clamp(p.life / p.maxLife, 0.0f, 1.0f) *
-                                    p.color.a;
+                //
+                // Guarded because Emit is public and takes a Particle whose
+                // maxLife defaults to 0: a caller building one by hand and
+                // forgetting to set it produced 0/0, and std::clamp passes a
+                // NaN straight through both of its comparisons rather than
+                // clamping it. A NaN alpha reaches the vertex buffer.
+                const float alpha = p.maxLife > 0.0f
+                                        ? std::clamp(p.life / p.maxLife, 0.0f, 1.0f) *
+                                              p.color.a
+                                        : 0.0f;
 
                 const float half = p.size * 0.5f;
 

@@ -327,7 +327,18 @@ void LoginScreen::BuildForm(float columnX, float columnWidth)
     passwordBox_ = addField("PASSWORD", true);
     passwordBox_->setPlaceholderText("Min 8 characters");
 
-    // Remember me / forgot password row.
+    // Remember me / forgot password row. The authenticator-code field shares
+    // this exact slot when the server asks for a code - see RevealTotpField()
+    // for why it swaps rather than relays the panel out.
+    totpBox_ = std::make_shared<UITextBox>();
+    totpBox_->setPlaceholderText("6-digit authenticator code");
+    totpBox_->setFont(BodyFont(UITheme::Body::Caption));
+    totpBox_->setPosition(x, y);
+    totpBox_->setSize(contentWidth, kRowHeight);
+    totpBox_->setMaxLength(6);
+    totpBox_->setVisible(false);
+    panel->addChild(totpBox_);
+
     rememberBox_ = std::make_shared<UICheckBox>();
     rememberBox_->setLabel("Remember me");
     rememberBox_->setFont(BodyFont(UITheme::Body::Caption));
@@ -337,15 +348,15 @@ void LoginScreen::BuildForm(float columnX, float columnWidth)
     rememberBox_->setSize(contentWidth * 0.6f, kRowHeight);
     panel->addChild(rememberBox_);
 
-    auto forgot = std::make_shared<UILabel>();
-    forgot->setText("Forgot password?");
-    forgot->setFont(BodyFont(UITheme::Body::Caption));
-    forgot->setTextColor(UITheme::Accent);
-    forgot->setAlignment(UILabel::Alignment::Right);
-    forgot->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
-    forgot->setPosition(x + contentWidth * 0.6f, y);
-    forgot->setSize(contentWidth * 0.4f, kRowHeight);
-    panel->addChild(forgot);
+    forgotLabel_ = std::make_shared<UILabel>();
+    forgotLabel_->setText("Forgot password?");
+    forgotLabel_->setFont(BodyFont(UITheme::Body::Caption));
+    forgotLabel_->setTextColor(UITheme::Accent);
+    forgotLabel_->setAlignment(UILabel::Alignment::Right);
+    forgotLabel_->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
+    forgotLabel_->setPosition(x + contentWidth * 0.6f, y);
+    forgotLabel_->setSize(contentWidth * 0.4f, kRowHeight);
+    panel->addChild(forgotLabel_);
 
     y += kRowHeight + kFieldGap;
 
@@ -518,6 +529,26 @@ void LoginScreen::ClearRememberedUsername()
     std::filesystem::remove(RememberedLoginPath(), ec);
 }
 
+void LoginScreen::RevealTotpField()
+{
+    if (totpRequested_)
+        return;
+    totpRequested_ = true;
+
+    // The code field takes the remember-me row's slot. Remembering the name
+    // was already decided by the first submit's checkbox state, and choosing
+    // between two fields mid-login is noise - so the row swaps rather than
+    // the panel relaying every element below it down a row.
+    if (rememberBox_) rememberBox_->setVisible(false);
+    if (forgotLabel_) forgotLabel_->setVisible(false);
+    if (totpBox_)
+    {
+        totpBox_->setVisible(true);
+        if (uiManager_)
+            uiManager_->setFocusedElement(totpBox_);
+    }
+}
+
 void LoginScreen::SetStatus(const std::string& message, const Color& color)
 {
     if (!statusLabel_)
@@ -545,6 +576,9 @@ void LoginScreen::SetBusy(bool busy)
 
     if (passwordBox_)
         passwordBox_->setEnabled(!busy);
+
+    if (totpBox_)
+        totpBox_->setEnabled(!busy);
 }
 
 void LoginScreen::Submit()
@@ -554,6 +588,8 @@ void LoginScreen::Submit()
 
     const std::string username = usernameBox_ ? usernameBox_->getText() : std::string();
     const std::string password = passwordBox_ ? passwordBox_->getText() : std::string();
+    const std::string totpCode = (totpRequested_ && totpBox_) ? totpBox_->getText()
+                                                              : std::string();
 
     if (username.empty())
     {
@@ -568,6 +604,16 @@ void LoginScreen::Submit()
         SetStatus("Enter your password.", UITheme::Danger);
         if (uiManager_ && passwordBox_)
             uiManager_->setFocusedElement(passwordBox_);
+        return;
+    }
+
+    // Only demanded once the server has said the account needs one, so a
+    // player without 2FA never sees this field at all.
+    if (totpRequested_ && totpCode.empty())
+    {
+        SetStatus("Enter the 6-digit code from your authenticator app.", UITheme::Danger);
+        if (uiManager_ && totpBox_)
+            uiManager_->setFocusedElement(totpBox_);
         return;
     }
 
@@ -608,12 +654,13 @@ void LoginScreen::Submit()
         connecting_       = true;
         pendingUsername_  = username;
         pendingPassword_  = password;
+        pendingTotpCode_  = totpCode;
         return;
     }
 
     SetStatus("Authenticating...", UITheme::Accent);
 
-    auth->BeginLogin(username, password);
+    auth->BeginLogin(username, password, totpCode);
 }
 
 void LoginScreen::UpdateConnect()
@@ -655,10 +702,11 @@ void LoginScreen::UpdateConnect()
     }
 
     SetStatus("Authenticating...", UITheme::Accent);
-    auth->BeginLogin(pendingUsername_, pendingPassword_);
+    auth->BeginLogin(pendingUsername_, pendingPassword_, pendingTotpCode_);
 
     // Not kept a moment longer than needed.
     pendingPassword_.clear();
+    pendingTotpCode_.clear();
 }
 
 void LoginScreen::Update(float deltaTime)
@@ -698,16 +746,34 @@ void LoginScreen::Update(float deltaTime)
         break;
 
     case AuthService::Status::Failed:
-        SetBusy(false);
-        SetStatus(auth->GetStatusMessage(), UITheme::Danger);
-        auth->ResetRequest();
+    {
+        const std::string& message = auth->GetStatusMessage();
 
-        if (uiManager_ && passwordBox_)
+        SetBusy(false);
+
+        // The server names the missing second factor only after a CORRECT
+        // password, so this string is the client's cue to show the code field.
+        // Kept as a substring match rather than a new protocol field: the
+        // wording lives in one server file and one client file, mirrored.
+        if (message.find("authenticator") != std::string::npos)
         {
-            passwordBox_->setText("");
-            uiManager_->setFocusedElement(passwordBox_);
+            RevealTotpField();
+            SetStatus(message, UITheme::Warning);
         }
+        else
+        {
+            SetStatus(message, UITheme::Danger);
+
+            if (uiManager_ && passwordBox_)
+            {
+                passwordBox_->setText("");
+                uiManager_->setFocusedElement(passwordBox_);
+            }
+        }
+
+        auth->ResetRequest();
         break;
+    }
 
     case AuthService::Status::Pending:
     case AuthService::Status::Idle:

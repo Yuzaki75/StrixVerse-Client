@@ -65,7 +65,8 @@ public:
 
     // --- Requests --------------------------------------------------------
     bool sendHandshake();
-    bool sendLogin(const std::string& username, const std::string& password);
+    bool sendLogin(const std::string& username, const std::string& password,
+                   const std::string& totpCode = {});
     bool sendRegister(const std::string& username,
                       const std::string& email,
                       const std::string& password);
@@ -318,6 +319,30 @@ public:
     // Bumped whenever the inventory changes, so a view can redraw only then.
     uint32_t getInventoryRevision() const { return m_InventoryRevision; }
 
+    // Uses whatever is in an inventory slot. What that does is entirely the
+    // server's decision; this only names the slot.
+    bool sendUseItem(uint8_t inventorySlot, uint16_t itemId);
+
+    // --- Buffs ------------------------------------------------------------
+    // What the server last said is running on this player. Seconds, not
+    // milliseconds, because that is what the display works in.
+    //
+    // Held here rather than on the HUD for the same reason the inventory is:
+    // a buff can be granted while a screen is being swapped, and the packet
+    // must not land on a HUD that does not exist yet.
+    struct BuffState
+    {
+        std::string id;
+        std::string name;
+        float       remainingSeconds = 0.0f;
+        float       totalSeconds     = 0.0f;
+    };
+
+    const std::vector<BuffState>& getBuffs() const { return m_Buffs; }
+
+    // Bumped whenever the set changes, so the display rebuilds only then.
+    uint32_t getBuffRevision() const { return m_BuffRevision; }
+
     // --- World entry ------------------------------------------------------
     // True once the server has answered a world-join request with WorldState.
     // Tracked here rather than on the loading screen because the reply can
@@ -443,6 +468,9 @@ private:
 
     std::unordered_map<uint8_t, InventorySlot> m_Inventory;
     uint32_t                                   m_InventoryRevision = 0;
+
+    std::vector<BuffState>                     m_Buffs;
+    uint32_t                                   m_BuffRevision = 0;
 
     std::unordered_map<uint64_t, TerrainChunk> m_Terrain;
     uint32_t                                   m_TerrainRevision = 0;

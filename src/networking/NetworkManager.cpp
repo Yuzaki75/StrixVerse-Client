@@ -6,10 +6,11 @@
 #include "InventoryPacket.h"
 #include "InventoryUpdatePacket.h"
 #include "LoginPacket.h"
-#include "NotificationPacket.h"
 #include "PacketRegistry.h"
 #include "PingPacket.h"
+#include "PlayerBuffsPacket.h"
 #include "PlayerDataPacket.h"
+#include "UseItemPacket.h"
 #include "WorldListPacket.h"
 #include "StrixCorePacket.h"
 #include "WorldManagePackets.h"
@@ -372,6 +373,40 @@ bool NetworkManager::initialize()
                                          data->TileX, data->TileY));
             }));
 
+    // What is running on this player, as a complete replacement. The server
+    // sends the whole set on every change, so there is nothing to merge.
+    m_dispatcher->addHandler(
+        Opcode::PlayerBuffs,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* buffs = static_cast<const PlayerBuffsPacket*>(packet.get());
+
+                if (!buffs->Valid)
+                {
+                    Logger::Warning("NetworkManager: ignoring a buff set in an "
+                                    "unrecognised wire format.");
+                    return;
+                }
+
+                m_Buffs.clear();
+                m_Buffs.reserve(buffs->Buffs.size());
+
+                for (const auto& entry : buffs->Buffs)
+                {
+                    BuffState state;
+                    state.id   = entry.Id;
+                    state.name = entry.Name;
+                    state.remainingSeconds =
+                        static_cast<float>(entry.RemainingMs) / 1000.0f;
+                    state.totalSeconds =
+                        static_cast<float>(entry.TotalMs) / 1000.0f;
+                    m_Buffs.push_back(std::move(state));
+                }
+
+                ++m_BuffRevision;
+            }));
+
     m_dispatcher->addHandler(
         Opcode::WorldList,
         std::make_shared<FunctionPacketHandler>(
@@ -392,13 +427,15 @@ bool NetworkManager::initialize()
                 for (const auto& entry : list->Worlds)
                 {
                     WorldInfo info;
-                    info.name    = entry.Name;
-                    info.players = static_cast<int>(entry.Players);
+                    info.name           = entry.Name;
+                    info.players        = static_cast<int>(entry.Players);
+                    info.owner          = entry.OwnerName;
+                    info.protectedWorld = entry.IsProtected();
+                    info.allowsVisitors = entry.AllowsVisitors();
 
-                    // Type, owner, description and capacity are not modelled on
-                    // the server at all, so they are left empty rather than
-                    // invented - the browser already renders a world without
-                    // them.
+                    // Type, description and capacity are still not modelled on
+                    // the server, so they are left empty rather than invented -
+                    // the browser already renders a world without them.
                     worlds.push_back(std::move(info));
                 }
 
@@ -483,6 +520,27 @@ bool NetworkManager::initialize()
 
     // The roster. Only sent to someone whose role may see it, so an arrival is
     // itself the server saying this client may act on the list.
+    // The server's own voice: every management reply, plus the world-saved
+    // and protection-toggled notices. Arrives here rather than through player
+    // chat, which is what stops a refusal rendering as "Player 0: ...".
+    //
+    // Delivered to the registered handler, or queued when the HUD has not
+    // bound itself yet.
+    m_dispatcher->addHandler(
+        Opcode::WorldNotification,
+        std::make_shared<FunctionPacketHandler>(
+            [this](const std::shared_ptr<Packet>& packet)
+            {
+                const auto* notice =
+                    static_cast<const WorldNotificationPacket*>(packet.get());
+                if (!notice->Valid || notice->Message.empty())
+                    return;
+
+                // Straight into the queue the HUD already drains, so a notice
+                // that arrives before the HUD exists is not lost.
+                pushNotification(notice->Message, static_cast<int>(notice->Severity));
+            }));
+
     m_dispatcher->addHandler(
         Opcode::WorldMembers,
         std::make_shared<FunctionPacketHandler>(
@@ -568,22 +626,6 @@ bool NetworkManager::initialize()
                 Logger::Warning(std::format("NetworkManager: server disconnected us - {}",
                                             disconnectPacket->Reason));
                 clearSession();
-            }));
-
-    // World-management notices for the HUD's notification stack: world saved,
-    // protection toggled and so on. Delivered to the registered handler, or
-    // queued here when the HUD has not bound itself yet.
-    m_dispatcher->addHandler(
-        Opcode::Notification,
-        std::make_shared<FunctionPacketHandler>(
-            [this](const std::shared_ptr<Packet>& packet)
-            {
-                const auto* note = static_cast<const NotificationPacket*>(packet.get());
-
-                if (note->Message.empty())
-                    return;
-
-                pushNotification(note->Message, static_cast<int>(note->Severity));
             }));
 
     m_initialized = true;
@@ -704,11 +746,13 @@ bool NetworkManager::sendHandshake()
     return sendPacket(packet);
 }
 
-bool NetworkManager::sendLogin(const std::string& username, const std::string& password)
+bool NetworkManager::sendLogin(const std::string& username, const std::string& password,
+                               const std::string& totpCode)
 {
     auto packet = std::make_shared<LoginPacket>();
     packet->Username = username;
     packet->Password = password;
+    packet->TotpCode = totpCode;
 
     return sendPacket(packet);
 }
@@ -933,6 +977,23 @@ bool NetworkManager::sendBlockPlace(int32_t tileX, int32_t tileY, uint16_t itemI
     return sendPacket(packet);
 }
 
+bool NetworkManager::sendUseItem(uint8_t inventorySlot, uint16_t itemId)
+{
+    if (!isConnected())
+        return false;
+
+    auto packet = std::make_shared<UseItemPacket>();
+
+    // PlayerID is left at zero deliberately. The server resolves who is asking
+    // from the connection, and a client-supplied id would be a value it must
+    // not trust - the same reason block edits do not carry one.
+    packet->SlotIndex = inventorySlot;
+    packet->ItemID    = itemId;
+    packet->Quantity  = 1;
+
+    return sendPacket(packet);
+}
+
 void NetworkManager::recordTileEdit(int32_t tileX, int32_t tileY, uint8_t tileId,
                                     int32_t tileZ)
 {
@@ -1067,6 +1128,9 @@ void NetworkManager::clearSession()
 
     m_Inventory.clear();
     ++m_InventoryRevision;
+
+    m_Buffs.clear();
+    ++m_BuffRevision;
 
     m_Core = CoreState{};
     ++m_CoreRevision;

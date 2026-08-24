@@ -4,6 +4,41 @@ All notable changes to the StrixVerse Client project will be documented in this 
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-24
+
+### Added
+- Real Winsock TCP gameplay networking: ~25 packet types including StrixCore claim/interact/updated, world management (invite/role/ban/settings), TileChange, and Notification (opcode 112 client-side ready, server pending)
+- Server-driven authentication (login/register over the network) with offline mode fallback (accepts any password >= 8 chars - intentional, documented)
+- Full screen flow: Splash > Login > Register > Continue > Connecting > WorldBrowser (selection + create-on-join) > Loading (real chunk-progress with indeterminate mode when server sends no totals) > Game
+- Player movement/jump/gravity with AABB collision
+- Block break/place with 2x2x2 build reach: client-side gate plus server BlockReachTiles enforcement; hover tile highlight (blue in reach / red out)
+- Remote-player interpolation (100ms lerp, extrapolation, snap)
+- Animation system (Animator/AnimationClip) driving animated procedural player figures; spritesheet swap point marked in CharacterRenderSystem.cpp
+- AudioManager: music playback (SDL3+stb_vorbis) and SFX (WAV one-shots, random variants, 16 voices); sfxVolume config setting and Settings control
+- Particle system (src/fx): block-break debris, Strix Core bursts, ambient Aether
+- HUD panels: Pause overlay (Esc), Player list (Tab hold), Inventory (I), Character (C), WorldManager (wrench), buff display
+- Lost Tech shell panels: Vault, Gate, Stabilizer, MemoryCrystal (UI ready, server ids 29-32 placeholder)
+- Interaction prompts ([E] Leave/Interact/Strix Core/Lost Tech) and notification stack with severity styling
+- Camera follow and zoom (shift/ctrl+wheel); plain wheel cycles hotbar
+- Full keyboard dispatch (UIKey letters/F-keys, key repeat suppressed)
+- Assets: tile set expansion through strix core tiers I-IV, doors, ores, marble/castle/neon blocks; item set with seeds, punch/wrench previews, gear and consumables
+
+### Fixed
+- SpriteBatch capacity raised to 16384, fixing tile drop-out when zoomed out
+
+### Changed
+- UI consistency pass: click SFX everywhere, busy/disabled states, inline validation, step/pip states, no per-frame string allocations in update paths
+- Walkable door handling plus Strix Core claim feedback
+- Gameplay polish wave across HUD and interaction flow
+
+### Known Limitations (Current)
+1. Server-side still pending: buff packets, WorldInfo metadata, per-player roster roles, chunk totals in WorldState, Lost Tech packet senders, Notification opcode 112
+2. Character spritesheet art not yet authored (procedural placeholder live)
+3. Three SFX remain .mp3 and need WAV conversion (dirtBreak/join/exit); gameplay track world_theme.ogg missing
+4. Plaintext TCP (no TLS); auth token not persisted
+
+## [Unreleased]
+
 ### Added (v0.2.0 Audit Fixes)
 - LoadingScreen.cpp implementation with progress bar and world name display
 - LOG_ERROR/LOG_INFO/LOG_WARN convenience macros in Logger.h

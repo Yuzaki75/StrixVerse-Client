@@ -2,6 +2,7 @@
 
 #include "../core/Engine.h"
 #include "../core/Logger.h"
+#include "../graphics/Font.h"
 #include "../networking/NetworkManager.h"
 #include "../networking/Protocol.h"
 #include "../ui/UIButton.h"
@@ -84,6 +85,44 @@ namespace
         return nullptr;
     }
 
+    // One chip: a rounded pill with a centred label, sized to the text it
+    // actually holds.
+    //
+    // The three chips on a world row each estimated their own width from a
+    // per-character constant - S(9) for two of them, S(7) for the third - which
+    // is only ever right for one string at one font. "PROTECTED" came out with
+    // its letters against the border while shorter tags swam in empty pill.
+    // The font can measure, so it does.
+    std::shared_ptr<UIPanel> MakeChip(const std::string& text, const Color& color,
+                                      Font* font, bool bordered)
+    {
+        constexpr float kChipHeight = S(14.0f);
+        constexpr float kChipPadX   = S(8.0f);
+
+        auto chip = std::make_shared<UIPanel>();
+        const float textWidth = font ? font->MeasureWidth(text) : 0.0f;
+        const float width     = textWidth + kChipPadX * 2.0f;
+
+        chip->setSize(width, kChipHeight);
+        chip->setBackgroundColor(UITheme::WithAlpha(color, 0.10f));
+        chip->setBorder(bordered ? UITheme::WithAlpha(color, 0.27f)
+                                 : Color(0.0f, 0.0f, 0.0f, 0.0f),
+                        bordered ? UITheme::BorderThin : 0.0f);
+        chip->setBorderRadius(UITheme::RadiusChip);
+
+        auto label = std::make_shared<UILabel>();
+        label->setText(text);
+        label->setFont(font);
+        label->setTextColor(color);
+        label->setAlignment(UILabel::Alignment::Center);
+        label->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
+        label->setPosition(0.0f, 0.0f);
+        label->setSize(width, kChipHeight);
+        chip->addChild(label);
+
+        return chip;
+    }
+
     Color TagColor(const std::string& tag)
     {
         if (tag == "RECENT")   return UITheme::Primary;
@@ -123,27 +162,65 @@ void WorldBrowserScreen::OnEnter()
     if (engine_)
         engine_->getNetworkManager().sendWorldListRequest();
 
+    BuildUI();
+}
+
+void WorldBrowserScreen::OnResize()
+{
+    if (!uiManager_ || !root_)
+        return;
+
+    // Keep what was typed. The rebuild replaces every element, and losing a
+    // half-typed world name because the window was nudged would be worse than
+    // the stale layout this exists to fix.
+    const std::string typed = searchBox_ ? searchBox_->getText() : std::string();
+
+    DestroyRoot();
+    BuildUI();
+
+    if (searchBox_ && !typed.empty())
+        searchBox_->setText(typed);
+}
+
+void WorldBrowserScreen::BuildUI()
+{
     CreateRoot();
 
-    const float originX = DesignOriginX();
-    const float originY = DesignOriginY();
+    // Laid out against the window, not the 1920x1080 canvas. The header and
+    // footer are full-bleed bars; stopping them at the canvas edge left a
+    // visible cut with backdrop either side on any window wider than 16:9,
+    // which read as a card that had been clipped rather than as a header.
+    //
+    // Their contents already position from both edges of whatever width they
+    // are given, so widening the bar is all it takes.
+    // The root panel is already placed at the window's top-left, so a child
+    // offset of zero IS the window edge. DesignOriginX/Y - which the previous
+    // version passed here - is the offset from that root to the 1920x1080
+    // canvas inside it, which is exactly the inset being removed.
+    const UIScale* scale = Scale();
+
+    constexpr float originX = 0.0f;
+    constexpr float originY = 0.0f;
+
+    const float width  = scale ? scale->GetVisibleWidth() : UIScale::kDesignWidth;
+    const float height = scale ? scale->GetVisibleHeight() : UIScale::kDesignHeight;
 
     // Solid screen background with the design's border colour.
     AddBackdrop(UITheme::ScreenBackground, UITheme::ScreenBackground, false);
 
-    BuildHeader(originX, originY, UIScale::kDesignWidth);
+    BuildHeader(originX, originY, width);
 
     // Scrolling world list between the header and the footer.
     const float listY = originY + kHeaderHeight;
-    const float listHeight = UIScale::kDesignHeight - kHeaderHeight - kFooterHeight;
+    const float listHeight = height - kHeaderHeight - kFooterHeight;
 
     list_ = std::make_shared<UIScrollPanel>();
     list_->setPosition(originX + kListPadding, listY + kListPadding);
-    list_->setSize(UIScale::kDesignWidth - kListPadding * 2.0f, listHeight - kListPadding * 2.0f);
+    list_->setSize(width - kListPadding * 2.0f, listHeight - kListPadding * 2.0f);
     list_->setScrollSpeed(kRowHeight + kRowGap);
     root_->addChild(list_);
 
-    BuildFooter(originX, originY + UIScale::kDesignHeight - kFooterHeight, UIScale::kDesignWidth);
+    BuildFooter(originX, originY + height - kFooterHeight, width);
 
     RebuildList();
 
@@ -618,59 +695,47 @@ std::shared_ptr<UIPanel> WorldBrowserScreen::BuildWorldRow(const WorldInfo& worl
 
     if (const char* tag = TagFor(world))
     {
-        const Color color = TagColor(tag);
-        const float chipWidth = S(9.0f) * static_cast<float>(std::string(tag).size()) + S(12.0f);
-
-        auto chip = std::make_shared<UIPanel>();
-        chip->setBackgroundColor(UITheme::WithAlpha(color, 0.10f));
-        chip->setBorder(UITheme::WithAlpha(color, 0.27f), UITheme::BorderThin);
-        chip->setBorderRadius(UITheme::RadiusChip);
+        auto chip = MakeChip(tag, TagColor(tag),
+                             DisplayFont(UITheme::Display::Micro), true);
         chip->setPosition(chipX, kRowPadY - S(2.0f));
-        chip->setSize(chipWidth, S(14.0f));
         row->addChild(chip);
-
-        auto chipLabel = std::make_shared<UILabel>();
-        chipLabel->setText(tag);
-        chipLabel->setFont(DisplayFont(UITheme::Display::Micro));
-        chipLabel->setTextColor(color);
-        chipLabel->setAlignment(UILabel::Alignment::Center);
-        chipLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
-        chipLabel->setPosition(0.0f, 0.0f);
-        chipLabel->setSize(chipWidth, S(14.0f));
-        chip->addChild(chipLabel);
-
-        chipX += chipWidth + S(8.0f);
+        chipX += chip->getWidth() + S(8.0f);
     }
 
     // The type chip is only drawn for a world whose type the server has told
     // us; an unknown type would otherwise render as an empty coloured pill.
     if (!world.type.empty())
     {
-        const Color color = TypeColor(world.type);
-        const float chipWidth = S(7.0f) * static_cast<float>(world.type.size()) + S(14.0f);
-
-        auto chip = std::make_shared<UIPanel>();
-        chip->setBackgroundColor(UITheme::WithAlpha(color, 0.10f));
-        chip->setBorder(Color(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
-        chip->setBorderRadius(UITheme::RadiusChip);
+        auto chip = MakeChip(world.type, TypeColor(world.type),
+                             BodyFont(UITheme::Body::Tiny), false);
         chip->setPosition(chipX, kRowPadY - S(2.0f));
-        chip->setSize(chipWidth, S(14.0f));
         row->addChild(chip);
 
-        auto chipLabel = std::make_shared<UILabel>();
-        chipLabel->setText(world.type);
-        chipLabel->setFont(BodyFont(UITheme::Body::Tiny));
-        chipLabel->setTextColor(color);
-        chipLabel->setAlignment(UILabel::Alignment::Center);
-        chipLabel->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
-        chipLabel->setPosition(0.0f, 0.0f);
-        chipLabel->setSize(chipWidth, S(14.0f));
-        chip->addChild(chipLabel);
+        // The type chip used to be the last on the line and did not have to
+        // advance the cursor. It is not last any more.
+        chipX += chip->getWidth() + S(8.0f);
     }
 
-    // Ownership is not modelled on the server, so most worlds have none. A
-    // bare "by " with nothing after it reads as a bug rather than as absent
-    // data, so the line is simply left out when there is no owner to name.
+    // What the world's Strix Core is doing, on the same chip line as the name.
+    // Only a claimed world can carry either state, and the server only sets
+    // the flags for one, so an unclaimed world stays visually quiet.
+    const char* stateChip = world.protectedWorld  ? "PROTECTED"
+                            : !world.allowsVisitors ? "CLOSED"
+                                                    : nullptr;
+    if (stateChip)
+    {
+        const Color color = world.protectedWorld ? UITheme::Accent : UITheme::Warning;
+
+        auto chip = MakeChip(stateChip, color,
+                             DisplayFont(UITheme::Display::Micro), true);
+        chip->setPosition(chipX, kRowPadY - S(2.0f));
+        row->addChild(chip);
+        chipX += chip->getWidth() + S(8.0f);
+    }
+
+    // A bare "by " with nothing after it reads as a bug rather than as absent
+    // data, so the line is simply left out when there is no owner to name -
+    // which is every world nobody has claimed a Strix Core in.
     if (!world.owner.empty())
     {
         auto owner = std::make_shared<UILabel>();

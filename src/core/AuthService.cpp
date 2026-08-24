@@ -128,7 +128,8 @@ void AuthService::Fail(const std::string& message)
     m_PendingPassword.clear();
 }
 
-void AuthService::BeginLogin(const std::string& usernameOrEmail, const std::string& password)
+void AuthService::BeginLogin(const std::string& usernameOrEmail, const std::string& password,
+                             const std::string& totpCode)
 {
     m_Pending         = PendingKind::Login;
     m_PendingUsername = usernameOrEmail;
@@ -149,7 +150,10 @@ void AuthService::BeginLogin(const std::string& usernameOrEmail, const std::stri
         return;
     }
 
-    if (!m_Network->sendLogin(usernameOrEmail, password))
+    // Forwarded rather than stored: per the declaration, a login refused for a
+    // missing code is re-submitted by LoginScreen with the field's contents, so
+    // there is no retry here that would need to remember it.
+    if (!m_Network->sendLogin(usernameOrEmail, password, totpCode))
         Fail("Could not reach the server.");
 }
 

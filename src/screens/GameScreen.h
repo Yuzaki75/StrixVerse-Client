@@ -85,6 +85,11 @@ private:
     // redundant thing.
     void OnMouseDown(float x, float y) override;
 
+    // The right button uses what is selected. Placing moved to the left button
+    // with everything else, which left this one free; a potion had no way to
+    // be drunk before it.
+    void OnRightMouseDown(float x, float y) override;
+
     // True while a UI element holds focus or the game is paused, so world edits
     // are suppressed for the same reason movement already is.
     bool GameplayInputBlocked() const;
@@ -373,6 +378,10 @@ private:
     std::uint16_t SelectedToolItemId() const;
 
     // Violet/blue Aether burst over the Strix Core an interaction succeeded on.
+    // Records the tile a Strix Core request named, for the burst that
+    // follows the server's answer.
+    void RememberCoreTarget(int32_t tileX, int32_t tileY);
+
     void EmitCoreBurst();
 
     // One ambient Aether mote every so often at a random point in view.
@@ -396,7 +405,20 @@ private:
     // Pushes the roster (everyone in the world, including us) into the
     // player list panel. Rebuilt per frame; the roster is small and has no
     // revision to key a change test on.
+    // Re-pins the screen's own bottom-edge chrome - the world name and the
+    // settings button - to the window. Both are laid out once in InitializeUI
+    // against the visible canvas, which moves the moment the window changes
+    // shape; without this they stayed where the window used to be.
+    void LayoutScreenChrome();
+
+    int chromeWidth_  = 0;
+    int chromeHeight_ = 0;
+
     void RefreshRoster();
+
+    // Pushes the server's buff set into the display. Called on the buff
+    // revision only; the display animates between calls itself.
+    void RefreshBuffs();
 
     // Pushes the character stats into the character panel, keyed on the same
     // stats revision RefreshStats follows.
@@ -442,6 +464,27 @@ private:
     // Last inventory revision drawn, so the hotbar is rebuilt only on change.
     uint32_t inventoryRevision_ = 0;
     uint32_t statsRevision_     = 0;
+    uint32_t buffRevision_      = 0;
+
+    // The tile the last Strix Core request named, remembered at the point the
+    // request is sent.
+    //
+    // EmitCoreBurst used to read interactTileX_/interactTileY_, which
+    // UpdateInteractPrompt owns and clears to 0,0 at the top of every frame
+    // before setting them to whatever the E prompt is nearest to. That is the
+    // main door as often as it is a Core - so a burst fired for a Core claimed
+    // by clicking it was drawn at the door instead, or at world tile 0,0 when
+    // no prompt target was in range at all. Either way it was never where the
+    // player was looking.
+    int32_t coreBurstTileX_ = 0;
+    int32_t coreBurstTileY_ = 0;
+    bool    coreBurstArmed_ = false;
+
+    // Counts down between the Strix Core burst and the panel that follows it.
+    // Long enough for the puff to read and short enough not to feel like lag;
+    // the burst itself lives 0.8-0.9s, so this shows roughly its first third.
+    static constexpr float kCorePanelDelaySeconds = 0.28f;
+    float corePanelDelay_ = 0.0f;
 
     float moveSendTimer_ = 0.0f;
     float lastSentTileX_ = 0.0f;

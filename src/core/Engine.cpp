@@ -372,6 +372,11 @@ void Engine::HandleResize()
 
     m_UIScale.Update(width, height);
 
+    // Screens that span the window rather than the design canvas have to be
+    // told; UIScale changing underneath them is invisible otherwise.
+    if (m_CurrentScreen)
+        m_CurrentScreen->OnResize();
+
     // The camera owns the world projection, so it needs the new viewport; the
     // SpriteBatch picks the matrix up per frame in Render().
     m_Camera.SetViewport(static_cast<float>(width), static_cast<float>(height));

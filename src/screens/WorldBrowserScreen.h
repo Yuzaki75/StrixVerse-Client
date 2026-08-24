@@ -34,6 +34,7 @@ public:
     ~WorldBrowserScreen() override = default;
 
     void OnEnter() override;
+    void OnResize() override;
     void OnKeyDown(int key, bool ctrl, bool shift) override;
     void Update(float deltaTime) override;
 
@@ -44,6 +45,11 @@ private:
         Recent,
         Favorites
     };
+
+    // Everything between CreateRoot and the first RebuildList. Split out of
+    // OnEnter so a resize can run it again without repeating the audio, the
+    // network request and the state reset that OnEnter also does.
+    void BuildUI();
 
     void BuildHeader(float x, float y, float width);
     void BuildFooter(float x, float y, float width);

@@ -272,6 +272,60 @@ void GameScreen::RefreshCharacterPanel()
     characterPanel_->SetCharacter(info);
 }
 
+void GameScreen::LayoutScreenChrome()
+{
+    const UIScale* scale = Scale();
+    if (!scale)
+        return;
+
+    const int width  = scale->GetFramebufferWidth();
+    const int height = scale->GetFramebufferHeight();
+    if (width <= 0 || height <= 0)
+        return;
+
+    if (width == chromeWidth_ && height == chromeHeight_)
+        return;
+
+    chromeWidth_  = width;
+    chromeHeight_ = height;
+
+    const float left   = scale->GetVisibleLeft();
+    const float top    = scale->GetVisibleTop();
+    const float bottom = top + scale->GetVisibleHeight();
+
+    if (worldLabel_)
+    {
+        worldLabel_->setPosition(left, bottom - S(46.0f));
+        worldLabel_->setSize(scale->GetVisibleWidth(), S(14.0f));
+    }
+
+    if (settingsButton_)
+    {
+        settingsButton_->setPosition(
+            left + scale->GetVisibleWidth() - settingsButton_->getWidth() - S(20.0f),
+            bottom - settingsButton_->getHeight() - S(20.0f));
+    }
+}
+
+void GameScreen::RefreshBuffs()
+{
+    if (!buffDisplay_ || !engine_)
+        return;
+
+    std::vector<BuffDisplay::BuffEntry> entries;
+    for (const auto& buff : engine_->getNetworkManager().getBuffs())
+    {
+        BuffDisplay::BuffEntry entry;
+        entry.id               = buff.id;
+        entry.name             = buff.name;
+        entry.remainingSeconds = buff.remainingSeconds;
+        entry.totalSeconds     = buff.totalSeconds;
+        entries.push_back(std::move(entry));
+    }
+
+    buffDisplay_->SetBuffs(entries);
+}
+
 void GameScreen::RefreshRoster()
 {
     if (!playerListPanel_ || !engine_)
@@ -364,9 +418,6 @@ void GameScreen::RefreshInventory()
 
 void GameScreen::InitializeUI()
 {
-    const float originX = DesignOriginX();
-    const float originY = DesignOriginY();
-
     // The world the server put us in, not the one we asked for.
     //
     // These are usually the same and are not always: a join can be refused -
@@ -388,7 +439,6 @@ void GameScreen::InitializeUI()
     worldLabel_->setFont(DisplayFont(UITheme::Display::Label));
     worldLabel_->setTextColor(UITheme::Text);
     worldLabel_->setAlignment(UILabel::Alignment::Center);
-    worldLabel_->setPosition(originX, originY + UIScale::kDesignHeight - S(46.0f));
     worldLabel_->setSize(UIScale::kDesignWidth, S(14.0f));
     root_->addChild(worldLabel_);
 
@@ -399,8 +449,6 @@ void GameScreen::InitializeUI()
     settingsButton_->setText("SETTINGS");
     settingsButton_->setFont(DisplayFont(UITheme::Display::Small));
     settingsButton_->setVariant(UIButton::Variant::Purple);
-    settingsButton_->setPosition(originX + UIScale::kDesignWidth - buttonWidth - S(20.0f),
-                                 originY + UIScale::kDesignHeight - buttonHeight - S(20.0f));
     settingsButton_->setSize(buttonWidth, buttonHeight);
     settingsButton_->setOnClick([this]()
     {
@@ -914,6 +962,28 @@ void GameScreen::InitializePanels()
     inventoryPanel_ = std::make_unique<InventoryPanel>(engine_, uiManager_);
     inventoryPanel_->Build();
 
+    // The hotbar and the inventory grid show the same slots, so selecting in
+    // one has to move the highlight in the other. Both halves of this already
+    // existed - HUD::SetOnSlotSelected and InventoryPanel::SetSelectedIndex -
+    // and neither had a caller, so selectedIndex_ never left -1 and the grid
+    // highlighted nothing until the server happened to send an inventory.
+    if (hud_)
+    {
+        hud_->SetOnSlotSelected(
+            [this](uint8_t hudSlot)
+            {
+                if (!inventoryPanel_)
+                    return;
+
+                // The punch and wrench slots are tools, not inventory: they
+                // have no square in the grid, so the grid highlights nothing.
+                inventoryPanel_->SetSelectedIndex(
+                    hudSlot < HUD::kFirstItemSlot
+                        ? -1
+                        : static_cast<int>(hudSlot - HUD::kFirstItemSlot));
+            });
+    }
+
     characterPanel_ = std::make_unique<CharacterPanel>(engine_, uiManager_);
     characterPanel_->Build();
 
@@ -1122,6 +1192,31 @@ bool GameScreen::UiConsumesPointer(float x, float y) const
     return uiManager && uiManager->getElementAt(x, y) != nullptr;
 }
 
+void GameScreen::OnRightMouseDown(float x, float y)
+{
+    if (!engine_ || GameplayInputBlocked() || UiConsumesPointer(x, y))
+        return;
+
+    // Nothing is aimed: using an item acts on the player, not on a tile, so
+    // the click position matters only for deciding the UI did not want it.
+    if (!hud_ || hud_->GetSelectedTool() == HUD::Tool::Punch)
+        return;
+
+    const uint8_t inventorySlot =
+        static_cast<uint8_t>(hud_->GetSelectedSlot() - HUD::kFirstItemSlot);
+
+    auto& network = engine_->getNetworkManager();
+    const auto held = network.getInventory().find(inventorySlot);
+    if (held == network.getInventory().end() || held->second.IsEmpty())
+        return;
+
+    // Whether this item does anything at all is the server's call. It owns the
+    // item definitions, so a client that guessed would be a second, drifting
+    // copy of the rules - which is exactly how the consumable branch it
+    // replaces came to test item names for the word "potion".
+    network.sendUseItem(inventorySlot, held->second.itemId);
+}
+
 void GameScreen::OnMouseDown(float x, float y)
 {
     if (!engine_ || GameplayInputBlocked() || UiConsumesPointer(x, y))
@@ -1175,6 +1270,11 @@ void GameScreen::OnMouseDown(float x, float y)
             // and asking the wrong one is harmless: the server answers a claim
             // on an owned world with "already belongs to someone else" and an
             // interact on an unowned one with "no Core here".
+            // Remember what was asked about, so the burst that follows the
+            // server's answer lands on this tile rather than on whatever the
+            // E prompt happens to be nearest to.
+            RememberCoreTarget(coreX, coreY);
+
             if (ServerIdAt(coreX, coreY) == kStrixCoreUnclaimedTile)
                 engine_->getNetworkManager().sendClaimStrixCore(coreX, coreY);
             else
@@ -1422,10 +1522,26 @@ void GameScreen::UpdateInteractPrompt()
     // It went unnoticed because the only prompt was a Strix Core, which a
     // player stands next to rarely. The main door is at every spawn, so the
     // prompt is now on screen the moment anyone arrives.
+    // Measured from the window, exactly as HUD::LayoutForCanvas measures the
+    // hotbar this sits above. It used to add DesignOriginX/Y to design-canvas
+    // coordinates while the hotbar used neither, so the two agreed only at
+    // 16:9: at 4:3 the offset pushed the prompt down onto the middle of the
+    // bar and covered five slots.
+    //
+    // Two elements that must stack have to be measured from the same origin.
+    const UIScale* scale = Scale();
+
+    const float visibleLeft   = scale ? scale->GetVisibleLeft() : 0.0f;
+    const float visibleTop    = scale ? scale->GetVisibleTop() : 0.0f;
+    const float visibleWidth  = scale ? scale->GetVisibleWidth()
+                                      : UIScale::kDesignWidth;
+    const float visibleHeight = scale ? scale->GetVisibleHeight()
+                                      : UIScale::kDesignHeight;
+
     constexpr float kHotbarTopGap = 110.0f + 12.0f;
     interactPromptPanel_->setPosition(
-        DesignOriginX() + (UIScale::kDesignWidth - width) * 0.5f,
-        DesignOriginY() + UIScale::kDesignHeight - height - S(kHotbarTopGap));
+        visibleLeft + (visibleWidth - width) * 0.5f,
+        visibleTop + visibleHeight - height - S(kHotbarTopGap));
     interactPromptPanel_->setVisible(true);
 }
 
@@ -1491,6 +1607,10 @@ void GameScreen::InteractWithTarget()
     // claimed, a claimed one opens management. Which of the two this is comes
     // from the tile, and asking the wrong one is harmless - the server
     // answers each with its own refusal.
+    // Both branches ask about the same tile, so the burst target is recorded
+    // once above the fork rather than inside two braceless arms.
+    RememberCoreTarget(interactTileX_, interactTileY_);
+
     if (ServerIdAt(interactTileX_, interactTileY_) == kStrixCoreUnclaimedTile)
         engine_->getNetworkManager().sendClaimStrixCore(interactTileX_, interactTileY_);
     else
@@ -2123,6 +2243,8 @@ void GameScreen::Update(float deltaTime)
 
     PublishLocalPosition(deltaTime);
 
+    LayoutScreenChrome();
+
     // Redraw the hotbar only when the inventory actually changed, rather than
     // rebuilding it every frame.
     if (engine_ && engine_->getNetworkManager().getInventoryRevision() != inventoryRevision_)
@@ -2139,8 +2261,19 @@ void GameScreen::Update(float deltaTime)
     // every frame and the panel decides what to do with it.
     RefreshRoster();
 
-    // Buffs stay empty until buff packets exist; Update keeps an empty
-    // display hidden at no cost.
+    // The server sends the whole buff set whenever it changes, so the display
+    // is rebuilt on the revision and only animates in between - the countdown
+    // it runs is presentation, never a decision about whether a buff is over.
+    if (engine_ && buffDisplay_)
+    {
+        const uint32_t revision = engine_->getNetworkManager().getBuffRevision();
+        if (revision != buffRevision_)
+        {
+            buffRevision_ = revision;
+            RefreshBuffs();
+        }
+    }
+
     if (buffDisplay_)
         buffDisplay_->Update(deltaTime);
 
@@ -2203,12 +2336,33 @@ void GameScreen::Update(float deltaTime)
         if (revision != worldInfoRevision_)
         {
             worldInfoRevision_ = revision;
-            if (!worldManagerPanel_->IsOpen())
+            if (!worldManagerPanel_->IsOpen() && corePanelDelay_ <= 0.0f)
             {
                 // The server answering WorldInfo *is* the interaction
                 // succeeding, so this is where the burst belongs - a claim or
                 // an open-management both land here.
+                //
+                // The panel follows a beat later rather than in this same
+                // frame. Particles are drawn in the world pass and the panel in
+                // the UI pass over the top of it, and the player has to be
+                // standing next to the Core to have interacted at all - so the
+                // Core is always near the middle of the screen, which is
+                // exactly where the panel opens. The burst was drawn under it
+                // on every frame of its life and had never once been visible.
                 EmitCoreBurst();
+                corePanelDelay_ = kCorePanelDelaySeconds;
+            }
+        }
+
+        // Opens the panel once the burst has had its moment. Counted here
+        // rather than in the block above because that only runs when the
+        // revision moves, and this has to run every frame.
+        if (corePanelDelay_ > 0.0f)
+        {
+            corePanelDelay_ -= deltaTime;
+            if (corePanelDelay_ <= 0.0f)
+            {
+                corePanelDelay_ = 0.0f;
                 worldManagerPanel_->Show();
             }
         }
@@ -2371,9 +2525,27 @@ void GameScreen::RenderGame() const
     if (!batch || !playerTexture_)
         return;
 
+    // Begin/End around the pass, like every other draw site has.
+    //
+    // Without them this whole layer was queued and thrown away. Draw() only
+    // appends to the vertex buffer; End() is what flushes it. The render
+    // systems each Begin and End their own pass, so by the time this ran the
+    // last one had already flushed - and nothing flushed again before the
+    // frame ended, so these vertices sat in the buffer until the next frame's
+    // Begin() cleared them.
+    //
+    // That silently discarded everything RenderGame draws: the hover
+    // highlight, block-break debris, the ambient Aether motes and the Strix
+    // Core burst. Sixteen frames captured 35ms apart across half a second were
+    // byte-identical while a mote should have been rising through them, which
+    // is what turned "the burst does not show" into this.
+    batch->Begin();
+
     DrawHoverHighlight(*batch);
 
     particles_.Render(*batch, *playerTexture_);
+
+    batch->End();
 }
 
 void GameScreen::DrawHoverHighlight(SpriteBatch& batch) const
@@ -2524,18 +2696,41 @@ std::uint16_t GameScreen::SelectedToolItemId() const
     return it->second.itemId;
 }
 
+void GameScreen::RememberCoreTarget(int32_t tileX, int32_t tileY)
+{
+    coreBurstTileX_ = tileX;
+    coreBurstTileY_ = tileY;
+    coreBurstArmed_ = true;
+}
+
 void GameScreen::EmitCoreBurst()
 {
-    // Centred on the tile the interaction targeted, in local world pixels -
+    // Only for a request this screen actually made. Without the guard a
+    // WorldInfo arriving for any other reason would put a burst on tile 0,0.
+    if (!coreBurstArmed_)
+        return;
+
+    coreBurstArmed_ = false;
+
+    // Centred on the tile the request named, in local world pixels -
     // TileYToLocalY already does the server-Y flip, so +half a tile is the
     // middle of that tile's square.
-    const float cx = static_cast<float>(interactTileX_) * kTileSize + kTileSize * 0.5f;
-    const float cy = TileYToLocalY(static_cast<float>(interactTileY_) + 0.5f);
+    const float cx = static_cast<float>(coreBurstTileX_) * kTileSize + kTileSize * 0.5f;
+    const float cy = TileYToLocalY(static_cast<float>(coreBurstTileY_) + 0.5f);
 
     // Two interleaved bursts, one end of the Aether palette each, so the puff
     // reads violet-blue rather than either alone.
-    particles_.EmitBurst(cx, cy, 20, 40.0f, 150.0f, UITheme::Secondary, 60.0f, 0.8f);
-    particles_.EmitBurst(cx, cy, 20, 40.0f, 150.0f, UITheme::Accent,   60.0f, 0.9f);
+    //
+    // Sized like the Aether motes rather than like block debris: this is a
+    // crystal discharging, not a rock breaking, and EmitBurst used to hand out
+    // 3-6px chips to every caller regardless.
+    constexpr float kCoreMoteMin = 2.0f;
+    constexpr float kCoreMoteMax = 4.5f;
+
+    particles_.EmitBurst(cx, cy, 20, 40.0f, 150.0f, UITheme::Secondary, 60.0f, 0.8f,
+                         kCoreMoteMin, kCoreMoteMax);
+    particles_.EmitBurst(cx, cy, 20, 40.0f, 150.0f, UITheme::Accent,   60.0f, 0.9f,
+                         kCoreMoteMin, kCoreMoteMax);
 }
 
 void GameScreen::UpdateAmbientAether(float deltaTime)

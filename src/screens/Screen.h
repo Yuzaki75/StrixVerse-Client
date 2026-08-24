@@ -58,6 +58,14 @@ public:
     // Delivered after the UI has had its chance, so a screen-level "press any
     // key" never steals a keystroke from a focused text box.
     virtual void OnKeyDown(int key, bool ctrl, bool shift);
+    // The window changed shape. Screens laid out against the visible canvas
+    // - anything spanning the full width, or pinned to an edge - are stale
+    // after this and should re-lay or rebuild.
+    //
+    // The window is SDL_WINDOW_RESIZABLE, so this is reachable by dragging a
+    // corner, not only by changing resolution in Settings.
+    virtual void OnResize() {}
+
     virtual void OnMouseDown(float x, float y);
 
     // Right button. Separate from OnMouseDown because the button that fired

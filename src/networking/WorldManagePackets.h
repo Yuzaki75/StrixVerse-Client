@@ -392,3 +392,46 @@ private:
         }
     }
 };
+
+// Server -> client: a line the server wrote, not a player.
+//
+// Every management reply used to ride ChatMessagePacket with SenderID left at
+// zero, which the client rendered as "Player 0: ...". Giving the server its own
+// channel is what lets the chat log tell a refusal from something a player
+// said, and lets a severity pick the colour.
+//
+// Severity matches the notification stack the HUD already keeps:
+//   0 information, 1 warning, 2 success, 3 error.
+class WorldNotificationPacket final : public Packet
+{
+public:
+    static constexpr std::uint8_t FormatVersion = 1;
+
+    bool Valid = false;
+
+    std::uint8_t Severity = 0;
+    std::string  Message;
+
+    Opcode getOpcode() const override { return Opcode::WorldNotification; }
+    const char* getName() const override { return "WorldNotificationPacket"; }
+
+    void serialize(PacketBuffer& buffer) const override
+    {
+        buffer.write(FormatVersion);
+        buffer.write(Severity);
+        buffer.writeString(Message, ProtocolLimits::MaxChatMessageLength);
+    }
+
+    void deserialize(PacketBuffer& buffer) override
+    {
+        Valid = false;
+
+        if (buffer.read<std::uint8_t>() != FormatVersion)
+            return;
+
+        Severity = buffer.read<std::uint8_t>();
+        Message  = buffer.readString(ProtocolLimits::MaxChatMessageLength);
+
+        Valid = true;
+    }
+};

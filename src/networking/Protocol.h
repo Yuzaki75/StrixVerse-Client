@@ -71,17 +71,25 @@ enum class Opcode : uint16_t
     SetWorldSettings    = 107,  // C->S: protection and the allow_* toggles
     BanWorldPlayer      = 109,  // C->S: ban or unban, by username
     StrixCoreUpdated    = 111,  // S->C: the Core's state changed
+    WorldNotification   = 112,  // S->C: a line the server wrote
 
-    // SERVER: implement -- a HUD notification for world-management events
-    // (world saved, protection enabled/disabled, membership changes). Payload:
-    // string Message (uint32 little-endian length + raw characters, capped at
-    // MaxChatMessageLength), then uint8 Severity: 0 info, 1 warn, 2 success.
-    Notification        = 112,
+    // Numbered past the design's reserved block rather than stealing a number
+    // a future feature is already documented against.
+    //
+    // 113 to 116 are listed because the server SENDS them. The client has no
+    // handler for any of the four yet, so they are dropped as unknown opcodes
+    // - but an opcode the server uses must never be free for the client to
+    // assign to something else. Opcode 112 was assigned twice for exactly that
+    // reason, and the duplicate silently won the decode table.
+    RespondWorldInvite  = 113,  // C->S: accept or decline an offered access
+    WorldRoleChanged    = 114,  // S->C: someone's standing in this world changed
+    GemBalance          = 115,  // S->C: the recipient's gem wallet changed
+    BlockDamaged        = 116,  // S->C: a block took a punch; cracks progress
+    PlayerBuffs         = 117,  // S->C: what is running on you, and for how long
 
     // 108 SetWorldSpawn and 110 TransferWorldOwner are reserved by the design
     // and deliberately unimplemented; the gaps are left so they land on their
-    // own numbers when they arrive. 112 was the design's WorldNotification
-    // slot and is now taken by Notification above.
+    // own numbers when they arrive.
     EntityUpdate = 25,
     EntitySpawn  = 26,
     EntityRemove = 27,
@@ -135,6 +143,7 @@ namespace ProtocolLimits
     inline constexpr std::size_t MaxUsernameLength    = 32;
     inline constexpr std::size_t MaxEmailLength       = 254;
     inline constexpr std::size_t MaxPasswordLength    = 128;
+    inline constexpr std::size_t MaxTotpCodeLength    = 16;   // mirrors server PacketLimits
     inline constexpr std::size_t MaxChatMessageLength = 256;
     inline constexpr std::size_t MaxWorldNameLength   = 64;
     inline constexpr std::size_t MaxReasonLength      = 256;

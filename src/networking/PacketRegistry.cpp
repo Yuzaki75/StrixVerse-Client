@@ -9,9 +9,10 @@
 #include "LoginFailedPacket.h"
 #include "LoginPacket.h"
 #include "LoginSuccessPacket.h"
-#include "NotificationPacket.h"
 #include "PingPacket.h"
+#include "PlayerBuffsPacket.h"
 #include "PlayerDataPacket.h"
+#include "UseItemPacket.h"
 #include "WorldListPacket.h"
 #include "StrixCorePacket.h"
 #include "WorldManagePackets.h"
@@ -102,16 +103,19 @@ void PacketRegistry::registerAllPacketTypes()
     add(Opcode::PlayerMove,   [] { return std::make_shared<PlayerMovePacket>(); });
     add(Opcode::PlayerRemove, [] { return std::make_shared<PlayerRemovePacket>(); });
     add(Opcode::PlayerData,   [] { return std::make_shared<PlayerDataPacket>(); });
+    add(Opcode::PlayerBuffs,  [] { return std::make_shared<PlayerBuffsPacket>(); });
     add(Opcode::WorldList,    [] { return std::make_shared<WorldListPacket>(); });
     add(Opcode::StrixCoreUpdated, [] { return std::make_shared<StrixCoreUpdatedPacket>(); });
     add(Opcode::WorldInfo,    [] { return std::make_shared<WorldInfoPacket>(); });
     add(Opcode::WorldMembers, [] { return std::make_shared<WorldMembersPacket>(); });
-    add(Opcode::Notification, [] { return std::make_shared<NotificationPacket>(); });
+    add(Opcode::WorldNotification,
+        [] { return std::make_shared<WorldNotificationPacket>(); });
 
     // Inventory. InventoryUpdate is inbound only - the server disconnects a
     // client that sends one - but it still needs an entry here to be decoded.
     add(Opcode::Inventory,       [] { return std::make_shared<InventoryPacket>(); });
     add(Opcode::InventoryUpdate, [] { return std::make_shared<InventoryUpdatePacket>(); });
+    add(Opcode::UseItem,         [] { return std::make_shared<UseItemPacket>(); });
 
     // Chat
     add(Opcode::ChatMessage, [] { return std::make_shared<ChatMessagePacket>(); });

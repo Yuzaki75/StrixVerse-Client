@@ -188,6 +188,14 @@ void PlayerListPanel::Toggle()
 
 void PlayerListPanel::SetPlayers(const std::vector<Entry>& players)
 {
+    // The roster has no revision counter to key on, so GameScreen pushes it
+    // every frame. Without this test that meant tearing down and rebuilding
+    // every row sixty times a second - a few thousand UI elements per second
+    // for a list that almost never changes, and it ran while the panel was
+    // shut as well.
+    if (players == players_)
+        return;
+
     players_ = players;
 
     if (open_)

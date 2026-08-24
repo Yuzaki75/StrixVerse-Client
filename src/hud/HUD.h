@@ -53,7 +53,23 @@ public:
     void SetStats(const Stats& stats);
 
     // Add a chat message
-    void AddChatMessage(const std::string& message);
+    // What wrote this line. Player speech and the server's own notices share
+    // the log, and only the sender can say which is which - the previous
+    // version guessed from the wording, because the server had no channel of
+    // its own to arrive on.
+    //
+    // The values follow the notification severity scale the server sends:
+    // 0 information, 1 warning, 2 success, 3 error.
+    enum class ChatKind
+    {
+        Player  = -1,
+        System  = 0,
+        Warning = 1,
+        Success = 2,
+        Error   = 3,
+    };
+
+    void AddChatMessage(const std::string& message, ChatKind kind = ChatKind::Player);
 
     // Pushes a system notice onto the top-centre notification stack. This is
     // the channel for join/left/connection events, kept out of the chat log
@@ -218,9 +234,26 @@ private:
         float remaining = 0.0f;
     };
 
+    // Pins the four HUD sections to the window's own edges rather than to
+    // the 1920x1080 design canvas.
+    //
+    // UIScale keeps that canvas centred and lets the axis with spare room see
+    // more of the world, which is right for terrain and wrong for a HUD: at
+    // 2.45:1 the health panel sat 290 pixels in from the left with empty
+    // gutter beside it, because "20 from the left" meant 20 from the canvas,
+    // and the canvas no longer started at the window edge.
+    //
+    // Called on build and again whenever the framebuffer changes shape, which
+    // is why the last shape is remembered.
+    void LayoutForCanvas();
+
+    int m_LaidOutWidth  = 0;
+    int m_LaidOutHeight = 0;
+
     static constexpr std::size_t kMaxNotifications = 5;
 
-    // Severity: 0 info, 1 warn, 2 success - matching NotificationPacket.
+    // Severity: 0 info, 1 warn, 2 success, 3 error - matching
+    // WorldNotificationPacket, which is where these arrive from.
     void AddNotification(const std::string& message, float duration, int severity);
     void CloseNotification(std::size_t index);
     void LayoutNotifications();

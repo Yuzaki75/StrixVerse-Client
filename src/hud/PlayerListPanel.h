@@ -27,6 +27,11 @@ public:
     {
         std::string name;
         std::string role;   // "Developer", "Moderator" or "Player".
+
+        bool operator==(const Entry& other) const
+        {
+            return name == other.name && role == other.role;
+        }
     };
 
     PlayerListPanel(Engine* engine, UIManager* uiManager);

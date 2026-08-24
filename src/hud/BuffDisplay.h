@@ -66,6 +66,15 @@ private:
     };
 
     void BuildFrame();
+
+    // Pins the column to the window's top-left, the same edge the health and
+    // level panels above it are pinned to. Called on build and whenever the
+    // framebuffer changes shape.
+    void LayoutForCanvas();
+
+    int laidOutWidth_  = 0;
+    int laidOutHeight_ = 0;
+
     void RebuildRows();
     void ApplyBars() const;
     void UpdateVisibility();

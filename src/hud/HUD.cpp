@@ -91,6 +91,10 @@ void HUD::Initialize()
     CreateChatSection();
     CreateInventorySection();
 
+    // The sections are built at design coordinates; this moves them onto the
+    // window's actual edges.
+    LayoutForCanvas();
+
     LOG_INFO("HUD initialized");
 }
 
@@ -102,6 +106,10 @@ void HUD::Update(float deltaTime)
     // before the HUD existed are drained into a fully built stack.
     if (!m_NotificationBound && m_Engine)
         BindNotificationSource(&m_Engine->getNetworkManager());
+
+    // Cheap enough to test every frame and far simpler than subscribing to a
+    // resize the HUD would then have to unsubscribe from in its destructor.
+    LayoutForCanvas();
 
     // Tick the stack down, then repaint what survives at its current fade.
     // The first kEnterSeconds ease in (and slide into place) and the last
@@ -210,14 +218,29 @@ bool HUD::IsSystemChatMessage(const std::string& message)
     return message == "Welcome to StrixVerse!";
 }
 
-void HUD::AddChatMessage(const std::string& message)
+void HUD::AddChatMessage(const std::string& message, ChatKind kind)
 {
     // System notices share the log but must not read as something a person
-    // said, so they are dropped to the Muted tone while player speech keeps
-    // the body Subtext colour.
+    // said. The kind is now told to us rather than inferred: the server has its
+    // own channel, so a line's origin is a fact rather than a guess about its
+    // wording. IsSystemChatMessage remains the fallback for the one line that
+    // still arrives as player chat with no sender - the operator broadcast.
     ChatMessage entry;
-    entry.text  = message;
-    entry.color = IsSystemChatMessage(message) ? UITheme::Muted : UITheme::Subtext;
+    entry.text = message;
+
+    switch (kind)
+    {
+    case ChatKind::Warning: entry.color = UITheme::Warning; break;
+    case ChatKind::Success: entry.color = UITheme::Success; break;
+    case ChatKind::Error:   entry.color = UITheme::Danger;  break;
+    case ChatKind::System:  entry.color = UITheme::Accent;  break;
+
+    case ChatKind::Player:
+    default:
+        entry.color = IsSystemChatMessage(message) ? UITheme::Muted
+                                                   : UITheme::Subtext;
+        break;
+    }
 
     m_ChatMessages.push_back(std::move(entry));
     if (m_ChatMessages.size() > MAX_CHAT_MESSAGES)
@@ -299,6 +322,10 @@ void HUD::BindNotificationSource(NetworkManager* network)
         [this](const std::string& message, int severity)
         {
             AddNotification(message, kNotificationSeconds, severity);
+
+            // And into the log, so a notice the player missed is still there to
+            // scroll back to. The severity is the kind: they share a scale.
+            AddChatMessage(message, static_cast<ChatKind>(severity));
         });
 }
 
@@ -311,15 +338,23 @@ void HUD::AddNotification(const std::string& message, float duration, int severi
     while (m_Notifications.size() >= kMaxNotifications)
         CloseNotification(0);
 
-    constexpr float kWidth  = S(420.0f);
-    constexpr float kHeight = S(30.0f);
+    // Sized to the message rather than to a constant. The old fixed S(420)
+    // came out 986 design units wide - over half the canvas - so a three-word
+    // notice ran under the stat panels on one side and the chat log on the
+    // other. The bounds keep a one-word notice from looking like a glitch and
+    // a long one from spanning the screen.
+    constexpr float kMinWidth = S(160.0f);
+    constexpr float kMaxWidth = S(560.0f);
+    constexpr float kHeight   = S(30.0f);
+    constexpr float kPadLeft  = S(16.0f);
+    constexpr float kPadRight = S(14.0f);
 
     Notification note;
     note.remaining   = duration;
     note.background  = UITheme::Hex(0x1E2230, 0.82f);
 
     note.panel = std::make_shared<UIPanel>();
-    note.panel->setSize(kWidth, kHeight);
+    note.panel->setSize(kMinWidth, kHeight);
     // Created fully transparent: the next Update fades it in over
     // kEnterSeconds, so a notice never appears at full strength for a frame.
     note.panel->setBackgroundColor(UITheme::WithAlpha(note.background, 0.0f));
@@ -333,12 +368,13 @@ void HUD::AddNotification(const std::string& message, float duration, int severi
     {
     case 1:  note.accentColor = UITheme::Gold;    break;
     case 2:  note.accentColor = UITheme::Success; break;
+    case 3:  note.accentColor = UITheme::Danger;  break;
     default: note.accentColor = (m_Notifications.size() % 2 == 0) ? UITheme::Secondary
                                                                   : UITheme::Accent;
              break;
     }
 
-    if (severity == 1 || severity == 2)
+    if (severity >= 1 && severity <= 3)
     {
         note.borderAlpha = 0.65f;
         note.panel->setBorder(UITheme::WithAlpha(note.accentColor, 0.0f),
@@ -357,11 +393,18 @@ void HUD::AddNotification(const std::string& message, float duration, int severi
     note.label->setTextColor(UITheme::WithAlpha(UITheme::Text, 0.0f));
     note.label->setAlignment(UILabel::Alignment::Left);
     note.label->setVerticalAlignment(UILabel::VerticalAlignment::Middle);
-    note.label->setPosition(S(16.0f), 0.0f);
-    note.label->setSize(kWidth - S(24.0f), kHeight);
-    note.panel->addChild(note.label);
-
+    note.label->setPosition(kPadLeft, 0.0f);
     note.label->setText(message);
+
+    // Measured only now that both the font and the text are set; a label with
+    // neither measures zero.
+    const float textWidth = note.label->measureTextWidth();
+    const float panelWidth =
+        std::clamp(textWidth + kPadLeft + kPadRight, kMinWidth, kMaxWidth);
+
+    note.panel->setSize(panelWidth, kHeight);
+    note.label->setSize(panelWidth - kPadLeft - kPadRight, kHeight);
+    note.panel->addChild(note.label);
 
     m_Notifications.push_back(std::move(note));
     LayoutNotifications();
@@ -381,10 +424,27 @@ void HUD::CloseNotification(std::size_t index)
 
 void HUD::LayoutNotifications()
 {
-    // Top-centre stack, below the top edge and clear of the stat panels on
-    // the left and the chat panel on the right.
-    constexpr float kTopMargin = S(20.0f);
+    // Top-centre stack, below the stat panels on the left and the chat panel
+    // on the right rather than merely between them: a long notice is wider
+    // than the corridor those two leave, so clearing them horizontally is not
+    // something the width can be trusted to do. S(170) is the chat panel's
+    // bottom edge - S(20) of margin plus its S(150) of height - and the lower
+    // of the two, so starting past it clears both.
+    constexpr float kTopMargin = S(190.0f);
     constexpr float kGap       = S(6.0f);
+
+    // Measured from the window, like the panels it has to clear.
+    float originX = 0.0f;
+    float originY = 0.0f;
+    float visibleWidth = UIScale::kDesignWidth;
+
+    if (m_Engine)
+    {
+        const UIScale& scale = m_Engine->GetUIScale();
+        originX      = scale.GetVisibleLeft();
+        originY      = scale.GetVisibleTop();
+        visibleWidth = scale.GetVisibleWidth();
+    }
 
     for (std::size_t i = 0; i < m_Notifications.size(); ++i)
     {
@@ -398,10 +458,64 @@ void HUD::LayoutNotifications()
         const float slide = (1.0f - enter) * S(10.0f);
 
         note.panel->setPosition(
-            (UIScale::kDesignWidth - note.panel->getWidth()) * 0.5f,
-            kTopMargin + static_cast<float>(i) *
-                             (note.panel->getHeight() + kGap) - slide);
+            originX + (visibleWidth - note.panel->getWidth()) * 0.5f,
+            originY + kTopMargin + static_cast<float>(i) *
+                                       (note.panel->getHeight() + kGap) - slide);
     }
+}
+
+void HUD::LayoutForCanvas()
+{
+    if (!m_Engine)
+        return;
+
+    const UIScale& scale = m_Engine->GetUIScale();
+
+    const int width  = scale.GetFramebufferWidth();
+    const int height = scale.GetFramebufferHeight();
+    if (width <= 0 || height <= 0)
+        return;
+
+    if (width == m_LaidOutWidth && height == m_LaidOutHeight)
+        return;
+
+    m_LaidOutWidth  = width;
+    m_LaidOutHeight = height;
+
+    // The window's edges, in canvas coordinates. At 16:9 these are exactly
+    // 0,0 and 1920,1080 and every line below is a no-op; at any other shape
+    // they are where the window actually is.
+    const float left   = scale.GetVisibleLeft();
+    const float top    = scale.GetVisibleTop();
+    const float right  = left + scale.GetVisibleWidth();
+    const float bottom = top + scale.GetVisibleHeight();
+
+    constexpr float kEdge = S(20.0f);
+
+    if (m_HealthPanel)
+        m_HealthPanel->setPosition(left + kEdge, top + kEdge);
+
+    if (m_LevelPanel)
+        m_LevelPanel->setPosition(left + kEdge, top + S(66.0f));
+
+    if (m_ChatBackground)
+    {
+        m_ChatBackground->setPosition(right - m_ChatBackground->getWidth() - kEdge,
+                                      top + kEdge);
+    }
+
+    if (m_InventoryBar)
+    {
+        // Centred on the window rather than on the canvas, so it stays under
+        // the player's eye line on a wide monitor.
+        m_InventoryBar->setPosition(
+            left + (scale.GetVisibleWidth() - m_InventoryBar->getWidth()) * 0.5f,
+            bottom - m_InventoryBar->getHeight() - S(64.0f));
+    }
+
+    // The notification stack measures from the chat panel's lower edge, so it
+    // has to be re-laid whenever that edge moves.
+    LayoutNotifications();
 }
 
 void HUD::CreateHealthSection()

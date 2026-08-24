@@ -47,6 +47,12 @@ private:
     bool        connecting_ = false;
     std::string pendingUsername_;
     std::string pendingPassword_;
+    std::string pendingTotpCode_;
+
+    // Two-factor reveal. The field shares the remember-me row's slot: once the
+    // server has asked for a code, "remember me" is the irrelevant choice, so
+    // it steps aside rather than the whole panel relaying itself out.
+    void RevealTotpField();
 
     // Remembered sign-in. The username only -- never the password. See the
     // note in LoginScreen.cpp for why.
@@ -59,10 +65,14 @@ private:
 
     std::shared_ptr<UITextBox>  usernameBox_;
     std::shared_ptr<UITextBox>  passwordBox_;
+    std::shared_ptr<UITextBox>  totpBox_;
+    std::shared_ptr<UILabel>    totpLabel_;
     std::shared_ptr<UICheckBox> rememberBox_;
+    std::shared_ptr<UILabel>    forgotLabel_;
     std::shared_ptr<UIButton>   loginButton_;
     std::shared_ptr<UIButton>   registerButton_;
     std::shared_ptr<UILabel>    statusLabel_;
 
-    bool submitting_ = false;
+    bool submitting_    = false;
+    bool totpRequested_ = false;
 };

@@ -45,7 +45,11 @@ public:
     bool IsOfflineMode() const { return m_OfflineMode; }
 
     // --- Asynchronous API -------------------------------------------------
-    void BeginLogin(const std::string& usernameOrEmail, const std::string& password);
+    // totpCode is the 6-digit authenticator code; empty for accounts without
+    // 2FA. When a login fails because the server wants a code, the status
+    // message says so and LoginScreen re-submits with the field's contents.
+    void BeginLogin(const std::string& usernameOrEmail, const std::string& password,
+                    const std::string& totpCode = {});
     void BeginRegister(const std::string& username,
                        const std::string& email,
                        const std::string& password);

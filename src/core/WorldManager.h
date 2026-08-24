@@ -27,6 +27,16 @@ struct WorldInfo
     bool favourite  = false;
     bool recent     = false;
 
+    // A claimed world whose Strix Core is enforcing permissions. Shown in the
+    // browser so a player can tell before joining that they will not be able
+    // to build there, rather than finding out by being refused.
+    bool protectedWorld = false;
+
+    // False when the owner has closed the world to non-members. Joining is
+    // still offered - the server decides, and it may know the caller is a
+    // member - but the row says what to expect.
+    bool allowsVisitors = true;
+
     bool HasPopulation() const { return maxPlayers > 0; }
     bool IsFull() const { return maxPlayers > 0 && players >= maxPlayers; }
 };

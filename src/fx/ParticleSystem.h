@@ -25,6 +25,11 @@ namespace StrixVerse
         // the tile renderer draws in). life counts down from maxLife; alpha is
         // derived at render time as life / maxLife.
         // -----------------------------------------------------------------------------
+        // Default burst particle dimensions - the block-debris chip size, which
+        // is what EmitBurst produced for every caller before it took a size.
+        inline constexpr float kDefaultBurstSizeMin = 3.0f;
+        inline constexpr float kDefaultBurstSizeMax = 6.0f;
+
         struct Particle
         {
             float x = 0.0f;
@@ -66,9 +71,17 @@ namespace StrixVerse
             // speed between speedMin and speedMax, all sharing colour, gravity
             // and lifetime (with a small per-particle jitter so a burst does not
             // die in one visible step).
+            //
+            // sizeMin/sizeMax default to the block-debris dimensions, which is
+            // what this used to hardcode: every caller of this general-purpose
+            // burst got rock-chip particles whatever it was depicting, so the
+            // Strix Core puff was made of gravel. They are parameters now, and
+            // the defaults keep block debris looking exactly as it did.
             void EmitBurst(float x, float y, int count,
                            float speedMin, float speedMax,
-                           const Color& color, float gravity, float lifetime);
+                           const Color& color, float gravity, float lifetime,
+                           float sizeMin = kDefaultBurstSizeMin,
+                           float sizeMax = kDefaultBurstSizeMax);
 
             // Block debris: a downward-biased burst of block-coloured chips that
             // fall and settle. tileX/tileY are tile coordinates; they are
@@ -94,6 +107,10 @@ namespace StrixVerse
             void Clear() { m_Count = 0; }
 
         private:
+            // Which end of the Aether palette the next sparkle takes. See
+            // EmitAether.
+            bool m_AetherViolet = true;
+
             std::array<Particle, kMaxParticles> m_Pool{};
             std::size_t m_Count = 0;
 
