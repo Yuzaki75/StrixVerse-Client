@@ -746,8 +746,15 @@ void Engine::CaptureScreenshot()
     // Tightly packed rows. The default is 4-byte alignment, which silently
     // shears the image whenever the row length is not a multiple of four -- a
     // 1279-pixel-wide window would come out skewed rather than failing.
+    GLint previousAlignment = 4;
+    glGetIntegerv(GL_PACK_ALIGNMENT, &previousAlignment);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    // Put it back. Pack alignment is global GL state, and leaving it at 1
+    // would silently change how any later pixel read unpacks its rows -- a
+    // fault that would surface far from the screenshot code that caused it.
+    glPixelStorei(GL_PACK_ALIGNMENT, previousAlignment);
 
     // OpenGL's origin is bottom-left and every image format here is top-down,
     // so the rows come back upside down. The same trap the asset loader
@@ -779,7 +786,17 @@ void Engine::CaptureScreenshot()
     char stamp[32] = {};
     std::strftime(stamp, sizeof(stamp), "%Y%m%d-%H%M%S", &tm);
 
-    const std::string path = std::string("screenshots/strixverse-") + stamp + ".png";
+    // Seconds are not fine-grained enough to name a file by. Two presses in
+    // one second resolved to the same path, the second overwrote the first,
+    // and stbi_write_png returned success -- so the log claimed two
+    // screenshots while only the later one existed. Suffix until the name is
+    // free rather than clobber something the player meant to keep.
+    std::string path = std::string("screenshots/strixverse-") + stamp + ".png";
+    for (int dedupe = 2; std::filesystem::exists(path, ec) && dedupe < 1000; ++dedupe)
+    {
+        path = std::string("screenshots/strixverse-") + stamp
+             + "-" + std::to_string(dedupe) + ".png";
+    }
 
     if (stbi_write_png(path.c_str(), width, height, 4, pixels.data(),
                        static_cast<int>(stride)) == 0)

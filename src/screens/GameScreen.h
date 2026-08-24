@@ -71,10 +71,14 @@ private:
     // screen. Does nothing if none arrived.
     void BuildWorldFromServerTerrain();
 
-    // Left click breaks, right click places. Both only ask -- the server
+    // Left click is the only world action: the selected hotbar slot decides
+    // whether it punches, wrenches or places. It only asks -- the server
     // decides, and the change appears when its broadcast arrives.
+    //
+    // OnRightMouseDown is deliberately not overridden. The base is a no-op, so
+    // the right button does nothing in the world rather than doing a second,
+    // redundant thing.
     void OnMouseDown(float x, float y) override;
-    void OnRightMouseDown(float x, float y) override;
 
     // True while a UI element holds focus or the game is paused, so world edits
     // are suppressed for the same reason movement already is.
@@ -204,7 +208,8 @@ private:
     bool WorldPixelToCanvas(float worldX, float worldY, float& outX, float& outY) const;
 
     // --- Zoom ---------------------------------------------------------------
-    void OnScroll(float canvasX, float canvasY, float delta) override;
+    // Zoom rides on OnMouseWheel behind a shift/ctrl modifier; the wheel's
+    // plain gesture belongs to hotbar cycling.
 
     // Multiplicative, so each notch feels the same at every zoom level; a fixed
     // step crawls when zoomed out and lurches when zoomed in.

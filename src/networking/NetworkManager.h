@@ -145,6 +145,11 @@ public:
         float       tileX = 0.0f;
         float       tileY = 0.0f;
         Appearance  look{};
+
+        // Standing in the current world, as the server resolved it at spawn.
+        // Held here rather than looked up per frame because the roster is the
+        // only place that wants it and the server is the only source of it.
+        uint8_t     worldRole = 0;
     };
 
     // The roster is kept here rather than on the gameplay screen because the

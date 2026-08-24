@@ -10,6 +10,22 @@
 class PlayerSpawnPacket final : public Packet
 {
 public:
+    // Must equal the mirror in Server/src/network/Packets/PlayerSpawnPacket.cpp.
+    //
+    // This packet had been extending itself with a trailing-optional field
+    // read behind Remaining(), which works for exactly one append and cannot
+    // tell an old sender from a truncated frame. It is also blind to the
+    // failure this byte exists to catch: CharacterDataPacket drifted to
+    // format 2 the same day, and the version check turned that into one loud
+    // log line instead of fields read at the wrong offset. Five hand-mirrored
+    // layouts in this project have drifted; this one no longer opts out.
+    //
+    //   1 - EntityID through WorldRole
+    static constexpr std::uint8_t FormatVersion = 1;
+
+    // True once a packet of a version this build understands has been read.
+    bool Valid = false;
+
     uint64_t EntityID = 0;
     std::string Username;
     float X = 0.0f;
@@ -38,10 +54,15 @@ public:
 
     Opcode getOpcode() const override { return Opcode::PlayerSpawn; }
 
+    // The spawning player's standing in this world, as the server resolved it.
+    // Zero (Visitor) when talking to a server that does not send it.
+    std::uint8_t WorldRole = 0;
+
     const char* getName() const override { return "PlayerSpawnPacket"; }
 
     void serialize(PacketBuffer& buffer) const override
     {
+        buffer.write(FormatVersion);
         buffer.write(EntityID);
         buffer.writeString(Username, ProtocolLimits::MaxUsernameLength);
         buffer.write(X);
@@ -53,10 +74,16 @@ public:
         buffer.write(Appearance.shirt);
         buffer.write(Appearance.trousers);
         buffer.write(Appearance.boots);
+        buffer.write(WorldRole);
     }
 
     void deserialize(PacketBuffer& buffer) override
     {
+        Valid = false;
+
+        if (buffer.read<std::uint8_t>() != FormatVersion)
+            return;
+
         EntityID = buffer.read<uint64_t>();
         Username = buffer.readString(ProtocolLimits::MaxUsernameLength);
         X = buffer.read<float>();
@@ -68,5 +95,12 @@ public:
         Appearance.shirt    = buffer.read<uint8_t>();
         Appearance.trousers = buffer.read<uint8_t>();
         Appearance.boots    = buffer.read<uint8_t>();
+
+        // The server was already sending this and the client dropped it on the
+        // floor, which is why PlayerListPanel::RoleColor could never fire: the
+        // only producer of a row role hardcoded "Player".
+        WorldRole = buffer.read<std::uint8_t>();
+
+        Valid = true;
     }
 };

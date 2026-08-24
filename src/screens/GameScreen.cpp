@@ -48,6 +48,21 @@ namespace
 {
     constexpr float S(float previewPixels) { return UITheme::Scaled(previewPixels); }
 
+    // Mirrors Server/src/world/WorldRole.h. The client is told a role and
+    // renders it; it never decides one, so this is a display table and not a
+    // permission table.
+    const char* WorldRoleName(std::uint8_t role)
+    {
+        switch (role)
+        {
+        case 1:  return "Member";
+        case 2:  return "Builder";
+        case 3:  return "Co-Owner";
+        case 4:  return "Owner";
+        default: return "Visitor";
+        }
+    }
+
     // Tile 24 is an unclaimed Strix Core; 25-28 are levels I-IV. Mirrors
     // Server/src/item/ItemDefinition.h.
     constexpr std::uint8_t kStrixCoreUnclaimedTile = 24;
@@ -267,20 +282,25 @@ void GameScreen::RefreshRoster()
 
     // Us first, then everyone else in id order-ish map order; the panel only
     // lists rows, it does not rank them.
+    //
+    // Our own standing comes from WorldInfo, which is the same answer the
+    // management panel is drawn from; everyone else's rides in with their
+    // spawn. Both were previously the literal "Player", which is why
+    // PlayerListPanel::RoleColor could never reach its Developer or Moderator
+    // branches - the data existed on the wire and nothing read it.
+    const NetworkManager& network = engine_->getNetworkManager();
+
     const std::string own = engine_->GetSignedInUser();
     if (!own.empty())
-        players.push_back({own, "Player"});
+        players.push_back({own, WorldRoleName(network.getWorldManageState().viewerRole)});
 
-    // The spawn roster carries a name and a look but no role field, so every
-    // row reads as "Player". When the server starts sending roles this is the
-    // line to change.
-    for (const auto& [id, remote] : engine_->getNetworkManager().getRemotePlayers())
+    for (const auto& [id, remote] : network.getRemotePlayers())
     {
         (void)id;
         players.push_back({remote.username.empty()
                                ? std::format("Player {}", id)
                                : remote.username,
-                           "Player"});
+                           WorldRoleName(remote.worldRole)});
     }
 
     playerListPanel_->SetPlayers(players);
@@ -1167,68 +1187,44 @@ void GameScreen::OnMouseDown(float x, float y)
         return;
     }
 
-    // Primary attack attempt. Fired on the swing rather than the confirm -
-    // a punch that hits nothing (or is refused) should still sound like one.
-    if (hud_ && hud_->GetSelectedTool() == HUD::Tool::Punch)
-        PlaySfx("punch");
-
-    engine_->getNetworkManager().sendBlockBreak(tileX, tileY, SelectedToolItemId());
-}
-
-void GameScreen::OnRightMouseDown(float x, float y)
-{
-    if (!engine_ || GameplayInputBlocked() || UiConsumesPointer(x, y))
-        return;
-
-    int32_t tileX = 0;
-    int32_t tileY = 0;
-    if (!CanvasToServerTile(x, y, tileX, tileY))
-        return;
-
-    if (hud_ && hud_->GetSelectedTool() == HUD::Tool::Wrench)
-    {
-        InspectPlayerAt(tileX, tileY);
-        return;
-    }
-
+    // One button, and what you are holding decides what it does.
+    //
+    // Left click used to always break, with placing on the right button, so the
+    // selected slot only mattered for the wrench. Now the fist breaks, the
+    // wrench interacts (above), and an item places - which makes the hotbar
+    // selection the whole interface, with one thing to learn instead of two
+    // buttons whose meanings depended on the slot anyway.
     auto& network = engine_->getNetworkManager();
 
-    // Prefer whatever the hotbar has selected. Hotbar slots 0 and 1 are the
-    // tools, so server inventory slot N sits at hotbar slot N + 2.
-    uint16_t itemId = 0;
-    if (hud_ && hud_->GetSelectedTool() == HUD::Tool::Item)
+    if (!hud_ || hud_->GetSelectedTool() == HUD::Tool::Punch)
     {
-        const uint8_t inventorySlot =
-            static_cast<uint8_t>(hud_->GetSelectedSlot() - HUD::kFirstItemSlot);
-
-        const auto it = network.getInventory().find(inventorySlot);
-        if (it != network.getInventory().end() && !it->second.IsEmpty())
-            itemId = it->second.itemId;
-    }
-
-    // Nothing selected, or an empty slot: fall back to the first thing held,
-    // so right-click still does something sensible before anyone has chosen.
-    if (itemId == 0)
-    {
-        for (const auto& [slotIndex, slot] : network.getInventory())
-        {
-            (void)slotIndex;
-            if (!slot.IsEmpty())
-            {
-                itemId = slot.itemId;
-                break;
-            }
-        }
-    }
-
-    if (itemId == 0)
-    {
-        LOG_INFO("GameScreen: nothing in the inventory to place");
+        // Fired on the swing rather than the confirm - a punch that hits
+        // nothing (or is refused) should still sound like one.
+        PlaySfx("punch");
+        network.sendBlockBreak(tileX, tileY, SelectedToolItemId());
         return;
     }
 
-    network.sendBlockPlace(tileX, tileY, itemId);
+    // Holding an item: place exactly what is selected, and nothing if that slot
+    // is empty.
+    //
+    // There is deliberately no fall back to "the first thing in the bag". The
+    // old right-click path had one, which was harmless while placing lived on
+    // its own button; here it would mean a click placing a block the player
+    // never chose, and the selection would stop meaning anything.
+    const uint8_t inventorySlot =
+        static_cast<uint8_t>(hud_->GetSelectedSlot() - HUD::kFirstItemSlot);
+
+    const auto held = network.getInventory().find(inventorySlot);
+    if (held == network.getInventory().end() || held->second.IsEmpty())
+    {
+        LOG_INFO("GameScreen: the selected slot is empty; nothing to place");
+        return;
+    }
+
+    network.sendBlockPlace(tileX, tileY, held->second.itemId);
 }
+
 
 std::uint8_t GameScreen::ServerIdAt(int32_t tileX, int32_t tileY) const
 {
@@ -2207,29 +2203,32 @@ void GameScreen::RenderBackground() const
 
     if (worldBackdrop_)
     {
-        // Cover, preserving the artwork's aspect: sized off the taller of the
-        // two axes so no edge of the view can ever see past it.
+        // One copy of the artwork, stretched over the world's full height.
+        //
+        // It used to tile vertically like it tiles horizontally, and that read
+        // as a bug: the seam between two stacked copies puts the bottom of one
+        // picture - its grass - directly above the sky of the next, so a
+        // yellow-green band floated at the top of the screen behind the HUD.
+        // Anchored to the world instead, the picture's own sky sits over the
+        // game's sky and its grass lands deep underground, where the depth
+        // darkening below buries it.
         const float imgW = static_cast<float>(worldBackdrop_->GetWidth());
         const float imgH = static_cast<float>(worldBackdrop_->GetHeight());
         if (imgW > 0.0f && imgH > 0.0f)
         {
-            constexpr float kCover   = 1.6f;      // of the view height
             constexpr float kParallax = 0.25f;    // moves at a quarter of the world
+            constexpr float kMargin   = 4.0f;     // tiles of overscan, top and bottom
 
-            float drawH = (bottom - top) * kCover;
-            float drawW = drawH * (imgW / imgH);
-            if (drawW < right - left)
-            {
-                drawW = (right - left) * 1.1f;
-                drawH = drawW * (imgH / imgW);
-            }
+            const float drawTop    = -kMargin * kTileSize;
+            const float drawHeight = worldHeightPx + 2.0f * kMargin * kTileSize;
+            const float drawWidth  = drawHeight * (imgW / imgH);
 
-            // Parallax: the layer slides at kParallax of the camera's speed.
-            // Shifting the tile grid by centre * (1 - kParallax) is what makes
-            // that read - as the camera moves d, the grid moves d*(1-p) the
-            // other way, and the picture crosses the screen at d*p.
+            // Horizontal parallax only: the layer slides at kParallax of the
+            // camera's sideways speed. Shifting the tile grid by
+            // centre.x * (1 - kParallax) is what makes that read - as the
+            // camera moves d, the grid moves d*(1-p) the other way, and the
+            // picture crosses the screen at d*p.
             const float offsetX = centre.x * (1.0f - kParallax);
-            const float offsetY = centre.y * (1.0f - kParallax);
 
             auto firstBefore = [](float viewEdge, float size, float shift) {
                 // Largest grid line at or before viewEdge, for tiles spaced
@@ -2244,16 +2243,12 @@ void GameScreen::RenderBackground() const
             // reason.
             const Color tint(0.62f, 0.64f, 0.74f, 1.0f);
 
-            const float startX = firstBefore(left - drawW, drawW, offsetX);
-            const float startY = firstBefore(top - drawH, drawH, offsetY);
+            const float startX = firstBefore(left - drawWidth, drawWidth, offsetX);
 
-            for (float y = startY; y < bottom; y += drawH)
+            for (float x = startX; x < right; x += drawWidth)
             {
-                for (float x = startX; x < right; x += drawW)
-                {
-                    batch->Draw(*worldBackdrop_, x, y, drawW, drawH,
-                                tint.r, tint.g, tint.b, tint.a);
-                }
+                batch->Draw(*worldBackdrop_, x, drawTop, drawWidth, drawHeight,
+                            tint.r, tint.g, tint.b, tint.a);
             }
 
             // Depth darkening over the art. The surface sits in the upper
@@ -2624,7 +2619,10 @@ void GameScreen::HandleGameplayKeys()
 
 void GameScreen::OnMouseWheel(float, float, float delta)
 {
-    if (!hud_ || paused_ || GameplayInputBlocked())
+    // GameplayInputBlocked already covers paused_; it is the single answer to
+    // "is gameplay input live", and restating one of its terms here invites the
+    // next reader to think it is not.
+    if (!hud_ || GameplayInputBlocked())
         return;
 
     // Shift or ctrl held: the wheel zooms the camera instead of cycling the

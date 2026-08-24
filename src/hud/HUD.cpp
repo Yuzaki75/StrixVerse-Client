@@ -584,14 +584,22 @@ void HUD::CreateInventorySection()
         slot->addChild(label);
 
         // Stack count, bottom right, as a hotbar conventionally shows it.
+        //
+        // White on a hard black shadow, not gold. The count sits directly on
+        // top of the item's own art, so its colour has to work against every
+        // icon in the game - and gold failed the one case that matters most,
+        // the gold coins, where a gold "42" on a gold stack was almost
+        // invisible. It was no better over the healing herb or the marble.
+        // White with an offset shadow is the same treatment the world-space
+        // name tags use, and for the same reason: it reads on anything.
         auto count = std::make_shared<UILabel>();
         count->setFont(slotFont);
-        count->setTextColor(UITheme::Gold);
+        count->setTextColor(UITheme::Text);
+        count->setShadow(UITheme::Hex(0x000000, 1.0f), S(1.0f), S(1.0f));
         count->setAlignment(UILabel::Alignment::Right);
         count->setVerticalAlignment(UILabel::VerticalAlignment::Bottom);
         count->setPosition(0.0f, 0.0f);
         count->setSize(slotSize - S(3.0f), slotSize - S(2.0f));
-        slot->addChild(count);
 
         // Artwork sits above the slot background and below the click target.
         auto icon = std::make_shared<UIImage>();
@@ -600,6 +608,16 @@ void HUD::CreateInventorySection()
         icon->setSize(slotSize - iconInset * 2.0f, slotSize - iconInset * 2.0f);
         icon->setVisible(false);
         slot->addChild(icon);
+
+        // The count goes on *after* the icon, so it draws over it.
+        //
+        // Children render in insertion order, and adding the count first put
+        // the artwork on top of it: a two-digit stack had its first digit
+        // hidden behind the icon's lower right, so 42 gold coins read as a
+        // clipped "2" with a fragment beside it. The count is the one thing in
+        // a slot that must never be occluded, because it is the only part that
+        // cannot be inferred from the picture.
+        slot->addChild(count);
 
         auto hint = std::make_shared<UILabel>();
         hint->setFont(slotFont);
@@ -687,39 +705,66 @@ void HUD::SetToolSlot(std::size_t barSlot, const std::string& iconPath,
 std::string HUD::IconPathForItem(uint16_t itemId)
 {
     // Explicit table rather than arithmetic. Item ids and tile ids are related
-    // by the item's placeBlockId, which lives in the server's items.json and
-    // is not sent to the client -- and it is not a formula: 1000 places tile 1,
+    // by the item's placeBlockId, which lives in the server's item table and is
+    // not sent to the client -- and it is not a formula: 1000 places tile 1,
     // but 1004 places tile 6. Guessing would put the wrong picture on the slot.
     //
-    // Seeds are named by their own item id, so those map directly.
+    // Everything here is keyed on the ITEM id. An earlier version also carried
+    // cases 3 to 19 mapping *tile* ids into the same switch, which was not just
+    // dead weight: items 3 and 4 are the Minor and Greater Healing Potions, so
+    // those two rendered as a grass block and a wood block. The only caller
+    // passes an inventory item id, so tile ids have no business in here.
     switch (itemId)
     {
+    // --- consumables -------------------------------------------------------
+    case 1:   return "assets/items/1_health_potion.png";
+    case 2:   return "assets/items/2_mana_potion.png";
+    case 3:   return "assets/items/3_minor_healing_potion.png";
+    case 4:   return "assets/items/4_greater_healing_potion.png";
+
+    // --- equipment ---------------------------------------------------------
+    case 101: return "assets/items/101_iron_sword.png";
+    case 102: return "assets/items/102_leather_armor.png";
+    case 103: return "assets/items/103_wooden_shield.png";
+    case 104: return "assets/items/104_steel_sword.png";
+    case 105: return "assets/items/105_iron_helmet.png";
+    case 106: return "assets/items/106_iron_boots.png";
+
+    // --- materials and currency --------------------------------------------
+    case 201: return "assets/items/201_gold_coins.png";
+    case 301: return "assets/items/301_iron_ore.png";
+    case 302: return "assets/items/302_healing_herb.png";
+    case 401: return "assets/items/401_ancient_relic.png";
+
+    // --- blocks, drawn as the tile they place ------------------------------
     case 1000: return "assets/tiles/001_dirt.png";
     case 1002: return "assets/tiles/002_stone.png";
     case 1004: return "assets/tiles/006_bedrock.png";
     case 1006: return "assets/tiles/013_lava.png";
     case 1008: return "assets/tiles/011_copper_ore.png";
     case 1010: return "assets/tiles/012_lantern.png";
+    case 1012: return "assets/tiles/021_castle_wall.png";
+    case 1014: return "assets/tiles/022_marble.png";
+    case 1016: return "assets/tiles/023_neon_trim.png";
 
+    // The Core is shown unclaimed in the hotbar: that is what a Core in your
+    // inventory is. Which level it becomes is decided by the world it is
+    // planted in, not by the item.
+    case 1018: return "assets/tiles/024_strix_core_unclaimed.png";
+
+    // --- seeds, which have art of their own ---------------------------------
     case 1001: return "assets/items/1001_dirt_seed.png";
     case 1003: return "assets/items/1003_rock_seed.png";
     case 1009: return "assets/items/1009_copper_seed.png";
     case 1011: return "assets/items/1011_lantern_seed.png";
-
-    case 3:  return "assets/tiles/003_grass.png";
-    case 4:  return "assets/tiles/004_wood.png";
-    case 5:  return "assets/tiles/005_leaves.png";
-    case 7:  return "assets/tiles/007_water.png";
-    case 8:  return "assets/tiles/008_torch.png";
-    case 9:  return "assets/tiles/009_chest.png";
-    case 10: return "assets/tiles/010_door.png";
-    case 15: return "assets/tiles/015_coal_ore.png";
-    case 16: return "assets/tiles/016_iron_ore.png";
-    case 17: return "assets/tiles/017_gold_ore.png";
-    case 18: return "assets/tiles/018_diamond_ore.png";
-    case 19: return "assets/tiles/019_sapling.png";
+    case 1013: return "assets/items/1013_castle_wall_seed.png";
+    case 1015: return "assets/items/1015_marble_seed.png";
+    case 1017: return "assets/items/1017_neon_trim_seed.png";
 
     default:
+        // Every item the server currently defines is named above. This is the
+        // drop-in path for one that is not: name a file after the id and it
+        // appears, with a load warning in the log until it exists.
         return std::format("assets/items/{}.png", itemId);
     }
 }

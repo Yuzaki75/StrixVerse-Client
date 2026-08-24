@@ -56,6 +56,27 @@ namespace
         return color;
     }
 
+    // World roles. Gold for the owner, echoing UITheme::Gold's use for
+    // legendary elsewhere; the accent cyan for a Co-Owner, who acts with the
+    // owner's authority; a quieter green for a Builder, who may only build.
+    const Color& OwnerColor()
+    {
+        static const Color c = UITheme::Gold;
+        return c;
+    }
+
+    const Color& CoOwnerColor()
+    {
+        static const Color c = UITheme::Accent;
+        return c;
+    }
+
+    const Color& BuilderColor()
+    {
+        static const Color c = UITheme::Success;
+        return c;
+    }
+
     const Color& PlayerColor()
     {
         static const Color color = UITheme::Text;
@@ -175,8 +196,27 @@ void PlayerListPanel::SetPlayers(const std::vector<Entry>& players)
 
 const Color& PlayerListPanel::RoleColor(const std::string& role)
 {
+    // Two different axes end up in this one string.
+    //
+    // Developer and Moderator are *server* ranks, from players.rank. Owner
+    // through Visitor are *world* roles, from world_members - what you are
+    // here, which changes as you walk between worlds. A player can be both,
+    // and the rank is the rarer, louder fact, so it wins when it is present.
+    //
+    // The world roles were added because the roster had been filling every row
+    // with the literal "Player": the branches below could not fire, and the
+    // spawn packet was already carrying the real role and being discarded one
+    // line before it was read.
     if (role == "Developer") return DeveloperColor();
     if (role == "Moderator") return ModeratorColor();
+
+    if (role == "Owner")    return OwnerColor();
+    if (role == "Co-Owner") return CoOwnerColor();
+    if (role == "Builder")  return BuilderColor();
+
+    // Member and Visitor read plainly: most rows in a busy world are one of
+    // the two, and colouring them would leave nothing for the roles that mean
+    // something.
     return PlayerColor();
 }
 

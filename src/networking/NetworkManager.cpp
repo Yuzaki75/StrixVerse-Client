@@ -234,6 +234,17 @@ bool NetworkManager::initialize()
             {
                 const auto* spawn = static_cast<const PlayerSpawnPacket*>(packet.get());
 
+                // A packet whose version this build does not recognise leaves
+                // every field at its default. Entering that in the roster would
+                // put a nameless player at tile (0,0) - the same reasoning as
+                // the PlayerData handler below.
+                if (!spawn->Valid)
+                {
+                    Logger::Warning("NetworkManager: ignoring PlayerSpawn in an "
+                                    "unrecognised wire format.");
+                    return;
+                }
+
                 // Never enter ourselves in the roster of other players. The
                 // server excludes the joiner from its own spawn broadcast
                 // today, so this has not bitten - but the roster is what the
@@ -249,6 +260,7 @@ bool NetworkManager::initialize()
                 entry.username = spawn->Username;
                 entry.tileX    = spawn->X;
                 entry.tileY    = spawn->Y;
+                entry.worldRole = spawn->WorldRole;
 
                 // What they look like. The server sends this with the spawn
                 // and the client used to stop reading before it, so everyone

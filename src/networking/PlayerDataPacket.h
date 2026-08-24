@@ -16,10 +16,19 @@ class PlayerDataPacket final : public Packet
 public:
     // Must equal CharacterDataPacket::FormatVersion on the server. The byte
     // exists because this layout is maintained by hand in two repositories,
-    // and three times already the two have drifted and been read at the wrong
+    // and the two have now drifted five times, each time read at the wrong
     // offsets without anything noticing - a wrong offset still yields a
-    // number. An unknown version is now refused rather than guessed at.
-    static constexpr uint8_t FormatVersion = 1;
+    // number. An unknown version is refused rather than guessed at.
+    //
+    //   1 - through TileY
+    //   2 - same as 1, plus Gems
+    //
+    // The most recent drift is what this constant being 1 while the server sent
+    // 2 actually cost: every PlayerData was refused, so the client had no name,
+    // no level, no health and - worse - no spawn position, fell back to the
+    // middle of the world, and was then visibly yanked back by the server's
+    // position correction on every single login.
+    static constexpr uint8_t FormatVersion = 2;
 
     // True once a packet of a version this client understands has been read.
     // Nothing downstream should trust the fields until it is.
@@ -61,6 +70,10 @@ public:
     int32_t     TileX = 0;
     int32_t     TileY = 0;
 
+    // Added in format 2: the recipient's own wallet, server-authoritative like
+    // everything else here. Zero when talking to a format-1 server.
+    uint32_t    Gems = 0;
+
     Opcode getOpcode() const override { return Opcode::PlayerData; }
 
     const char* getName() const override { return "PlayerDataPacket"; }
@@ -83,19 +96,22 @@ public:
         buffer.write(ExperienceToNextLevel);
         buffer.write(TileX);
         buffer.write(TileY);
+        buffer.write(Gems);
     }
 
     void deserialize(PacketBuffer& buffer) override
     {
         Valid = false;
 
+        // Both known versions are accepted, exactly as the server accepts them,
+        // so a client and server one revision apart still agree on everything
+        // up to the point where they diverge. Anything else stops rather than
+        // reading the rest at offsets that no longer mean what this build
+        // thinks they mean: every field keeps its default and `Valid` stays
+        // false, so a caller that ignores this cannot silently act on rubbish.
         const uint8_t version = buffer.read<uint8_t>();
-        if (version != FormatVersion)
+        if (version != 1 && version != FormatVersion)
         {
-            // Stop rather than read the rest at offsets that no longer mean
-            // what this build thinks they mean. Every field keeps its default
-            // and `Valid` stays false, so a caller that ignores this cannot
-            // silently act on rubbish.
             return;
         }
 
@@ -114,6 +130,13 @@ public:
         ExperienceToNextLevel = buffer.read<uint32_t>();
         TileX = buffer.read<int32_t>();
         TileY = buffer.read<int32_t>();
+
+        // Only format 2 carries it; a format-1 server stops after TileY and
+        // reading further would run off the end of the payload.
+        if (version >= 2)
+        {
+            Gems = buffer.read<uint32_t>();
+        }
 
         Valid = true;
     }
