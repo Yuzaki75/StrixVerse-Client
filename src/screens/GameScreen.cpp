@@ -1198,21 +1198,17 @@ void GameScreen::OnMouseDown(float x, float y)
 
     if (!hud_ || hud_->GetSelectedTool() == HUD::Tool::Punch)
     {
+        // Reach first: a 2x2x2 box around the player is all the arm has. The
+        // hover highlight already says so by turning dull past that line;
+        // the click simply does nothing rather than asking the server for a
+        // refusal it would have to explain.
+        if (!TileWithinReach(tileX, tileY))
+            return;
+
         // Fired on the swing rather than the confirm - a punch that hits
         // nothing (or is refused) should still sound like one.
         PlaySfx("punch");
-
-        // One swing breaks a 2x2x2 cube anchored at the clicked tile: two
-        // wide, two tall, two deep. The far layer sits behind the foreground
-        // plane, so what visibly opens up is the 2x2 face; the four blocks
-        // behind it go with it. The server still rules on each block
-        // individually, so a cube crossing into protection comes back
-        // partially refused rather than wholly allowed or denied.
-        for (int dz = 0; dz < 2; ++dz)
-            for (int dy = 0; dy < 2; ++dy)
-                for (int dx = 0; dx < 2; ++dx)
-                    network.sendBlockBreak(tileX + dx, tileY + dy,
-                                           SelectedToolItemId(), dz);
+        network.sendBlockBreak(tileX, tileY, SelectedToolItemId());
         return;
     }
 
@@ -1233,17 +1229,39 @@ void GameScreen::OnMouseDown(float x, float y)
         return;
     }
 
-    // Placing is the same cube: a 2x2x2 anchored at the click, one item from
-    // the stack per block. The server consumes and validates per block, so a
-    // stack too small to fill the cube places what it can and the rest come
-    // back refused rather than the client pretending eight were placed.
-    for (int dz = 0; dz < 2; ++dz)
-        for (int dy = 0; dy < 2; ++dy)
-            for (int dx = 0; dx < 2; ++dx)
-                network.sendBlockPlace(tileX + dx, tileY + dy,
-                                       held->second.itemId, dz);
+    // Placing obeys the same 2x2x2 reach as breaking: the hover highlight
+    // already turns dull past the line, and out here the click does nothing
+    // rather than spending an item on a refusal.
+    if (!TileWithinReach(tileX, tileY))
+        return;
+
+    network.sendBlockPlace(tileX, tileY, held->second.itemId);
 }
 
+
+// Build reach: the 2x2x2 box around the player a swing or a placement can
+// land in - two tiles of reach along each axis, Chebyshev distance, the same
+// measure the interact prompt uses. The server enforces its own copy; this
+// one keeps far clicks from becoming requests.
+bool GameScreen::TileWithinReach(int32_t tileX, int32_t tileY) const
+{
+    auto componentManager = ServiceLocator::Get<StrixVerse::ECS::ComponentManager>();
+    if (!componentManager || playerEntity_ == StrixVerse::ECS::NULL_ENTITY)
+        return false;
+
+    const auto* transform =
+        componentManager->getComponent<StrixVerse::ECS::Transform>(playerEntity_);
+    if (!transform)
+        return false;
+
+    const int32_t playerX =
+        static_cast<int32_t>(PlayerLocalXToTileX(transform->position.x));
+    const int32_t playerY =
+        static_cast<int32_t>(PlayerLocalYToTileY(transform->position.y));
+
+    return std::abs(tileX - playerX) <= kInteractRadius &&
+           std::abs(tileY - playerY) <= kInteractRadius;
+}
 
 std::uint8_t GameScreen::ServerIdAt(int32_t tileX, int32_t tileY) const
 {
@@ -2353,7 +2371,57 @@ void GameScreen::RenderGame() const
     if (!batch || !playerTexture_)
         return;
 
+    DrawHoverHighlight(*batch);
+
     particles_.Render(*batch, *playerTexture_);
+}
+
+void GameScreen::DrawHoverHighlight(SpriteBatch& batch) const
+{
+    // The tile under the cursor, outlined so the player can see what a click
+    // would act on before committing to it. Bright Aether blue inside arm's
+    // reach - that click will work; a dull red past it - the click would be
+    // refused, and saying so beats letting them find out from the silence.
+    if (!engine_ || !world_ || GameplayInputBlocked())
+        return;
+
+    float mouseX = 0.0f, mouseY = 0.0f;
+    SDL_GetMouseState(&mouseX, &mouseY);
+
+    const glm::vec2 canvas = engine_->GetUIScale().ToCanvas(mouseX, mouseY);
+
+    int32_t tileX = 0, tileY = 0;
+    if (!CanvasToServerTile(canvas.x, canvas.y, tileX, tileY))
+        return;
+
+    // Server tile to the row order the world is drawn in - the flip
+    // ServerIdAt reads through, applied on the way to pixels.
+    const int localRowY = (worldHeightInTiles_ - 1) - static_cast<int>(tileY);
+    if (localRowY < 0 || tileX < 0 ||
+        tileX >= world_->GetWidthInTiles() || localRowY >= world_->GetHeightInTiles())
+    {
+        return;
+    }
+
+    const bool  inReach = TileWithinReach(tileX, tileY);
+    const Color edge    = inReach ? Color(0.45f, 0.85f, 1.00f, 0.90f)   // Aether blue
+                                  : Color(0.90f, 0.35f, 0.35f, 0.55f);  // out of reach red
+    const Color fill    = inReach ? Color(0.45f, 0.85f, 1.00f, 0.14f)
+                                  : Color(0.90f, 0.35f, 0.35f, 0.08f);
+
+    const float px = static_cast<float>(tileX) * kTileSize;
+    const float py = static_cast<float>(localRowY) * kTileSize;
+    const float s  = kTileSize;
+
+    batch.Draw(*playerTexture_, px, py, s, s, fill.r, fill.g, fill.b, fill.a);
+
+    // The frame is four hairlines, not a textured border - one pixel of world
+    // per side reads at every zoom this game allows.
+    const float t = 1.5f;
+    batch.Draw(*playerTexture_, px, py,         s, t, edge.r, edge.g, edge.b, edge.a);
+    batch.Draw(*playerTexture_, px, py + s - t, s, t, edge.r, edge.g, edge.b, edge.a);
+    batch.Draw(*playerTexture_, px, py,         t, s, edge.r, edge.g, edge.b, edge.a);
+    batch.Draw(*playerTexture_, px + s - t, py, t, s, edge.r, edge.g, edge.b, edge.a);
 }
 
 void GameScreen::TrackAirborne()

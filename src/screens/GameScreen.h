@@ -51,6 +51,11 @@ public:
     // time this runs, so a particle lands on the tile it was emitted over.
     void RenderGame() const override;
 
+    // The build/break cursor: an outline on the tile under the mouse, bright
+    // inside the 2x2x2 reach and dull red past it, so a refused click is
+    // legible before it happens.
+    void DrawHoverHighlight(SpriteBatch& batch) const;
+
     // Sky drawn before the systems' render pass, so tiles and players sit on
     // a gradient instead of the flat clear colour. Anchored to world height:
     // daylight Aether blue at the top of the map shading down to near-black
@@ -165,8 +170,13 @@ private:
     // prompt is showing rather than re-reading the world.
     InteractTarget interactTarget_ = InteractTarget::None;
 
-    // How far, in tiles, the scan reaches around the player.
+    // How far, in tiles, the scan reaches around the player. Doubles as the
+    // break/place reach: one measure, so the prompt, the hover highlight and
+    // the click gate can never disagree.
     static constexpr int kInteractRadius = 2;
+
+    // True when the tile sits inside the 2x2x2 reach box around the player.
+    bool TileWithinReach(int32_t tileX, int32_t tileY) const;
 
     // Applies edits the server has accepted. Drained every frame so an edit
     // that lands mid-transition is not lost.
