@@ -135,7 +135,6 @@ void SpriteBatch::Draw(const Texture& texture, float x, float y, float width, fl
 void SpriteBatch::End()
 {
     Flush();
-    m_CapacityWarned = false;
 }
 
 void SpriteBatch::Flush()

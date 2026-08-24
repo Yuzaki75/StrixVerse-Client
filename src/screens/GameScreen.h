@@ -132,10 +132,7 @@ private:
     // Level-based hold-to-show falls out of the same read for free.
     void HandleGameplayKeys();
 
-    bool prevInventoryKey_ = false;   // I
-    bool prevCharacterKey_ = false;   // C
-    bool prevPlayerListKey_ = false;  // Tab (hold to show)
-    bool prevInteractKey_  = false;   // E
+    bool prevPlayerListKey_ = false;  // Tab (hold to show; polled for key-up)
 
     // --- Interaction -------------------------------------------------------
     // Scans the tiles around the player for something interactable (a Strix

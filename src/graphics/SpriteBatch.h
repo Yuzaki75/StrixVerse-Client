@@ -22,7 +22,11 @@ class Shader;
 class SpriteBatch
 {
 public:
-    explicit SpriteBatch(int maxSprites = 4096);
+    // 16384: a 1080p window at minimum zoom shows ~5,900 tiles before
+    // characters and particles join them. The original 4096 silently dropped
+    // everything past the cap on exactly those screens, which read as "the
+    // world stops drawing when I zoom out".
+    explicit SpriteBatch(int maxSprites = 16384);
     ~SpriteBatch();
 
     SpriteBatch(const SpriteBatch&) = delete;

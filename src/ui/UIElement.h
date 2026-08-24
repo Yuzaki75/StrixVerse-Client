@@ -36,7 +36,22 @@ namespace UIKey
         Digit6,
         Digit7,
         Digit8,
-        Digit9
+        Digit9,
+
+        // Everything that can be bound. The engine delivers these for every
+        // key press it recognises, so a feature never has to reach for raw
+        // SDL scancodes just to learn that E was pressed. Letter values are
+        // contiguous (LetterA + n == the nth letter); so are the F-keys.
+        Space,
+        Insert,
+        PageUp,
+        PageDown,
+        LetterA, LetterB, LetterC, LetterD, LetterE, LetterF,
+        LetterG, LetterH, LetterI, LetterJ, LetterK, LetterL,
+        LetterM, LetterN, LetterO, LetterP, LetterQ, LetterR,
+        LetterS, LetterT, LetterU, LetterV, LetterW, LetterX,
+        LetterY, LetterZ,
+        F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12
     };
 }
 

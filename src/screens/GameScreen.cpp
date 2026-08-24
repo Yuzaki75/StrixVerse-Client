@@ -2528,31 +2528,56 @@ void GameScreen::OnKeyDown(int key, bool, bool)
 
     if (key >= UIKey::Digit1 && key <= UIKey::Digit9)
         hud_->SetSelectedSlot(static_cast<uint8_t>(key - UIKey::Digit1));
+
+    // Panel and interaction keys. The event path is the right one for these -
+    // they are presses, not held states - and key repeat is suppressed at the
+    // source, so a held I toggles exactly once. Tab stays polled in
+    // HandleGameplayKeys: hold-to-show needs the release, and the event path
+    // carries no key-up. The same gate as clicks applies, so E behind an open
+    // vault does not act on the terrain behind the panel.
+    if (GameplayInputBlocked())
+        return;
+
+    switch (key)
+    {
+    case UIKey::LetterI:
+        if (inventoryPanel_ && !inventoryPanel_->IsOpen())
+            ClosePanelOverlays();
+        if (inventoryPanel_)
+            inventoryPanel_->Toggle();
+        break;
+
+    case UIKey::LetterC:
+        if (characterPanel_ && !characterPanel_->IsOpen())
+            ClosePanelOverlays();
+        if (characterPanel_)
+            characterPanel_->Toggle();
+        break;
+
+    case UIKey::LetterE:
+        InteractWithTarget();
+        break;
+
+    default:
+        break;
+    }
 }
 
 void GameScreen::HandleGameplayKeys()
 {
-    // Level read of the hardware keyboard - the same source InputSystem uses
-    // for movement - with edge detection kept here. Blocked frames still
-    // refresh the previous state, so releasing a key behind a focused chat
-    // field does not queue a phantom press for when focus goes away.
+    // Tab is the one gameplay key still read as a held state: hold-to-show
+    // needs the release, and the event path carries no key-up. Everything
+    // press-shaped moved to OnKeyDown now that the engine translates the
+    // whole keyboard. Blocked frames still refresh the previous state, so
+    // releasing Tab behind a focused chat field does not queue a phantom
+    // open for when focus goes away.
     const bool* state = SDL_GetKeyboardState(nullptr);
+    const bool  tab   = state[SDL_SCANCODE_TAB] != 0;
 
-    const bool tab       = state[SDL_SCANCODE_TAB] != 0;
-    const bool inventory = state[SDL_SCANCODE_I]   != 0;
-    const bool character = state[SDL_SCANCODE_C]   != 0;
-    const bool interact  = state[SDL_SCANCODE_E]   != 0;
-
-    // The management panel counts as blocking here, exactly as it does for
-    // clicks. It did not, so with the panel open `E` still fired
-    // InteractWithTarget at whatever tile the prompt last found, and `I` opened
-    // a second modal stacked on the first. The Lost Technology panels count as
-    // blocking for the same reason: they are opened from the world with E, and
-    // a second E behind an open vault must not act on the terrain behind it.
-    //
-    // The toggle panels deliberately do NOT block: `I` while the inventory is
-    // open is how it closes again. AnyPanelOpen is the click gate's test and
-    // would trap them shut.
+    // The management panel and the Lost Technology devices count as blocking
+    // here, exactly as they do for clicks. The toggle panels deliberately do
+    // NOT block: Tab over an open inventory still shows the player list, and
+    // AnyPanelOpen is the click gate's test and would trap everything shut.
     const bool blocked = !uiManager_ || uiManager_->isTextInputFocused() || paused_ ||
                          (worldManagerPanel_ && worldManagerPanel_->IsOpen()) ||
                          (vaultPanel_         && vaultPanel_->IsOpen()) ||
@@ -2560,47 +2585,16 @@ void GameScreen::HandleGameplayKeys()
                          (stabilizerPanel_    && stabilizerPanel_->IsOpen()) ||
                          (memoryCrystalPanel_ && memoryCrystalPanel_->IsOpen());
 
-    if (!blocked)
+    if (!blocked && tab && !prevPlayerListKey_)
     {
-        // Tab is hold-to-show: down opens the list, up closes it. Reading it
-        // as level state sidesteps key-repeat entirely - the event path only
-        // delivers keydowns with no repeat flag, so a toggle there would
-        // flicker while the key is held.
-        if (tab && !prevPlayerListKey_)
-        {
-            ClosePanelOverlays();
-            if (playerListPanel_)
-                playerListPanel_->Open();
-        }
-        else if (!tab && prevPlayerListKey_)
-        {
-            if (playerListPanel_)
-                playerListPanel_->Close();
-        }
-
-        if (inventory && !prevInventoryKey_)
-        {
-            if (inventoryPanel_ && !inventoryPanel_->IsOpen())
-                ClosePanelOverlays();
-            if (inventoryPanel_)
-                inventoryPanel_->Toggle();
-        }
-
-        if (character && !prevCharacterKey_)
-        {
-            if (characterPanel_ && !characterPanel_->IsOpen())
-                ClosePanelOverlays();
-            if (characterPanel_)
-                characterPanel_->Toggle();
-        }
-
-        if (interact && !prevInteractKey_)
-            InteractWithTarget();
+        ClosePanelOverlays();
+        if (playerListPanel_)
+            playerListPanel_->Open();
     }
 
     // Tab's release is handled whether or not the frame was blocked.
     //
-    // Both edges used to sit inside the `if (!blocked)` above while the
+    // The open edge used to sit inside the blocked gate while the
     // previous-state below was updated unconditionally, so a release that
     // happened during a blocked frame was swallowed and then forgotten: hold
     // Tab, press Escape, let go, and the player list stayed up for good with no
@@ -2612,9 +2606,6 @@ void GameScreen::HandleGameplayKeys()
     }
 
     prevPlayerListKey_ = tab;
-    prevInventoryKey_  = inventory;
-    prevCharacterKey_  = character;
-    prevInteractKey_   = interact;
 }
 
 void GameScreen::OnMouseWheel(float, float, float delta)

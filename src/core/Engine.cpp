@@ -90,7 +90,20 @@ namespace
         case SDLK_KP_8:      return UIKey::Digit8;
         case SDLK_9:
         case SDLK_KP_9:      return UIKey::Digit9;
-        default:             return UIKey::None;
+
+        // The bindable rest of the keyboard. SDL lays letters and F-keys out
+        // contiguously, so each range is one comparison; the strays are named
+        // individually.
+        case SDLK_SPACE:     return UIKey::Space;
+        case SDLK_INSERT:    return UIKey::Insert;
+        case SDLK_PAGEUP:    return UIKey::PageUp;
+        case SDLK_PAGEDOWN:  return UIKey::PageDown;
+        default:
+            if (key >= SDLK_A && key <= SDLK_Z)
+                return UIKey::LetterA + (key - SDLK_A);
+            if (key >= SDLK_F1 && key <= SDLK_F12)
+                return UIKey::F1 + (key - SDLK_F1);
+            return UIKey::None;
         }
     }
 }
@@ -482,6 +495,13 @@ void Engine::ProcessEvents()
             const bool       ctrl  = (mods & SDL_KMOD_CTRL) != 0;
             const bool       shift = (mods & SDL_KMOD_SHIFT) != 0;
             const int        key   = TranslateKey(event.key.key);
+
+            // OS key repeat is suppressed at the source: a held key delivers
+            // one press. Anything that wants held-state (movement, hold-to-
+            // show) polls the keyboard; anything bound to a press would
+            // otherwise fire again every repeat interval.
+            if (event.key.repeat)
+                break;
 
             const bool uiConsumes = m_UIManager && m_UIManager->isTextInputFocused();
 
