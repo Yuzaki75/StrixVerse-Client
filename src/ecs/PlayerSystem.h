@@ -37,6 +37,14 @@ namespace StrixVerse
             void SetGravityEnabled(bool enabled) { m_GravityEnabled = enabled; }
             bool IsGravityEnabled() const { return m_GravityEnabled; }
 
+            // Movement scale from the server's Speed Boost buff. GameScreen
+            // reads the buff set the server owns and pushes the strongest
+            // multiplier here; 1.0 is the plain walk. The server scales its
+            // own anti-speed-hack cap by the same value, so the faster pace
+            // never reads as a hack.
+            void SetSpeedMultiplier(float multiplier) { m_SpeedMultiplier = multiplier; }
+            float GetSpeedMultiplier() const { return m_SpeedMultiplier; }
+
             // Jumps triggered since the last consume: incremented where the
             // jump impulse is actually written (key edge AND grounded), so a
             // held key or a jump refused mid-air counts zero. Single game
@@ -50,6 +58,7 @@ namespace StrixVerse
 
         private:
             float m_MoveSpeed = 100.0f;      // pixels per second, horizontal
+            float m_SpeedMultiplier = 1.0f;  // Speed Boost buff, server-owned
 
             // Downward acceleration, pixels per second squared. 1600 is 50
             // tiles/s^2 at the 32px tile size.

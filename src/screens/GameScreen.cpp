@@ -2288,6 +2288,23 @@ void GameScreen::Update(float deltaTime)
             buffRevision_ = revision;
             RefreshBuffs();
         }
+
+        // The Speed Boost buff is a real movement change, not a badge: the
+        // strongest "speed" buff in the server-owned set scales the local
+        // walk speed. The server scales its anti-speed-hack cap by the same
+        // value, so the faster pace stays legal on both ends.
+        float speedMultiplier = 1.0f;
+        for (const auto& buff : engine_->getNetworkManager().getBuffs())
+        {
+            if (buff.id == "speed" && buff.remainingSeconds > 0.0f)
+                speedMultiplier = std::max(speedMultiplier, 1.5f);
+        }
+
+        if (auto systemManager = ServiceLocator::Get<StrixVerse::ECS::SystemManager>())
+        {
+            if (auto playerSystem = systemManager->getSystem<StrixVerse::ECS::PlayerSystem>())
+                playerSystem->SetSpeedMultiplier(speedMultiplier);
+        }
     }
 
     if (buffDisplay_)

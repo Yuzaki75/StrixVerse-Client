@@ -55,7 +55,7 @@ namespace StrixVerse
                 if (input->keys.test(SDL_SCANCODE_D) || input->keys.test(SDL_SCANCODE_RIGHT))
                     x += 1.0f;
 
-                velocity->vx = x * m_MoveSpeed;
+                velocity->vx = x * m_MoveSpeed * m_SpeedMultiplier;
 
                 if (!m_GravityEnabled)
                 {
