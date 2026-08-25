@@ -144,6 +144,12 @@ public:
     // click somewhere blank.
     virtual bool consumesTextInput() const { return false; }
 
+    // --- Tooltip ---------------------------------------------------------
+    // Optional one-line hint. Empty means none: UIManager runs its dwell
+    // timer only over an element carrying text.
+    void setTooltipText(const std::string& text) { tooltipText_ = text; }
+    const std::string& getTooltipText() const { return tooltipText_; }
+
     // --- Hierarchy -------------------------------------------------------
     void addChild(std::shared_ptr<UIElement> child);
     void removeChild(const std::shared_ptr<UIElement>& child);
@@ -168,7 +174,10 @@ public:
     virtual void onMouseEnter();
     virtual void onMouseLeave();
     virtual void onClick();
-    virtual void onScroll(float delta);
+
+    // Returns true when this element consumed the scroll, so the wheel stops
+    // travelling up the ancestor chain (UIManager walks until someone does).
+    virtual bool onScroll(float delta);
 
     // Optional scroll callback so a panel can react without a subclass.
     void setOnScroll(std::function<void(float)> callback) { onScroll_ = std::move(callback); }
@@ -216,4 +225,6 @@ protected:
     std::vector<std::shared_ptr<UIElement>> children_;
 
     std::function<void(float)> onScroll_;
+
+    std::string tooltipText_;
 };

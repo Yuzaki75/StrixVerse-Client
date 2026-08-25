@@ -147,6 +147,8 @@ set(SOURCES
     src/ui/UIProgressBar.cpp
     src/ui/UIScrollPanel.cpp
     src/ui/UITiledImage.cpp
+    src/ui/UIConfirmDialog.cpp
+    src/ui/UIRoleBadge.cpp
     src/ui/UIFonts.cpp
     src/ui/UIPatterns.cpp
     src/ui/UIScale.cpp
@@ -328,6 +330,8 @@ set(HEADERS
     src/ui/UIScale.h
     src/ui/UIScrollPanel.h
     src/ui/UITextBox.h
+    src/ui/UIConfirmDialog.h
+    src/ui/UIRoleBadge.h
     src/ui/UITheme.h
     src/ui/UITiledImage.h
 

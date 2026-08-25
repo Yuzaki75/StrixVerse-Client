@@ -249,6 +249,9 @@ void AuthService::ResetRequest()
     m_PendingTimer = 0.0f;
     m_Status       = Status::Idle;
     m_StatusMessage.clear();
+    
+    // Zero password memory before clearing
+    std::fill(m_PendingPassword.begin(), m_PendingPassword.end(), '\0');
     m_PendingPassword.clear();
 }
 

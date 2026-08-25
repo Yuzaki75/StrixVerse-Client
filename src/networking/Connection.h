@@ -120,8 +120,11 @@ private:
 
     // Reassembly buffer: TCP gives no message boundaries, so a frame may
     // arrive split across reads or several frames may arrive in one read.
+    // Protected by m_receiveBufferMutex since both the receive thread (writes)
+    // and parseFrames() (reads) access it.
     std::vector<uint8_t> m_receiveBuffer;
     std::size_t          m_readPosition = 0;
+    mutable std::mutex   m_receiveBufferMutex;
 
     std::deque<std::shared_ptr<Packet>> m_receiveQueue;
     mutable std::mutex                  m_receiveQueueMutex;

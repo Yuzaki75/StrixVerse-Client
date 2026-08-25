@@ -1,8 +1,30 @@
 #include "UIManager.h"
 
+#include "../core/Engine.h"
+#include "../core/ServiceLocator.h"
+#include "../graphics/Font.h"
 #include "../graphics/UIRenderer.h"
+#include "UIFonts.h"
+#include "UILabel.h"
+#include "UIPanel.h"
+#include "UIScale.h"
+#include "UITheme.h"
 
 #include <algorithm>
+
+namespace
+{
+    // Cursor dwell before the shared tooltip appears.
+    constexpr float kTooltipDwellSeconds = 0.4f;
+
+    // Tooltip offset from the cursor, in canvas pixels.
+    constexpr float kTooltipOffsetX = UITheme::Scaled(14.0f);
+    constexpr float kTooltipOffsetY = UITheme::Scaled(18.0f);
+
+    // Padding around the tooltip label, in canvas pixels.
+    constexpr float kTooltipPadX = UITheme::Scaled(8.0f);
+    constexpr float kTooltipPadY = UITheme::Scaled(5.0f);
+}
 
 UIManager::UIManager() = default;
 
@@ -51,6 +73,15 @@ void UIManager::removeElement(const std::shared_ptr<UIElement>& element)
         focusedElement_->onFocusLost();
         focusedElement_.reset();
     }
+
+    // The tooltip is a UIManager-owned element; if someone removed it (or an
+    // ancestor of it) the cached pointers must not survive.
+    if (tooltipPanel_ && isRemovedOrDescendant(tooltipPanel_))
+    {
+        tooltipPanel_.reset();
+        tooltipLabel_.reset();
+        tooltipVisible_ = false;
+    }
 }
 
 void UIManager::bringToFront(const std::shared_ptr<UIElement>& element)
@@ -84,6 +115,13 @@ void UIManager::clearAllElements()
     hoveredElement_.reset();
     pressedElement_.reset();
     focusedElement_.reset();
+
+    // The tooltip was in the tree and went with it.
+    tooltipPanel_.reset();
+    tooltipLabel_.reset();
+    tooltipShownText_.clear();
+    tooltipVisible_ = false;
+    tooltipDwell_   = 0.0f;
 }
 
 std::shared_ptr<UIElement> UIManager::getElementAt(float x, float y)
@@ -115,6 +153,10 @@ void UIManager::updateHoverState(float x, float y)
 
     if (hoveredElement_)
         hoveredElement_->onMouseEnter();
+
+    // The dwell timer restarts whenever the cursor's target changes; a
+    // tooltip shown for the previous target must not survive onto this one.
+    hideTooltip();
 }
 
 void UIManager::handleMouseMove(float x, float y)
@@ -142,6 +184,9 @@ void UIManager::handleMouseDown(float x, float y)
     lastMouseY_ = y;
 
     updateHoverState(x, y);
+
+    // A click anywhere dismisses the tooltip; it re-arms after the dwell.
+    hideTooltip();
 
     auto element = getElementAt(x, y);
 
@@ -182,13 +227,16 @@ void UIManager::handleMouseUp(float x, float y)
 
 void UIManager::handleScroll(float x, float y, float delta)
 {
-    // Walk up from the element under the cursor until something consumes it,
-    // so a row inside a scroll panel still scrolls the panel.
+    // Walk up from the element under the cursor and stop at the first one
+    // that consumes the scroll. Before the bool return this broadcast to the
+    // entire ancestor chain, so an inner list and the page behind it both
+    // moved on one wheel notch.
     auto element = getElementAt(x, y);
 
     for (UIElement* node = element.get(); node != nullptr; node = node->getParent())
     {
-        node->onScroll(delta);
+        if (node->onScroll(delta))
+            break;
     }
 }
 
@@ -231,6 +279,8 @@ void UIManager::update(float deltaTime)
         if (element && element->isVisible())
             element->update(deltaTime);
     }
+
+    updateTooltip(deltaTime);
 }
 
 void UIManager::render(UIRenderer& renderer)
@@ -299,4 +349,124 @@ void UIManager::focusNext(bool backwards)
 bool UIManager::isTextInputActive() const
 {
     return focusedElement_ != nullptr && focusedElement_->isFocusable();
+}
+
+void UIManager::ensureTooltipBuilt()
+{
+    if (tooltipPanel_)
+        return;
+
+    Font* caption = nullptr;
+    if (auto fonts = ServiceLocator::Get<UIFonts>())
+        caption = fonts->Get(UIFonts::Typeface::Body, UITheme::Body::Caption);
+
+    // One shared tooltip for every element, styled per the design: dark
+    // surface, thin accent border, chip corners.
+    tooltipPanel_ = std::make_shared<UIPanel>();
+    tooltipPanel_->setBackgroundColor(UITheme::WithAlpha(UITheme::Panel, 0.92f));
+    tooltipPanel_->setBorder(UITheme::WithAlpha(UITheme::Accent, 0.70f), UITheme::BorderThin);
+    tooltipPanel_->setBorderRadius(UITheme::RadiusChip);
+
+    tooltipLabel_ = std::make_shared<UILabel>();
+    tooltipLabel_->setFont(caption);
+    tooltipLabel_->setTextColor(UITheme::Subtext);
+    tooltipPanel_->addChild(tooltipLabel_);
+
+    tooltipPanel_->setVisible(false);
+
+    // Added last so it renders above everything already in the tree; it does
+    // not want input, so it can never steal a hover or click itself.
+    addElement(tooltipPanel_);
+}
+
+void UIManager::updateTooltip(float deltaTime)
+{
+    const bool hasText = hoveredElement_ && !hoveredElement_->getTooltipText().empty();
+
+    if (!hasText)
+    {
+        hideTooltip();
+        return;
+    }
+
+    if (tooltipVisible_)
+    {
+        refreshTooltipPosition();
+    }
+    else
+    {
+        tooltipDwell_ += deltaTime;
+        if (tooltipDwell_ >= kTooltipDwellSeconds)
+            showTooltip();
+    }
+}
+
+void UIManager::showTooltip()
+{
+    ensureTooltipBuilt();
+
+    const std::string& text = hoveredElement_->getTooltipText();
+
+    // Rebuild the label only when the text actually changed, so a static
+    // tooltip costs no allocations per frame.
+    if (text != tooltipShownText_)
+    {
+        tooltipShownText_ = text;
+        tooltipLabel_->setText(text);
+
+        const float textWidth = tooltipLabel_->measureTextWidth();
+        const float lineHeight =
+            tooltipLabel_->getFont()
+                ? tooltipLabel_->getFont()->GetLineHeight()
+                : static_cast<float>(UITheme::Body::Caption) * 1.2f;
+
+        tooltipLabel_->setPosition(kTooltipPadX, kTooltipPadY);
+        tooltipLabel_->setSize(textWidth, lineHeight);
+        tooltipPanel_->setSize(textWidth + kTooltipPadX * 2.0f,
+                               lineHeight + kTooltipPadY * 2.0f);
+    }
+
+    refreshTooltipPosition();
+    bringToFront(tooltipPanel_);
+    tooltipPanel_->setVisible(true);
+    tooltipVisible_ = true;
+}
+
+void UIManager::refreshTooltipPosition()
+{
+    if (!tooltipPanel_)
+        return;
+
+    float x = lastMouseX_ + kTooltipOffsetX;
+    float y = lastMouseY_ + kTooltipOffsetY;
+
+    // Clamp inside the visible canvas so an edge tooltip stays readable.
+    float left   = 0.0f;
+    float top    = 0.0f;
+    float right  = UIScale::kDesignWidth;
+    float bottom = UIScale::kDesignHeight;
+
+    if (auto engine = ServiceLocator::Get<Engine>())
+    {
+        const UIScale& scale = engine->GetUIScale();
+
+        left   = scale.GetVisibleLeft();
+        top    = scale.GetVisibleTop();
+        right  = scale.GetVisibleCanvas().z;
+        bottom = scale.GetVisibleCanvas().w;
+    }
+
+    x = std::clamp(x, left, std::max(left, right - tooltipPanel_->getWidth()));
+    y = std::clamp(y, top, std::max(top, bottom - tooltipPanel_->getHeight()));
+
+    tooltipPanel_->setPosition(x, y);
+}
+
+void UIManager::hideTooltip()
+{
+    tooltipDwell_   = 0.0f;
+    tooltipVisible_ = false;
+
+    if (tooltipPanel_)
+        tooltipPanel_->setVisible(false);
 }

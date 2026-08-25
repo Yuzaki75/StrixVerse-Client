@@ -667,6 +667,11 @@ std::shared_ptr<UIPanel> WorldBrowserScreen::BuildWorldRow(const WorldInfo& worl
     row->setSize(width, kRowHeight);
     row->setBlocksInput(true);
 
+    // A quiet accent wash on hover says "this row is one thing", while the
+    // selected row keeps its brighter border and glow as the dominant cue.
+    row->setHoverable(true);
+    row->setHoverTint(UITheme::WithAlpha(UITheme::Accent, 0.08f));
+
     if (selected)
         row->setGlow(UITheme::WithAlpha(UITheme::Accent, 0.30f), S(8.0f));
 

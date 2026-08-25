@@ -116,8 +116,12 @@ private:
 
     std::string m_PendingUsername;
     std::string m_PendingEmail;
-    std::string m_PendingPassword;
+    std::string m_PendingPassword;  // TODO: Migrate to SecureString for better memory safety
 
     bool m_OfflineSession = false;
     bool m_OfflineMode    = false;
 };
+
+// SECURITY NOTE: Passwords are currently transmitted in plaintext over TCP.
+// For production deployment, TLS/SSL MUST be enabled on the connection.
+// See SECURITY.md for details and mitigation strategies.

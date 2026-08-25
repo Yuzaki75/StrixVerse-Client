@@ -9,6 +9,7 @@ class Engine;
 class UIManager;
 class UIPanel;
 class UILabel;
+class UIRoleBadge;
 
 // -----------------------------------------------------------------------------
 // CharacterPanel
@@ -73,7 +74,7 @@ private:
     // Header labels are stable members; the stat rows are rebuilt per refresh
     // because their count follows the server's data.
     std::shared_ptr<UILabel> nameLabel_;
-    std::shared_ptr<UILabel> roleLabel_;
+    std::shared_ptr<UIRoleBadge> roleBadge_;
     std::shared_ptr<UILabel> levelLabel_;
 
     std::vector<std::shared_ptr<UILabel>> statRows_;

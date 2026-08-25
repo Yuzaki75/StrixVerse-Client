@@ -66,7 +66,7 @@ bool Connection::initialize()
 
 void Connection::cleanup()
 {
-    std::lock_guard<std::mutex> lock(s_wsaMutex);
+    std::lock_guard<std::mutex> cleanupLock(s_wsaMutex);
 
     if (s_wsaRefCount == 0)
         return;
@@ -77,14 +77,14 @@ void Connection::cleanup()
 
 std::string Connection::getLastError() const
 {
-    std::lock_guard<std::mutex> lock(m_errorMutex);
+    std::lock_guard<std::mutex> errorLock(m_errorMutex);
     return m_lastError;
 }
 
 void Connection::setFailure(const std::string& reason)
 {
     {
-        std::lock_guard<std::mutex> lock(m_errorMutex);
+        std::lock_guard<std::mutex> errorLock(m_errorMutex);
         m_lastError = reason;
     }
 
@@ -268,11 +268,14 @@ void Connection::finishConnect()
     setsockopt(m_socket, IPPROTO_TCP, TCP_NODELAY,
                reinterpret_cast<const char*>(&noDelay), sizeof(noDelay));
 
-    m_receiveBuffer.clear();
-    m_readPosition = 0;
+    {
+        std::lock_guard<std::mutex> bufferLock(m_receiveBufferMutex);
+        m_receiveBuffer.clear();
+        m_readPosition = 0;
+    }
 
     {
-        std::lock_guard<std::mutex> lock(m_receiveQueueMutex);
+        std::lock_guard<std::mutex> queueLock(m_receiveQueueMutex);
         m_receiveQueue.clear();
     }
 
@@ -295,7 +298,7 @@ void Connection::disconnect()
         m_receiveThread.join();
 
     {
-        std::lock_guard<std::mutex> lock(m_receiveQueueMutex);
+        std::lock_guard<std::mutex> queueLock(m_receiveQueueMutex);
         m_receiveQueue.clear();
     }
 
@@ -351,7 +354,7 @@ bool Connection::sendPacket(const std::shared_ptr<Packet>& packet)
     frame.insert(frame.end(), lengthBytes, lengthBytes + sizeof(lengthNet));
     frame.insert(frame.end(), payload.data(), payload.data() + payload.size());
 
-    std::lock_guard<std::mutex> lock(m_sendMutex);
+    std::lock_guard<std::mutex> sendLock(m_sendMutex);
 
     std::size_t sent = 0;
     while (sent < frame.size())
@@ -390,16 +393,19 @@ void Connection::receiveThread()
         {
             m_stats.bytesReceived(static_cast<uint32_t>(received));
 
-            m_receiveBuffer.insert(m_receiveBuffer.end(),
-                                   reinterpret_cast<uint8_t*>(chunk.data()),
-                                   reinterpret_cast<uint8_t*>(chunk.data()) + received);
-
-            if (m_receiveBuffer.size() > ProtocolLimits::MaxReceiveBufferSize)
             {
-                setFailure("server sent more unparsed data than the receive buffer allows");
-                Logger::Error("Connection: receive buffer overflow; dropping the session.");
-                m_running.store(false);
-                break;
+                std::lock_guard<std::mutex> bufferLock(m_receiveBufferMutex);
+                m_receiveBuffer.insert(m_receiveBuffer.end(),
+                                       reinterpret_cast<uint8_t*>(chunk.data()),
+                                       reinterpret_cast<uint8_t*>(chunk.data()) + received);
+
+                if (m_receiveBuffer.size() > ProtocolLimits::MaxReceiveBufferSize)
+                {
+                    setFailure("server sent more unparsed data than the receive buffer allows");
+                    Logger::Error("Connection: receive buffer overflow; dropping the session.");
+                    m_running.store(false);
+                    break;
+                }
             }
 
             parseFrames();
@@ -437,6 +443,8 @@ void Connection::receiveThread()
 
 void Connection::parseFrames()
 {
+    std::lock_guard<std::mutex> bufferLock(m_receiveBufferMutex);
+
     while (true)
     {
         const std::size_t available = m_receiveBuffer.size() - m_readPosition;
@@ -507,7 +515,7 @@ void Connection::parseFrames()
         m_stats.packetsReceived();
 
         {
-            std::lock_guard<std::mutex> lock(m_receiveQueueMutex);
+            std::lock_guard<std::mutex> queueLock(m_receiveQueueMutex);
             m_receiveQueue.push_back(std::move(packet));
         }
     }
@@ -531,7 +539,7 @@ void Connection::processReceivedPackets(
     std::deque<std::shared_ptr<Packet>> pending;
 
     {
-        std::lock_guard<std::mutex> lock(m_receiveQueueMutex);
+        std::lock_guard<std::mutex> queueLock(m_receiveQueueMutex);
         pending.swap(m_receiveQueue);
     }
 

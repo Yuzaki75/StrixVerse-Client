@@ -148,8 +148,9 @@ bool Engine::Initialize(Window* window, Config* config)
         return false;
     }
 
-    // Register the engine itself for systems that need to reach back into it.
-    ServiceLocator::Provide(std::shared_ptr<Engine>(this, [](Engine*) {}));
+    // NOTE: Engine is NOT registered in ServiceLocator to avoid creating an
+    // unsafe shared_ptr from raw 'this'. Systems that need Engine should
+    // receive it via constructor injection or access it through owned objects.
 
     m_AssetManager = std::make_shared<AssetManager>();
     ServiceLocator::Provide(m_AssetManager);

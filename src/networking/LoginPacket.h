@@ -6,6 +6,10 @@
 
 // Credentials submitted by the login screen.
 // Field order and types mirror Server/src/network/Packets/LoginPacket.cpp exactly.
+//
+// SECURITY WARNING: This packet transmits the password in plaintext.
+// The connection MUST use TLS/SSL in production to prevent credential theft.
+// See SECURITY.md for details.
 class LoginPacket final : public Packet
 {
 public:

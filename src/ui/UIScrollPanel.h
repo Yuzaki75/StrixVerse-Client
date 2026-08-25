@@ -45,7 +45,9 @@ public:
     // when the cursor is over empty space between rows.
     bool wantsInput() const override { return true; }
 
-    void onScroll(float delta) override;
+    // Consumes the wheel whenever the panel actually scrolled, so an
+    // enclosing scroll panel does not also move.
+    bool onScroll(float delta) override;
 
 protected:
     void beginChildren(UIRenderer& renderer) const override;

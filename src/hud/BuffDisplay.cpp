@@ -56,6 +56,20 @@ namespace
 
     // Between stacked rows, so two buffs do not read as one block.
     constexpr float kRowGap       = 4.0f;
+
+    // How long an expired row lingers, fading out, before it is removed.
+    constexpr float kGhostFadeSeconds = 0.3f;
+
+    // A burst of expiries must not pile up more fading panels than this; the
+    // oldest surplus ghosts vanish at once instead of fading.
+    constexpr std::size_t kMaxGhosts = 4;
+
+    // Rows are labelled by name, falling back to the raw id when no display
+    // name came with it - the same rule the label and tooltip both use.
+    std::string DisplayName(const BuffDisplay::BuffEntry& buff)
+    {
+        return buff.name.empty() ? buff.id : buff.name;
+    }
 }
 
 BuffDisplay::BuffDisplay(Engine* engine, UIManager* uiManager)
@@ -110,7 +124,7 @@ void BuffDisplay::SetBuffs(const std::vector<BuffEntry>& buffs)
     if (!built_)
         return;
 
-    RebuildRows();
+    RebuildRows(true);
 }
 
 void BuffDisplay::Clear()
@@ -120,17 +134,49 @@ void BuffDisplay::Clear()
     if (!built_)
         return;
 
-    RebuildRows();
+    // An explicit wipe (leaving a world, disconnecting) drops everything at
+    // once; ghosting is for the quiet disappearance between packets.
+    RebuildRows(false);
 }
 
-void BuffDisplay::RebuildRows()
+void BuffDisplay::RebuildRows(bool fadeExpiredRows)
 {
+    // Rows whose buff is gone from the new list stay behind for a short
+    // fade rather than popping out of the column.
+    if (fadeExpiredRows)
+    {
+        for (const Row& row : rows_)
+        {
+            const bool expired = std::none_of(
+                buffs_.begin(), buffs_.end(),
+                [&row](const BuffEntry& buff) { return buff.id == row.id; });
+
+            if (expired && row.backing)
+            {
+                row.backing->setOpacity(1.0f);
+                ghosts_.push_back(Ghost{row.backing, kGhostFadeSeconds});
+            }
+        }
+
+        if (ghosts_.size() > kMaxGhosts)
+            ghosts_.erase(ghosts_.begin(), ghosts_.end() - kMaxGhosts);
+    }
+    else
+    {
+        ghosts_.clear();
+    }
+
     rows_.clear();
 
     if (!root_)
         return;
 
     root_->clearChildren();
+
+    // clearChildren took the ghosts down with the rest; the survivors go
+    // back ahead of the fresh rows so they draw underneath them.
+    for (const Ghost& ghost : ghosts_)
+        root_->addChild(ghost.backing);
 
     const float width     = S(kRowWidth) - S(kPadding) * 2.0f;
     const float rowHeight = S(kNameHeight + kBarGap + kBarHeight);
@@ -140,6 +186,7 @@ void BuffDisplay::RebuildRows()
     for (const auto& buff : buffs_)
     {
         Row row;
+        row.id = buff.id;
 
         row.backing = std::make_shared<UIPanel>();
         row.backing->setSize(width, rowHeight);
@@ -153,7 +200,7 @@ void BuffDisplay::RebuildRows()
         row.name->setFont(PanelFont(engine_, UIFonts::Typeface::Body,
                                     UITheme::Body::Tiny));
         row.name->setTextColor(UITheme::Text);
-        row.name->setText(buff.name.empty() ? buff.id : buff.name);
+        row.name->setText(DisplayName(buff));
         row.name->setPosition(0.0f, 0.0f);
         // Narrowed to leave the right-hand column for the countdown.
         row.name->setSize(width - S(24.0f), S(kNameHeight));
@@ -172,6 +219,13 @@ void BuffDisplay::RebuildRows()
         row.shownSecond = ShownSeconds(buff.remainingSeconds);
         row.seconds->setText(std::format("{}", row.shownSecond));
         row.backing->addChild(row.seconds);
+
+        // The backing must want input for the tooltip's hover test to find
+        // it; nothing else listens on a row, so blocking costs nothing.
+        row.backing->setBlocksInput(true);
+        row.backing->setTooltipText(
+            std::format("{} \u2014 {}s remaining",
+                        DisplayName(buff), row.shownSecond));
 
         row.barBackground = std::make_shared<UIPanel>();
         row.barBackground->setSize(width, S(kBarHeight));
@@ -232,7 +286,8 @@ void BuffDisplay::UpdateVisibility()
 
     // Hidden entirely when there is nothing to show: an empty frame floating
     // under the stats would read as a rendering bug, not an absence of buffs.
-    bool anyVisible = false;
+    // Ghosts count as something to show - a fade-out cut short reads as a pop.
+    bool anyVisible = !ghosts_.empty();
 
     for (const auto& buff : buffs_)
     {
@@ -268,11 +323,40 @@ void BuffDisplay::LayoutForCanvas()
                        scale.GetVisibleTop() + S(kPanelY));
 }
 
+void BuffDisplay::FadeGhosts(float dt)
+{
+    for (std::size_t i = ghosts_.size(); i > 0; --i)
+    {
+        Ghost& ghost = ghosts_[i - 1];
+        ghost.remaining -= dt;
+
+        if (ghost.remaining <= 0.0f)
+        {
+            if (root_ && ghost.backing)
+                root_->removeChild(ghost.backing);
+
+            ghosts_.erase(ghosts_.begin() +
+                          static_cast<std::ptrdiff_t>(i) - 1);
+        }
+        else if (ghost.backing)
+        {
+            // setOpacity clamps, and the render pass multiplies the opacity
+            // down the panel's children, so a row fades as one piece.
+            ghost.backing->setOpacity(ghost.remaining / kGhostFadeSeconds);
+        }
+    }
+}
+
 void BuffDisplay::Update(float dt)
 {
     LayoutForCanvas();
 
-    if (!built_ || dt <= 0.0f || buffs_.empty())
+    if (!built_ || dt <= 0.0f)
+        return;
+
+    FadeGhosts(dt);
+
+    if (buffs_.empty())
         return;
 
     // Count every bar down between packets. A bar that reaches zero stops

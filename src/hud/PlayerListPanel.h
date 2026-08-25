@@ -7,7 +7,6 @@
 class Engine;
 class UIManager;
 class UIPanel;
-class UILabel;
 
 // -----------------------------------------------------------------------------
 // PlayerListPanel

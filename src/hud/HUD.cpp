@@ -16,6 +16,7 @@
 #include "../ui/UIPanel.h"
 #include "../ui/UIProgressBar.h"
 #include "../ui/UIScale.h"
+#include "../ui/UIScrollPanel.h"
 #include "../ui/UITextBox.h"
 #include "../ui/UITheme.h"
 
@@ -29,6 +30,33 @@ namespace
     // kEnterSeconds, and fades out over the last kFadeSeconds of its life.
     constexpr float kEnterSeconds = 0.2f;
     constexpr float kFadeSeconds  = 0.5f;
+
+    // Slack, in canvas pixels, within which the chat log counts as parked at
+    // its newest line. Floating-point offsets rarely land on the exact figure.
+    constexpr float kChatFollowEpsilon = 0.5f;
+
+    // The HUD is positioned in the same 1920x1080 design canvas as the
+    // screens, so it scales with the rest of the UI instead of drifting with
+    // the window size. Declared here rather than lower down because the chat
+    // log builds its lines from AddChatMessage, above the first panel.
+    constexpr float S(float previewPixels) { return UITheme::Scaled(previewPixels); }
+
+    // The notification channel's standard lifetime.
+    constexpr float kNotificationSeconds = 5.0f;
+
+    Font* HudFont(Engine* engine, UIFonts::Typeface face, unsigned int size)
+    {
+        UIFonts* fonts = engine ? engine->GetUIFonts() : nullptr;
+        return fonts ? fonts->Get(face, size) : nullptr;
+    }
+
+    // Shared look for the HUD's stat pills.
+    void StyleStatPanel(const std::shared_ptr<UIPanel>& panel)
+    {
+        panel->setBackgroundColor(UITheme::Hex(0x0E121E, 0.62f));
+        panel->setBorder(UITheme::SubtleBorder, UITheme::BorderThin);
+        panel->setBorderRadius(UITheme::RadiusButton);
+    }
 }
 
 HUD::HUD(Engine* engine)
@@ -110,6 +138,20 @@ void HUD::Update(float deltaTime)
     // Cheap enough to test every frame and far simpler than subscribing to a
     // resize the HUD would then have to unsubscribe from in its destructor.
     LayoutForCanvas();
+
+    // Chat auto-follow. The log is only pinned to the bottom while it
+    // actually is at the bottom: any scroll position short of the end means
+    // the player is reading back and must not be yanked down by new lines.
+    // Scrolling back to the bottom re-arms follow with no extra state, and
+    // before anything overflows (offset 0 == max 0) it is trivially true.
+    if (m_ChatLog)
+    {
+        const float maxScroll = std::max(
+            0.0f, m_ChatLog->getContentHeight() - m_ChatLog->getHeight());
+
+        m_ChatFollowBottom =
+            m_ChatLog->getScrollOffset() >= maxScroll - kChatFollowEpsilon;
+    }
 
     // Tick the stack down, then repaint what survives at its current fade.
     // The first kEnterSeconds ease in (and slide into place) and the last
@@ -254,24 +296,38 @@ void HUD::AddChatMessage(const std::string& message, ChatKind kind,
         m_ChatMessages.erase(m_ChatMessages.begin());
     }
 
-    // UILabel draws a single line, so the log is rendered as one label per
-    // line, newest at the bottom.
-    const size_t lineCount = m_ChatLines.size();
-    const size_t visible   = std::min(lineCount, m_ChatMessages.size());
+    // UILabel draws a single line, so the log is one label per remembered
+    // line inside the scroll panel, oldest at the top. Labels are created as
+    // the history grows and are never destroyed until the HUD is: once the
+    // cap is reached a new message only shifts text down through them.
+    if (!m_ChatLog)
+        return;
 
-    for (size_t i = 0; i < lineCount; ++i)
+    if (m_ChatLines.size() < m_ChatMessages.size())
+    {
+        Font* chatFont = HudFont(m_Engine, UIFonts::Typeface::Body,
+                                 UITheme::Body::Caption);
+        const float lineHeight = chatFont ? chatFont->GetLineHeight() : S(14.0f);
+
+        auto line = std::make_shared<UILabel>();
+        line->setFont(chatFont);
+        line->setTextColor(UITheme::Subtext);
+        line->setPosition(0.0f, lineHeight * static_cast<float>(m_ChatLines.size()));
+        line->setSize(m_ChatLog->getWidth(), lineHeight);
+        m_ChatLog->addContent(line);
+
+        m_ChatLines.push_back(line);
+    }
+
+    for (size_t i = 0; i < m_ChatLines.size(); ++i)
     {
         if (!m_ChatLines[i])
             continue;
 
-        // Bottom-align the log: empty slots stay at the top.
-        const size_t slotFromBottom = lineCount - 1 - i;
-
-        if (slotFromBottom < visible)
+        if (i < m_ChatMessages.size())
         {
-            const size_t index = m_ChatMessages.size() - 1 - slotFromBottom;
-            m_ChatLines[i]->setText(m_ChatMessages[index].text);
-            m_ChatLines[i]->setTextColor(m_ChatMessages[index].color);
+            m_ChatLines[i]->setText(m_ChatMessages[i].text);
+            m_ChatLines[i]->setTextColor(m_ChatMessages[i].color);
         }
         else
         {
@@ -279,29 +335,15 @@ void HUD::AddChatMessage(const std::string& message, ChatKind kind,
         }
     }
 
-}
+    m_ChatLog->refreshContentHeight();
 
-// The HUD is positioned in the same 1920x1080 design canvas as the screens, so
-// it scales with the rest of the UI instead of drifting with the window size.
-namespace
-{
-    constexpr float S(float previewPixels) { return UITheme::Scaled(previewPixels); }
-
-    // The notification channel's standard lifetime.
-    constexpr float kNotificationSeconds = 5.0f;
-
-    Font* HudFont(Engine* engine, UIFonts::Typeface face, unsigned int size)
+    // Only chase the newest line when the reader has not scrolled away.
+    if (m_ChatFollowBottom)
     {
-        UIFonts* fonts = engine ? engine->GetUIFonts() : nullptr;
-        return fonts ? fonts->Get(face, size) : nullptr;
-    }
+        const float maxScroll = std::max(
+            0.0f, m_ChatLog->getContentHeight() - m_ChatLog->getHeight());
 
-    // Shared look for the HUD's stat pills.
-    void StyleStatPanel(const std::shared_ptr<UIPanel>& panel)
-    {
-        panel->setBackgroundColor(UITheme::Hex(0x0E121E, 0.62f));
-        panel->setBorder(UITheme::SubtleBorder, UITheme::BorderThin);
-        panel->setBorderRadius(UITheme::RadiusButton);
+        m_ChatLog->setScrollOffset(maxScroll);
     }
 }
 
@@ -625,30 +667,25 @@ void HUD::CreateChatSection()
     m_UIManager->addElement(m_ChatBackground);
 
     Font* chatFont = HudFont(m_Engine, UIFonts::Typeface::Body, UITheme::Body::Caption);
-    const float lineHeight = chatFont ? chatFont->GetLineHeight() : S(14.0f);
 
     // The input row sits along the bottom, so the log gets what is left.
     const float logHeight = height - padding * 2.0f - inputHeight - inputGap;
 
-    // One label per visible line; AddChatMessage fills them bottom-up.
-    const size_t lines = logHeight > 0.0f
-                             ? static_cast<size_t>(logHeight / lineHeight)
-                             : 0;
-
+    // The whole history lives in a scroll panel filling the old fixed window.
+    // It stays transparent so the chat card shows through unchanged, and it
+    // wants input by design, which is what lets the wheel scroll it: the
+    // engine's wheel gating sees an element under the cursor and lets the
+    // event through to the panel's own onScroll.
     m_ChatLines.clear();
-    m_ChatLines.reserve(lines);
+    m_ChatFollowBottom = true;
 
-    for (size_t i = 0; i < lines; ++i)
-    {
-        auto line = std::make_shared<UILabel>();
-        line->setFont(chatFont);
-        line->setTextColor(UITheme::Subtext);
-        line->setPosition(padding, padding + lineHeight * static_cast<float>(i));
-        line->setSize(width - padding * 2.0f, lineHeight);
-        m_ChatBackground->addChild(line);
-
-        m_ChatLines.push_back(line);
-    }
+    m_ChatLog = std::make_shared<UIScrollPanel>();
+    m_ChatLog->setPosition(padding, padding);
+    m_ChatLog->setSize(width - padding * 2.0f, logHeight);
+    // Three lines per notch: the default step is tuned for list rows, and
+    // single-spaced text reads better moving in line-sized jumps.
+    m_ChatLog->setScrollSpeed((chatFont ? chatFont->GetLineHeight() : S(14.0f)) * 3.0f);
+    m_ChatBackground->addChild(m_ChatLog);
 
     m_ChatInput = std::make_shared<UITextBox>();
     m_ChatInput->setFont(chatFont);

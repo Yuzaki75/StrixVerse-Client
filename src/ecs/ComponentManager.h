@@ -76,12 +76,17 @@ namespace StrixVerse
                 const size_t compID = ComponentType::template Get<T>();
                 assert(compID < MAX_COMPONENTS && "Component type ID out of range.");
                 assert(m_ComponentTypes[compID].size == sizeof(T) && "Component type mismatch.");
+                assert(entity.id < m_MaxEntities && "Entity ID out of range.");
 
-                // Ensure storage exists
+                // Ensure storage exists with proper alignment
                 if (!m_ComponentStorage[compID])
                 {
                     m_ComponentStorage[compID] = std::make_unique<std::vector<std::byte>>();
-                    m_ComponentStorage[compID]->resize(m_MaxEntities * sizeof(T));
+                    // Allocate aligned storage for all entities
+                    const size_t totalSize = m_MaxEntities * sizeof(T);
+                    const size_t alignment = alignof(T);
+                    // Over-allocate to ensure we can find an aligned position
+                    m_ComponentStorage[compID]->resize(totalSize + alignment - 1);
                 }
 
                 // Ensure entity tracking exists
@@ -96,9 +101,27 @@ namespace StrixVerse
                     m_ComponentEntities[compID].assign(numWords, 0);
                 }
 
-                // Placement new to construct the object
+                // If component already exists, destroy it first
+                if (hasComponent<T>(entity))
+                {
+                    removeComponent<T>(entity);
+                }
+
+                // Calculate aligned offset
                 std::size_t offset = entity.id * sizeof(T);
                 void *ptr = &(*m_ComponentStorage[compID])[offset];
+                
+                // Verify alignment
+                std::size_t alignment = alignof(T);
+                std::size_t ptrValue = reinterpret_cast<std::size_t>(ptr);
+                if (ptrValue % alignment != 0)
+                {
+                    // Adjust to next aligned address
+                    std::size_t adjustment = alignment - (ptrValue % alignment);
+                    ptr = reinterpret_cast<void*>(ptrValue + adjustment);
+                }
+
+                // Placement new to construct the object
                 T *constructed = new (ptr) T(std::move(component));
 
                 // Mark that this entity has this component
@@ -129,18 +152,30 @@ namespace StrixVerse
             {
                 const size_t compID = ComponentType::template Get<T>();
                 assert(compID < MAX_COMPONENTS && "Component type ID out of range.");
+                assert(entity.id < m_MaxEntities && "Entity ID out of range.");
+
+                if (!hasComponent<T>(entity))
+                    return;
 
                 if (m_ComponentTypes[compID].size > 0 &&
-                    m_ComponentStorage[compID] &&
-                    entity.id < m_MaxEntities)
+                    m_ComponentStorage[compID])
                 {
-                    // Call destructor
+                    // Calculate the same offset used in addComponent
                     std::size_t offset = entity.id * sizeof(T);
-                    if (offset + sizeof(T) <= m_ComponentStorage[compID]->size())
+                    void *ptr = &(*m_ComponentStorage[compID])[offset];
+                    
+                    // Apply same alignment adjustment
+                    std::size_t alignment = alignof(T);
+                    std::size_t ptrValue = reinterpret_cast<std::size_t>(ptr);
+                    if (ptrValue % alignment != 0)
                     {
-                        void *ptr = &(*m_ComponentStorage[compID])[offset];
-                        std::destroy_at(static_cast<T *>(ptr));
+                        std::size_t adjustment = alignment - (ptrValue % alignment);
+                        ptr = reinterpret_cast<void*>(ptrValue + adjustment);
                     }
+
+                    // Explicitly call destructor
+                    T* component = static_cast<T*>(ptr);
+                    component->~T();
 
                     // Mark that this entity no longer has this component
                     if (m_ComponentEntities.size() > compID && !m_ComponentEntities[compID].empty())
@@ -182,12 +217,20 @@ namespace StrixVerse
                     if (wordIndex < m_ComponentEntities[compID].size() &&
                         (m_ComponentEntities[compID][wordIndex] & (1ULL << (entity.id % 64))))
                     {
-                        // Return pointer to the constructed object
+                        // Calculate aligned offset (same as in addComponent)
                         std::size_t offset = entity.id * sizeof(T);
-                        if (offset + sizeof(T) <= m_ComponentStorage[compID]->size())
+                        void *ptr = &(*m_ComponentStorage[compID])[offset];
+                        
+                        // Apply alignment adjustment
+                        std::size_t alignment = alignof(T);
+                        std::size_t ptrValue = reinterpret_cast<std::size_t>(ptr);
+                        if (ptrValue % alignment != 0)
                         {
-                            return reinterpret_cast<T *>(&(*m_ComponentStorage[compID])[offset]);
+                            std::size_t adjustment = alignment - (ptrValue % alignment);
+                            ptr = reinterpret_cast<void*>(ptrValue + adjustment);
                         }
+                        
+                        return static_cast<T *>(ptr);
                     }
                 }
 
@@ -216,12 +259,20 @@ namespace StrixVerse
                     if (wordIndex < m_ComponentEntities[compID].size() &&
                         (m_ComponentEntities[compID][wordIndex] & (1ULL << (entity.id % 64))))
                     {
-                        // Return pointer to the constructed object
+                        // Calculate aligned offset (same as in addComponent)
                         std::size_t offset = entity.id * sizeof(T);
-                        if (offset + sizeof(T) <= m_ComponentStorage[compID]->size())
+                        const void *ptr = &(*m_ComponentStorage[compID])[offset];
+                        
+                        // Apply alignment adjustment
+                        std::size_t alignment = alignof(T);
+                        std::size_t ptrValue = reinterpret_cast<std::size_t>(ptr);
+                        if (ptrValue % alignment != 0)
                         {
-                            return reinterpret_cast<const T *>(&(*m_ComponentStorage[compID])[offset]);
+                            std::size_t adjustment = alignment - (ptrValue % alignment);
+                            ptr = reinterpret_cast<const void*>(ptrValue + adjustment);
                         }
+                        
+                        return static_cast<const T *>(ptr);
                     }
                 }
 

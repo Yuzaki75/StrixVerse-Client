@@ -15,6 +15,7 @@ class UIPanel;
 class UIButton;
 class UIProgressBar;
 class UITextBox;
+class UIScrollPanel;
 class NetworkManager;
 
 /**
@@ -166,8 +167,19 @@ private:
 
     std::function<void(const std::string&)> m_OnChatSubmit;
 
-    // One label per visible chat line; UILabel is single-line by design.
+    // One label per remembered line, parented inside the log's scroll panel.
+    // UILabel is single-line by design; the scroll panel provides the window,
+    // so the label count grows with the history rather than the viewport.
     std::vector<std::shared_ptr<UILabel>> m_ChatLines;
+
+    // The chat log's scroll container. The wheel scrolls it natively; the
+    // flag below decides whether new lines yank the view down.
+    std::shared_ptr<UIScrollPanel> m_ChatLog;
+
+    // True while the log is pinned to its newest line. Cleared as soon as
+    // the player scrolls up and set again the moment they return to the
+    // bottom, so auto-follow never fights a reader mid-scrollback.
+    bool m_ChatFollowBottom = true;
 
     // Each remembered line carries its own colour so the log can keep system
     // notices visually apart from player speech as it scrolls.
@@ -178,7 +190,7 @@ private:
     };
 
     std::vector<ChatMessage> m_ChatMessages;
-    static const int MAX_CHAT_MESSAGES = 10;
+    static const int MAX_CHAT_MESSAGES = 100;
 
     // True for lines the client itself wrote rather than relayed speech.
     static bool IsSystemChatMessage(const std::string& message);

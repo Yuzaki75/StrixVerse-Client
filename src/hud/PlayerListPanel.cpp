@@ -8,6 +8,7 @@
 #include "../ui/UIPanel.h"
 #include "../ui/UIScale.h"
 #include "../ui/UITheme.h"
+#include "../ui/UIRoleBadge.h"
 
 namespace
 {
@@ -81,6 +82,31 @@ namespace
     {
         static const Color color = UITheme::Text;
         return color;
+    }
+
+    // Hover tint for roster rows, matching the world browser's rows: a quiet
+    // accent wash that lifts the transparent row without shouting over the
+    // role colours.
+    const Color& RowHoverTint()
+    {
+        static const Color color = UITheme::WithAlpha(UITheme::Accent, 0.08f);
+        return color;
+    }
+
+    // One-line explanations for the row tooltip. A plain "Player" explains
+    // itself; giving it a line too would only add noise.
+    const char* RoleDescription(const std::string& role)
+    {
+        if (role == "Developer") return "Developer — server staff";
+        if (role == "Moderator") return "Moderator — server staff";
+
+        if (role == "Owner")     return "Owner — full control of this world";
+        if (role == "Co-Owner")  return "Co-Owner — acts with the owner's authority";
+        if (role == "Builder")   return "Builder — can build and break";
+        if (role == "Member")    return "Member — can visit, cannot build";
+        if (role == "Visitor")   return "Visitor — can look around";
+
+        return nullptr;
     }
 }
 
@@ -243,6 +269,24 @@ void PlayerListPanel::RebuildRows()
         row->setSize(width, S(kRowHeight));
         row->setBackgroundColor(UITheme::Hex(0x000000, 0.0f));
 
+        // Hoverable so the roster reads as a list of rows rather than a wall
+        // of text; the wash is the only feedback, rows are not clickable.
+        row->setHoverable(true);
+        row->setHoverTint(RowHoverTint());
+
+        if (const char* description = RoleDescription(entry.role))
+            row->setTooltipText(description);
+
+        // The role badge sits right-aligned in the row; the name yields the
+        // width it needs and keeps its RoleColor treatment.
+        auto badge = std::make_shared<UIRoleBadge>(engine_);
+        badge->SetRole(entry.role);
+        badge->setPosition(width - badge->getWidth() - S(2.0f),
+                           (S(kRowHeight) - badge->getHeight()) * 0.5f);
+
+        const float nameWidth = width - S(5.0f) - badge->getWidth() - S(4.0f)
+                                - S(2.0f);
+
         auto name = std::make_shared<UILabel>();
         name->setFont(PanelFont(engine_, UIFonts::Typeface::Body,
                                 UITheme::Display::Label));
@@ -255,8 +299,9 @@ void PlayerListPanel::RebuildRows()
 
         name->setText(entry.name.empty() ? std::string("(unnamed)") : entry.name);
         name->setPosition(S(5.0f), S(3.0f));
-        name->setSize(width - S(10.0f), S(11.0f));
+        name->setSize(nameWidth, S(11.0f));
         row->addChild(name);
+        row->addChild(badge);
 
         list_->addChild(row);
     }

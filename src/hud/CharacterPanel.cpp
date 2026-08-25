@@ -8,6 +8,7 @@
 #include "../ui/UIPanel.h"
 #include "../ui/UIScale.h"
 #include "../ui/UITheme.h"
+#include "../ui/UIRoleBadge.h"
 
 #include <format>
 
@@ -98,13 +99,11 @@ void CharacterPanel::BuildFrame()
     nameLabel_->setSize(width - S(kPadding) * 2.0f, S(16.0f));
     root_->addChild(nameLabel_);
 
-    roleLabel_ = std::make_shared<UILabel>();
-    roleLabel_->setFont(PanelFont(engine_, UIFonts::Typeface::Body,
-                                  UITheme::Display::Small));
-    roleLabel_->setTextColor(UITheme::Subtext);
-    roleLabel_->setPosition(S(kPadding), S(kHeaderTop + 17.0f));
-    roleLabel_->setSize(width - S(kPadding) * 2.0f, S(10.0f));
-    root_->addChild(roleLabel_);
+    // The role pill replaces the plain text line: same slot under the name,
+    // auto-sized by the badge, coloured per PlayerListPanel's table.
+    roleBadge_ = std::make_shared<UIRoleBadge>(engine_);
+    roleBadge_->setPosition(S(kPadding), S(kHeaderTop + 17.0f));
+    root_->addChild(roleBadge_);
 
     levelLabel_ = std::make_shared<UILabel>();
     levelLabel_->setFont(PanelFont(engine_, UIFonts::Typeface::Data,
@@ -173,8 +172,8 @@ void CharacterPanel::Refresh()
         nameLabel_->setText(info_.name.empty() ? std::string("(unnamed)")
                                                : info_.name);
 
-    if (roleLabel_)
-        roleLabel_->setText(info_.role.empty() ? std::string("Visitor")
+    if (roleBadge_)
+        roleBadge_->SetRole(info_.role.empty() ? std::string("Visitor")
                                                : info_.role);
 
     if (levelLabel_)

@@ -704,8 +704,10 @@ void LoginScreen::UpdateConnect()
     SetStatus("Authenticating...", UITheme::Accent);
     auth->BeginLogin(pendingUsername_, pendingPassword_, pendingTotpCode_);
 
-    // Not kept a moment longer than needed.
+    // Not kept a moment longer than needed. Zero the memory before clearing.
+    std::fill(pendingPassword_.begin(), pendingPassword_.end(), '\0');
     pendingPassword_.clear();
+    std::fill(pendingTotpCode_.begin(), pendingTotpCode_.end(), '\0');
     pendingTotpCode_.clear();
 }
 

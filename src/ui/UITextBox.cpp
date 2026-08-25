@@ -331,16 +331,54 @@ void UITextBox::renderSelf(UIRenderer& renderer) const
         caretOffset = font_->MeasureWidth(beforeCaret, 0.0f);
     }
 
-    const float scroll = caretOffset > innerW ? caretOffset - innerW : 0.0f;
+    // Calculate scroll to keep caret visible with some padding
+    const float caretPadding = UITheme::Scaled(10.0f); // Small padding from edges
+    float scroll = scrollOffset_; // Start with previous scroll
+
+    if (!showPlaceholder)
+    {
+        // If caret is past the right edge, scroll right
+        if (caretOffset - scroll > innerW - caretPadding)
+        {
+            scroll = caretOffset - innerW + caretPadding;
+        }
+        // If caret is before the left edge, scroll left
+        else if (caretOffset - scroll < caretPadding)
+        {
+            scroll = std::max(0.0f, caretOffset - caretPadding);
+        }
+
+        // Ensure we don't scroll past the beginning
+        scroll = std::max(0.0f, scroll);
+
+        // Calculate total text width and ensure we don't over-scroll
+        const float totalWidth = font_->MeasureWidth(display, 0.0f);
+        if (totalWidth > innerW)
+        {
+            // Don't scroll past the end of the text
+            scroll = std::min(scroll, totalWidth - innerW);
+        }
+        else
+        {
+            // Text fits entirely, don't scroll at all
+            scroll = 0.0f;
+        }
+    }
 
     // Remembered so a click can map back to a caret position next frame.
     scrollOffset_ = scroll;
 
     // The field clips its own content so long values cannot spill over the
-    // rounded border.
-    renderer.PushClip(innerX, y, innerW, height_);
+    // rounded border or padding area. Clip slightly inset to avoid text
+    // touching the border.
+    const float clipInset = UITheme::Scaled(1.0f);
+    renderer.PushClip(innerX + clipInset, y + clipInset, 
+                      std::max(0.0f, innerW - clipInset * 2.0f), 
+                      std::max(0.0f, height_ - clipInset * 2.0f));
 
-    renderer.DrawText(*font_, drawn, innerX - scroll, textY,
+    // Draw text with scroll offset applied
+    const float textX = innerX - scroll;
+    renderer.DrawText(*font_, drawn, textX, textY,
                       showPlaceholder ? placeholderColor_ : textColor_);
 
     // Caret: visible for the first half of each blink cycle.
@@ -350,8 +388,12 @@ void UITextBox::renderSelf(UIRenderer& renderer) const
         const float caretH = font_->GetLineHeight() * 0.8f;
         const float caretY = y + (height_ - caretH) * 0.5f;
 
-        renderer.DrawRect(caretX, caretY, kCaretWidth, caretH,
-                          UIQuadStyle::Solid(textColor_));
+        // Only draw caret if it's within the visible area
+        if (caretX >= innerX && caretX <= innerX + innerW)
+        {
+            renderer.DrawRect(caretX, caretY, kCaretWidth, caretH,
+                              UIQuadStyle::Solid(textColor_));
+        }
     }
 
     renderer.PopClip();

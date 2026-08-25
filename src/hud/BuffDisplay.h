@@ -60,9 +60,21 @@ private:
         std::shared_ptr<UIPanel> barBackground;
         std::shared_ptr<UIPanel> barFill;
 
+        // The buff this row was built for. Expiry ghosting matches on it.
+        std::string id;
+
         // The whole-second figure currently shown; the string is only
         // rebuilt when this changes, never per frame.
         int shownSecond = -1;
+    };
+
+    // A row whose buff vanished between packets. It keeps drawing while its
+    // opacity runs down to nothing, then is removed from the root. Capped so
+    // a mass expiry cannot stack an unbounded number of fading panels.
+    struct Ghost
+    {
+        std::shared_ptr<UIPanel> backing;
+        float remaining = 0.0f;
     };
 
     void BuildFrame();
@@ -75,9 +87,10 @@ private:
     int laidOutWidth_  = 0;
     int laidOutHeight_ = 0;
 
-    void RebuildRows();
+    void RebuildRows(bool fadeExpiredRows);
     void ApplyBars() const;
     void UpdateVisibility();
+    void FadeGhosts(float dt);
 
     Engine*    engine_    = nullptr;
     UIManager* uiManager_ = nullptr;
@@ -86,6 +99,7 @@ private:
 
     std::vector<BuffEntry> buffs_;
     std::vector<Row>       rows_;
+    std::vector<Ghost>     ghosts_;
 
     std::shared_ptr<UIPanel> root_;
 };

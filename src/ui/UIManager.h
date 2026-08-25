@@ -7,6 +7,8 @@
 #include "UIElement.h"
 
 class UIRenderer;
+class UILabel;
+class UIPanel;
 
 // -----------------------------------------------------------------------------
 // UIManager
@@ -87,6 +89,16 @@ public:
 private:
     void updateHoverState(float x, float y);
 
+    // --- Shared tooltip --------------------------------------------------
+    // One tooltip for the whole tree: an element with tooltip text under a
+    // dwelling cursor shows it; everything else keeps it hidden. Built once,
+    // lazily, and kept at the top of the draw order.
+    void ensureTooltipBuilt();
+    void updateTooltip(float deltaTime);
+    void showTooltip();
+    void refreshTooltipPosition();
+    void hideTooltip();
+
     // Drawn back to front; the last element is on top.
     std::vector<std::shared_ptr<UIElement>> elements_;
 
@@ -96,4 +108,10 @@ private:
 
     float lastMouseX_ = 0.0f;
     float lastMouseY_ = 0.0f;
+
+    std::shared_ptr<UIPanel> tooltipPanel_;
+    std::shared_ptr<UILabel> tooltipLabel_;
+    bool        tooltipVisible_   = false;
+    float       tooltipDwell_     = 0.0f;
+    std::string tooltipShownText_;
 };

@@ -83,13 +83,15 @@ void UIScrollPanel::scrollBy(float delta)
     setScrollOffset(scroll_ + delta);
 }
 
-void UIScrollPanel::onScroll(float delta)
+bool UIScrollPanel::onScroll(float delta)
 {
     if (maxScroll() <= 0.0f)
-        return;
+        return false;   // nothing to scroll; let an ancestor try
 
     // Positive wheel delta means "scroll up" on every platform SDL reports.
     scrollBy(-delta * scrollSpeed_);
+
+    return true;
 }
 
 void UIScrollPanel::beginChildren(UIRenderer& renderer) const

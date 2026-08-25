@@ -203,10 +203,13 @@ void UIElement::onMouseMove(float, float) {}
 void UIElement::onMouseEnter() {}
 void UIElement::onMouseLeave() {}
 void UIElement::onClick() {}
-void UIElement::onScroll(float delta)
+bool UIElement::onScroll(float delta)
 {
     if (onScroll_)
         onScroll_(delta);
+
+    // Base elements never consume; the wheel falls through to the ancestors.
+    return false;
 }
 void UIElement::onFocusGained() {}
 void UIElement::onFocusLost() {}

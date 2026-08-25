@@ -5,6 +5,7 @@
 #include "UIElement.h"
 #include "../graphics/Color.h"
 #include "../graphics/UIRenderer.h"
+#include "UITheme.h"
 
 class Texture;
 
@@ -64,6 +65,27 @@ public:
     // panels are plain containers and scissoring costs a batch break.
     void setClipsChildren(bool clip) { clipsChildren_ = clip; }
 
+    // --- Hover -----------------------------------------------------------
+    // Opt-in hover highlight. A hoverable panel joins hit testing like a
+    // button does - it answers wantsInput() - which is what lets UIManager
+    // route enter/leave to it. That also means it counts as "over an
+    // element" for the gameplay input gate, so only mark panels that should
+    // feel interactive.
+    void setHoverable(bool hoverable);
+    bool isHoverable() const { return hoverable_; }
+    bool isHovered() const { return hovered_; }
+
+    // The fill blends toward this colour while hovered; its alpha is the
+    // blend strength (0 = no effect, 1 = full tint).
+    void setHoverTint(const Color& tint) { hoverTint_ = tint; }
+    const Color& getHoverTint() const { return hoverTint_; }
+
+    // --- UIElement -------------------------------------------------------
+    bool wantsInput() const override { return blocksInput_ || hoverable_; }
+    void setEnabled(bool enabled) override;
+    void onMouseEnter() override;
+    void onMouseLeave() override;
+
 protected:
     void renderSelf(UIRenderer& renderer) const override;
     void beginChildren(UIRenderer& renderer) const override;
@@ -75,4 +97,8 @@ protected:
     Color                    imageTint_{1.0f, 1.0f, 1.0f, 1.0f};
 
     bool clipsChildren_ = false;
+
+    bool  hoverable_ = false;
+    bool  hovered_   = false;
+    Color hoverTint_ = UITheme::Accent;
 };
