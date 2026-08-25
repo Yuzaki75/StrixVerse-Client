@@ -109,7 +109,9 @@ private:
     std::shared_ptr<UICheckBox>   visitorsBox_;
     std::shared_ptr<UIScrollPanel> banList_;
     std::shared_ptr<UITextBox>    banField_;
+    std::shared_ptr<UIButton>     banDurationButton_;
     std::shared_ptr<UIButton>     banButton_;
+    int                           banDurationIndex_ = 0;
 
     // Set while Refresh is writing the checkboxes, so setChecked does not fire
     // setOnChanged and bounce a settings packet straight back at the server for

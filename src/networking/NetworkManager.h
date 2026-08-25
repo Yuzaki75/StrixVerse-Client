@@ -281,7 +281,8 @@ public:
     bool sendSetWorldSettings(bool protectionOn, bool allowBuilding,
                               bool allowBreaking, bool allowVisitors);
     bool sendBanWorldPlayer(const std::string& username, bool banned,
-                            const std::string& reason);
+                            const std::string& reason,
+                            uint32_t durationSeconds = 0);
 
     // --- Server notifications --------------------------------------------
     //

@@ -877,7 +877,8 @@ bool NetworkManager::sendSetWorldSettings(bool protectionOn, bool allowBuilding,
 }
 
 bool NetworkManager::sendBanWorldPlayer(const std::string& username, bool banned,
-                                        const std::string& reason)
+                                        const std::string& reason,
+                                        uint32_t durationSeconds)
 {
     if (!isConnected() || username.empty())
         return false;
@@ -886,6 +887,7 @@ bool NetworkManager::sendBanWorldPlayer(const std::string& username, bool banned
     packet->Username = username;
     packet->Banned   = banned ? 1 : 0;
     packet->Reason   = reason;
+    packet->DurationSeconds = durationSeconds;
     return sendPacket(packet);
 }
 

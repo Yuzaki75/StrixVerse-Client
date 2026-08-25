@@ -203,6 +203,11 @@ public:
     std::uint8_t Banned = 1;     // 0 lifts the ban
     std::string  Reason;
 
+    // Optional tail: how long the ban lasts, in seconds. 0 = permanent.
+    // Mirrors the server's tolerant tail - an older server reads its absence
+    // as permanent, which is what an omitted duration means anyway.
+    std::uint32_t DurationSeconds = 0;
+
     Opcode getOpcode() const override { return Opcode::BanWorldPlayer; }
     const char* getName() const override { return "BanWorldPlayerPacket"; }
 
@@ -212,6 +217,7 @@ public:
         buffer.writeString(Username, ProtocolLimits::MaxUsernameLength);
         buffer.write(Banned);
         buffer.writeString(Reason, ProtocolLimits::MaxChatMessageLength);
+        buffer.write(DurationSeconds);
     }
 
     void deserialize(PacketBuffer& buffer) override
@@ -222,6 +228,9 @@ public:
         Username = buffer.readString(ProtocolLimits::MaxUsernameLength);
         Banned   = buffer.read<std::uint8_t>();
         Reason   = buffer.readString(ProtocolLimits::MaxChatMessageLength);
+
+        if (buffer.remaining() >= sizeof(std::uint32_t))
+            DurationSeconds = buffer.read<std::uint32_t>();
 
         Valid = true;
     }

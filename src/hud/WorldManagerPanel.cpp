@@ -269,6 +269,16 @@ void WorldManagerPanel::BuildLockTab()
 
     const float fieldY = height - S(19.0f);
 
+    // Ban duration presets. The cycler sits between the field and BAN and
+    // walks the table; 0 is permanent. Seconds are what the wire carries.
+    struct BanDuration { const char* label; uint32_t seconds; };
+    static constexpr BanDuration kBanDurations[] = {
+        { "FOREVER", 0 },
+        { "1 HOUR",  3600 },
+        { "1 DAY",   86400 },
+        { "1 WEEK",  604800 },
+    };
+
     banField_ = std::make_shared<UITextBox>();
     banField_->setPlaceholderText("username");
     banField_->setFont(PanelFont(engine_, UIFonts::Typeface::Body, UITheme::Display::Label));
@@ -278,16 +288,30 @@ void WorldManagerPanel::BuildLockTab()
     banField_->setBorderColor(UITheme::InputBorder);
     banField_->setFocusBorderColor(UITheme::Accent);
     banField_->setBorderRadius(UITheme::RadiusInput);
-    banField_->setSize(width - S(104.0f), S(16.0f));
+    banField_->setSize(width - S(174.0f), S(16.0f));
     banField_->setPosition(0.0f, fieldY);
     lockTab_->addChild(banField_);
+
+    banDurationButton_ = std::make_shared<UIButton>();
+    banDurationButton_->setText(kBanDurations[banDurationIndex_].label);
+    banDurationButton_->setFont(PanelFont(engine_, UIFonts::Typeface::Display, UITheme::Display::Small));
+    banDurationButton_->setVariant(UIButton::Variant::Ghost);
+    banDurationButton_->setSize(S(68.0f), S(16.0f));
+    banDurationButton_->setPosition(width - S(166.0f), fieldY);
+    banDurationButton_->setOnClick([this]() {
+        banDurationIndex_ = (banDurationIndex_ + 1) % 4;
+        banDurationButton_->setText(kBanDurations[banDurationIndex_].label);
+        if (engine_)
+            engine_->GetAudio().PlaySfx("ui_click");
+    });
+    lockTab_->addChild(banDurationButton_);
 
     banButton_ = std::make_shared<UIButton>();
     banButton_->setText("BAN");
     banButton_->setFont(PanelFont(engine_, UIFonts::Typeface::Display, UITheme::Display::Small));
     banButton_->setVariant(UIButton::Variant::Danger);
-    banButton_->setSize(S(98.0f), S(16.0f));
-    banButton_->setPosition(width - S(98.0f), fieldY);
+    banButton_->setSize(S(90.0f), S(16.0f));
+    banButton_->setPosition(width - S(90.0f), fieldY);
     banButton_->setOnClick([this]() {
         if (!engine_ || !banField_)
             return;
@@ -296,7 +320,9 @@ void WorldManagerPanel::BuildLockTab()
         if (name.empty())
             return;
 
-        engine_->getNetworkManager().sendBanWorldPlayer(name, true, std::string());
+        const uint32_t duration = kBanDurations[banDurationIndex_].seconds;
+        engine_->getNetworkManager().sendBanWorldPlayer(name, true,
+                                                        std::string(), duration);
         banField_->setText(std::string());
     });
     lockTab_->addChild(banButton_);
