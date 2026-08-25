@@ -164,6 +164,21 @@ void GameScreen::OnEnter()
     // as joining - they were already present.
     if (engine_)
     {
+        // Baseline the leave counter against the session's history. The
+        // counter counts every WorldLeave this connection has ever seen and
+        // is never reset, so a screen that assumes it starts at zero would
+        // read the previous session's exit as a fresh kick and bounce straight
+        // back to world selection - every time, after the first.
+        // Baseline every session counter against history. Each one counts up
+        // forever and none reset on join, so a screen that assumes zero would
+        // read the previous world's traffic as fresh events: the leave counter
+        // bounced straight back to world selection, and a stale WorldInfo
+        // revision popped the management panel open on arrival.
+        auto& network = engine_->getNetworkManager();
+        worldLeftRevision_  = network.getWorldLeftRevision();
+        worldInfoRevision_  = network.getWorldInfoRevision();
+        buffRevision_       = network.getBuffRevision();
+
         for (const auto& [id, player] : engine_->getNetworkManager().getRemotePlayers())
             OnPlayerSpawn(id, player.username, player.tileX, player.tileY, false);
 
