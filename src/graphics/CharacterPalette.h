@@ -35,10 +35,10 @@ namespace StrixVerse
             0x2B2B33, 0x3A6FB0, 0x4E8A46, 0x6B4A2B,
         };
         inline constexpr uint32_t Shirt[] = {
-            0x3A6FB0, 0xB4462A, 0x4E8A46, 0x6E6A78, 0xD8B24A, 0x7A4A8A,
+            0xC4453A, 0xB4462A, 0x4E8A46, 0x6E6A78, 0xD8B24A, 0x7A4A8A,
         };
         inline constexpr uint32_t Trousers[] = {
-            0x3B4252, 0x2E2A28, 0x5A4632, 0x3B3A44,
+            0x8A8E96, 0x2E2A28, 0x5A4632, 0x3B3A44,
         };
         inline constexpr uint32_t Boots[] = {
             0x4A3524, 0x3B2716, 0x2E2A28,
